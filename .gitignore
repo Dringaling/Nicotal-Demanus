@@ -1,0 +1,10 @@
+venv/
+.venv
+.DS_Store
+secret/
+*.env
+**/.env
+
+*.tmp
+tmp/
+.tmp
