@@ -26,6 +26,7 @@ body {
   padding: 16px 24px;
   background: var(--navy);
   color: #ffffff;
+  flex-wrap: wrap;
 }
 
 .brand {
@@ -181,4 +182,79 @@ button.danger {
 .counter {
   text-align: center;
   color: var(--muted);
+}
+
+.nav-links {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.nav-links a {
+  color: #c7d2fe;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.nav-links a:hover {
+  color: #ffffff;
+}
+
+.server-url {
+  color: #c7d2fe;
+  font-size: 13px;
+}
+
+.thumb-sm {
+  width: 96px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
+
+.thumb.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef2f7;
+  color: var(--muted);
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.review-card {
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.review-card h2 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.review-card h2 a {
+  color: var(--navy);
+  text-decoration: none;
+}
+
+.button.secondary {
+  background: #e5e7eb;
+  color: var(--navy);
 }

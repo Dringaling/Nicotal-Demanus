@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import socket
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -19,12 +20,13 @@ class GenerationSettings:
     top_p: float = 0.95
     max_tokens: int = 8000
     response_format: str = "json_schema"
+    chunk_chars: int = 8000
 
 
 @dataclass(frozen=True)
 class CacheSettings:
-    prompt_version: str = "demanus-deck-v1"
-    prompt_cache_key: str = "demanus-deck-v1"
+    prompt_version: str = "demanus-deck-v2"
+    prompt_cache_key: str = "demanus-deck-v2"
     cache_ttl: str = "1h"
     local_cache: bool = True
     local_cache_dir: str = "input/.cache"
@@ -48,7 +50,8 @@ class ProviderSettings:
 @dataclass(frozen=True)
 class ServerSettings:
     host: str = "0.0.0.0"
-    port: int = 8000
+    port: int = 8765
+    lan_ip: str = ""
 
 
 @dataclass(frozen=True)
@@ -119,10 +122,11 @@ def load_settings(path: Path | None = None) -> Settings:
         top_p=float(generation_raw.get("top_p", 0.95)),
         max_tokens=int(generation_raw.get("max_tokens", 8000)),
         response_format=str(generation_raw.get("response_format", "json_schema")),
+        chunk_chars=int(generation_raw.get("chunk_chars", 8000)),
     )
     cache = CacheSettings(
-        prompt_version=str(cache_raw.get("prompt_version", "demanus-deck-v1")),
-        prompt_cache_key=str(cache_raw.get("prompt_cache_key", "demanus-deck-v1")),
+        prompt_version=str(cache_raw.get("prompt_version", "demanus-deck-v2")),
+        prompt_cache_key=str(cache_raw.get("prompt_cache_key", "demanus-deck-v2")),
         cache_ttl=str(cache_raw.get("cache_ttl", "1h")),
         local_cache=bool(cache_raw.get("local_cache", True)),
         local_cache_dir=str(cache_raw.get("local_cache_dir", "input/.cache")),
@@ -151,10 +155,25 @@ def load_settings(path: Path | None = None) -> Settings:
         raise ConfigError("Bảng [server] phải là bảng TOML")
     server = ServerSettings(
         host=str(server_raw.get("host", "0.0.0.0")),
-        port=int(server_raw.get("port", 8000)),
+        port=int(server_raw.get("port", 8765)),
+        lan_ip=str(server_raw.get("lan_ip", "")),
     )
 
     return Settings(provider_name=provider_name, provider=provider, server=server)
+
+
+def detect_lan_ip() -> str:
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.connect(("8.8.8.8", 80))
+            return sock.getsockname()[0]
+    except OSError:
+        return "127.0.0.1"
+
+
+def lan_url(settings: Settings) -> str:
+    host = settings.server.lan_ip.strip() or detect_lan_ip()
+    return f"http://{host}:{settings.server.port}"
 
 
 def _read_env_file(key_path: Path, wanted: str) -> str | None:

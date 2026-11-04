@@ -111,4 +111,4 @@ class DeckSpec(BaseModel):
     author: str | None = Field(default=None, max_length=120)
     font: str = Field(default="Lexend", min_length=1, max_length=80)
     palette: Palette = Field(default_factory=Palette)
-    slides: list[SlideSpec] = Field(min_length=1, max_length=12)
+    slides: list[SlideSpec] = Field(min_length=1, max_length=60)

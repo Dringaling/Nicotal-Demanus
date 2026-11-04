@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Review · Demanus{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="deck-head">
+    <h1>Review deck</h1>
+    <a class="button" href="/">Tạo deck mới</a>
+  </div>
+  {% if decks %}
+  <div class="review-grid">
+    {% for deck in decks %}
+    <article class="review-card">
+      {% if deck.has_preview %}
+      <a href="/deck/{{ deck.slug }}">
+        <img class="thumb" src="/preview/{{ deck.slug }}/1" alt="Slide 1 của {{ deck.slug }}">
+      </a>
+      {% else %}
+      <div class="thumb placeholder">Chưa có preview</div>
+      {% endif %}
+      <h2><a href="/deck/{{ deck.slug }}">{{ deck.slug }}</a></h2>
+      <p class="meta">{{ deck.size_bytes }} bytes · {{ deck.modified_at }}</p>
+      <div class="actions">
+        <a class="button" href="/deck/{{ deck.slug }}">Xem slide</a>
+        <a class="button secondary" href="/download/{{ deck.slug }}">Tải</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">Chưa có deck nào.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -5,7 +5,14 @@ from pathlib import Path
 
 import pytest
 
-from app.config import ConfigError, load_secret, load_settings, paths
+from app.config import (
+    ConfigError,
+    detect_lan_ip,
+    lan_url,
+    load_secret,
+    load_settings,
+    paths,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "config" / "providers.toml"
@@ -23,14 +30,27 @@ def test_load_settings_reads_generation_and_cache() -> None:
     settings = load_settings(CONFIG)
     assert settings.provider.generation.max_tokens == 8000
     assert settings.provider.generation.response_format == "json_schema"
-    assert settings.provider.cache.prompt_cache_key == "demanus-deck-v1"
+    assert settings.provider.generation.chunk_chars == 8000
+    assert settings.provider.cache.prompt_cache_key == "demanus-deck-v2"
     assert settings.provider.cache.local_cache is True
 
 
 def test_load_settings_reads_server() -> None:
     settings = load_settings(CONFIG)
     assert settings.server.host == "0.0.0.0"
-    assert settings.server.port == 8000
+    assert settings.server.port == 8765
+    assert settings.server.lan_ip == "192.168.1.12"
+
+
+def test_lan_url_uses_configured_ip() -> None:
+    settings = load_settings(CONFIG)
+    assert lan_url(settings) == "http://192.168.1.12:8765"
+
+
+def test_detect_lan_ip_returns_string() -> None:
+    detected = detect_lan_ip()
+    assert isinstance(detected, str)
+    assert detected
 
 
 def test_missing_config_raises(tmp_path: Path) -> None:

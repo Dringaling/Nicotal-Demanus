@@ -4,7 +4,7 @@ import argparse
 import asyncio
 from pathlib import Path
 
-from app.config import load_settings
+from app.config import detect_lan_ip, load_settings
 from app.render import render_deck
 from app.sample import sample_deck
 
@@ -15,6 +15,9 @@ def cmd_serve(args: argparse.Namespace) -> None:
     settings = load_settings()
     host = args.host or settings.server.host
     port = args.port or settings.server.port
+    lan_host = settings.server.lan_ip.strip() or detect_lan_ip()
+    print(f"Server: http://{host}:{port}")
+    print(f"LAN:    http://{lan_host}:{port}")
     uvicorn.run("app.web:app", host=host, port=port, reload=args.reload)
 
 

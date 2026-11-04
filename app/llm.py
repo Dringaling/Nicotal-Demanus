@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import json
 import logging
 import re
 from dataclasses import dataclass
@@ -13,9 +12,11 @@ import httpx
 
 from .config import REPO_ROOT, Settings, load_secret
 from .prompts import build_system_prompt
-from .schema import DeckSpec
+from .schema import DeckSpec, SlideSpec
 
 logger = logging.getLogger(__name__)
+
+MAX_SLIDES = 60
 
 
 class LLMError(RuntimeError):
@@ -53,9 +54,114 @@ def _cache_key(
     name: str,
     desc: str,
     template: str,
+    chunk_chars: int,
 ) -> str:
-    payload = "\x00".join([prompt_version, model, name, desc, template])
+    payload = "\x00".join(
+        [prompt_version, model, name, desc, template, str(chunk_chars)]
+    )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def split_into_chunks(text: str, limit: int) -> list[str]:
+    """Cắt văn bản theo đoạn, không vượt quá `limit` ký tự mỗi chunk."""
+    text = text.strip()
+    if not text:
+        return [""]
+    if limit <= 0 or len(text) <= limit:
+        return [text]
+
+    units = re.split(r"\n\s*\n", text)
+    chunks: list[str] = []
+    current: list[str] = []
+    size = 0
+
+    for unit in units:
+        unit = unit.strip()
+        if not unit:
+            continue
+
+        if len(unit) > limit:
+            if current:
+                chunks.append("\n\n".join(current))
+                current, size = [], 0
+            for start in range(0, len(unit), limit):
+                chunks.append(unit[start : start + limit])
+            continue
+
+        if current and size + len(unit) + 2 > limit:
+            chunks.append("\n\n".join(current))
+            current, size = [], 0
+
+        current.append(unit)
+        size += len(unit) + 2
+
+    if current:
+        chunks.append("\n\n".join(current))
+    return chunks or [text]
+
+
+def _sum_usage(usages: list[UsageInfo]) -> UsageInfo:
+    return UsageInfo(
+        prompt_tokens=sum(item.prompt_tokens for item in usages),
+        completion_tokens=sum(item.completion_tokens for item in usages),
+        cached_tokens=sum(item.cached_tokens for item in usages),
+        cache_write_tokens=sum(item.cache_write_tokens for item in usages),
+        estimated_cost=sum(item.estimated_cost for item in usages),
+        from_cache=False,
+    )
+
+
+def _merge_specs(specs: list[DeckSpec]) -> DeckSpec:
+    if not specs:
+        raise LLMError("Không có chunk nào để merge")
+
+    base = specs[0]
+    merged: list[SlideSpec] = []
+    seen_titles: set[str] = set()
+
+    for spec_index, spec in enumerate(specs):
+        is_last = spec_index == len(specs) - 1
+        for slide in spec.slides:
+            if slide.layout == "title" and merged:
+                continue
+            if slide.layout == "closing" and not is_last:
+                continue
+
+            normalized = slide.title.strip().casefold()
+            if normalized and normalized in seen_titles:
+                continue
+            if normalized:
+                seen_titles.add(normalized)
+            merged.append(slide)
+
+    if not merged or merged[0].layout != "title":
+        merged.insert(
+            0,
+            SlideSpec(
+                layout="title",
+                title=base.title,
+                subtitle=base.subtitle,
+            ),
+        )
+
+    closing = SlideSpec(
+        layout="closing",
+        title="Cảm ơn",
+        subtitle=base.author,
+    )
+    has_closing = merged[-1].layout == "closing"
+
+    if len(merged) > MAX_SLIDES:
+        limit = MAX_SLIDES if has_closing else MAX_SLIDES - 1
+        merged = merged[:limit]
+        if has_closing:
+            merged[-1] = closing
+        else:
+            merged.append(closing)
+    elif not has_closing:
+        merged.append(closing)
+
+    return base.model_copy(update={"slides": merged})
 
 
 class LLMClient:
@@ -114,7 +220,7 @@ class LLMClient:
 
     def _payload(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         response_format: dict[str, Any],
     ) -> dict[str, Any]:
         generation = self.provider.generation
@@ -142,9 +248,11 @@ class LLMClient:
     def _messages(
         self,
         name: str,
-        desc: str,
+        chunk: str,
         template: str,
-    ) -> list[dict[str, str]]:
+        index: int,
+        total: int,
+    ) -> list[dict[str, Any]]:
         return [
             {
                 "role": "system",
@@ -154,10 +262,13 @@ class LLMClient:
             {
                 "role": "user",
                 "content": (
-                    f"Tên báo cáo: {name}\n"
-                    f"Mô tả: {desc}\n"
-                    f"Template: {template}\n\n"
-                    "Trả về JSON deck-spec."
+                    f"DECK NAME: {name}\n"
+                    f"TEMPLATE: {template}\n"
+                    f"CHUNK {index} OF {total}\n"
+                    f"--- CHUNK START ({index}/{total}) ---\n"
+                    f"{chunk}\n"
+                    f"--- CHUNK END ({index}/{total}) ---\n"
+                    "Return only the JSON deck-spec for this chunk."
                 ),
             },
         ]
@@ -225,7 +336,7 @@ class LLMClient:
     async def _parse(
         self,
         content: str,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
     ) -> DeckSpec:
         try:
             return DeckSpec.model_validate_json(_strip_fence(content))
@@ -235,8 +346,9 @@ class LLMClient:
                 {
                     "role": "user",
                     "content": (
-                        f"JSON trên không hợp lệ: {first_error}. "
-                        "Chỉ trả về JSON thuần đúng schema, không markdown."
+                        f"The JSON above is invalid: {first_error}. "
+                        "Return only a valid JSON deck-spec matching the schema, "
+                        "without markdown."
                     ),
                 },
             ]
@@ -251,24 +363,10 @@ class LLMClient:
                     f"Không parse được JSON deck-spec: {second_error}"
                 ) from second_error
 
-    async def generate_spec(
+    async def _request_spec(
         self,
-        name: str,
-        desc: str,
-        template: str = "flat",
+        messages: list[dict[str, Any]],
     ) -> tuple[DeckSpec, UsageInfo]:
-        key = _cache_key(
-            self.provider.cache.prompt_version,
-            self.provider.model,
-            name,
-            desc,
-            template,
-        )
-        cached = self._read_cache(key)
-        if cached is not None:
-            return cached, UsageInfo(from_cache=True)
-
-        messages = self._messages(name, desc, template)
         mode = self.provider.generation.response_format
         try:
             data = await self._post_with_retry(
@@ -284,15 +382,54 @@ class LLMClient:
 
         content = self._content(data)
         spec = await self._parse(content, messages)
-        usage = self._usage(data)
-        self._write_cache(key, spec)
+        return spec, self._usage(data)
+
+    async def generate_spec(
+        self,
+        name: str,
+        desc: str,
+        template: str = "flat",
+    ) -> tuple[DeckSpec, UsageInfo]:
+        chunk_chars = self.provider.generation.chunk_chars
+        key = _cache_key(
+            self.provider.cache.prompt_version,
+            self.provider.model,
+            name,
+            desc,
+            template,
+            chunk_chars,
+        )
+        cached = self._read_cache(key)
+        if cached is not None:
+            return cached, UsageInfo(from_cache=True)
+
+        chunks = split_into_chunks(desc, chunk_chars)
+        total = len(chunks)
+        specs: list[DeckSpec] = []
+        usages: list[UsageInfo] = []
+
+        for index, chunk in enumerate(chunks, start=1):
+            messages = self._messages(name, chunk, template, index, total)
+            try:
+                spec, usage = await self._request_spec(messages)
+            except LLMError as exc:
+                raise LLMError(f"chunk {index}/{total}: {exc}") from exc
+            specs.append(spec)
+            usages.append(usage)
+
+        merged = _merge_specs(specs)
+        usage = _sum_usage(usages)
+        self._write_cache(key, merged)
 
         logger.info(
-            "DeepInfra ok model=%s tier=%s prompt_tokens=%s cached_tokens=%s cost=%s",
-            data.get("model", self.provider.model),
+            "DeepInfra ok model=%s tier=%s chunks=%s slides=%s "
+            "prompt_tokens=%s cached_tokens=%s cost=%s",
+            self.provider.model,
             self.provider.service_tier,
+            total,
+            len(merged.slides),
             usage.prompt_tokens,
             usage.cached_tokens,
             usage.estimated_cost,
         )
-        return spec, usage
+        return merged, usage

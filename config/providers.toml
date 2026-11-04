@@ -17,14 +17,17 @@ temperature = 0.4
 top_p = 0.95
 max_tokens = 8000
 response_format = "json_schema"
+chunk_chars = 8000
 
 [deepinfra.cache]
-prompt_version = "demanus-deck-v1"
-prompt_cache_key = "demanus-deck-v1"
+prompt_version = "demanus-deck-v2"
+prompt_cache_key = "demanus-deck-v2"
 cache_ttl = "1h"
 local_cache = true
 local_cache_dir = "input/.cache"
 
 [server]
 host = "0.0.0.0"
-port = 8000
+port = 8765
+# IP LAN của máy này; để trống để tự dò.
+lan_ip = "192.168.1.12"

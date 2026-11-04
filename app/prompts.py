@@ -4,7 +4,7 @@ import json
 
 from .schema import DeckSpec
 
-PROMPT_VERSION = "demanus-deck-v1"
+PROMPT_VERSION = "demanus-deck-v2"
 
 
 def deck_json_schema() -> dict:
@@ -21,44 +21,45 @@ def _schema_text() -> str:
 
 
 _LAYOUT_GUIDE = """\
-- title: slide bìa. Bắt buộc có title; subtitle và author nên có.
-- section: mở đầu một phần. title là tên phần, subtitle là mô tả ngắn.
-- bullets: danh sách gạch đầu dòng. Dùng bullets; level 0 là mục chính,
-  level 1 là ý phụ.
-- two_column: so sánh hai cột. Bắt buộc đúng 2 phần tử columns, mỗi cột có
-  heading và bullets.
-- table: bảng so sánh. Bắt buộc có table với headers và rows; mọi hàng phải
-  có đúng số ô bằng số header.
-- quote: câu trích dẫn hoặc thông điệp chính. title là nội dung trích dẫn,
-  subtitle là nguồn.
-- closing: slide kết thúc. title là lời cảm ơn, subtitle là liên hệ."""
+- title: cover slide. `title` is the deck title; `subtitle` and `author` are optional.
+- section: opens a part. `title` is the part name; `subtitle` is a short description.
+- bullets: bullet list. Use `bullets`; level 0 is a main point, level 1 is a sub-point.
+- two_column: comparison. Exactly two `columns`, each with `heading` and `bullets`.
+- table: comparison table. `table.headers` and `table.rows` are required; every row
+  must have exactly as many cells as there are headers.
+- quote: pull quote. `title` is the quote; `subtitle` is the source.
+- closing: final slide. `title` is the thank-you line; `subtitle` is contact info."""
 
 SYSTEM_PROMPT = f"""\
-Bạn là chuyên gia thiết kế bài trình bày y khoa bằng tiếng Việt. Nhiệm vụ của
-bạn là chuyển mô tả của người dùng thành một deck-spec JSON đúng schema cho
-trình kết xuất python-pptx.
+You are an expert designer of medical presentations in Vietnamese. Convert the
+user's description into a JSON deck-spec that the python-pptx renderer can build.
 
-QUY TẮC NỘI DUNG
-- Toàn bộ nội dung hiển thị bằng tiếng Việt có dấu, giọng chuyên nghiệp,
-  ngắn gọn, dễ đọc trên slide.
-- Tạo từ 6 đến 10 slide. Slide đầu dùng layout "title", slide cuối dùng
-  layout "closing".
-- Mỗi slide chỉ nên có một ý chính. Bullet tối đa 8 dòng, mỗi dòng tối đa
-  20 từ. Tiêu đề tối đa 12 từ.
-- Bảng tối đa 4 cột và 6 hàng dữ liệu. Không nhồi chữ vào ô.
-- Không bịa số liệu, liều thuốc, hay kết luận lâm sàng không có trong mô tả.
-  Nếu thiếu dữ liệu, dùng mô tả chung hoặc ghi rõ "cần bổ sung".
-- Không dùng ký tự đánh dấu bullet trong text; renderer tự thêm.
-- Font mặc định là "Lexend". Bảng màu mặc định là navy, xanh dương, trắng.
+CHUNK PROTOCOL
+- The user message contains exactly one chunk of a longer document.
+- A chunk is delimited by `--- CHUNK START (i/N) ---` and `--- CHUNK END (i/N) ---`.
+- Generate slides only for the text between those markers.
+- If i == 1, include exactly one slide with layout "title" as the first slide.
+- If i == N, include exactly one slide with layout "closing" as the last slide.
+- If 1 < i < N, do not emit "title" or "closing" slides.
+- Do not repeat content that belongs to other chunks; the chunks are merged later.
+- Follow any explicit slide plan inside the chunk (for example "Slide 12: ...").
 
-QUY TẮC ĐẦU RA
-- Chỉ trả về một đối tượng JSON thuần, không markdown, không giải thích,
-  không code fence.
-- JSON phải hợp lệ và khớp chính xác schema bên dưới. Không thêm trường lạ.
-- Trường "layout" chỉ nhận một trong: title, section, bullets, two_column,
-  table, quote, closing.
+CONTENT RULES
+- All user-visible text must be Vietnamese with diacritics, professional and concise.
+- Target 3-6 content slides per chunk unless the chunk contains an explicit slide plan.
+- Each slide has one main idea. At most 8 bullets, each at most 20 words.
+- Tables: at most 4 columns and 8 rows. Do not overload cells.
+- Never invent clinical numbers, dosages, or conclusions absent from the description.
+  If data is missing, write "cần bổ sung" instead.
+- Do not include bullet characters in text; the renderer adds them.
+- Default font is "Lexend"; default palette is navy, blue, white.
 
-DANH MỤC LAYOUT
+OUTPUT RULES
+- Return only a single JSON object. No markdown, no code fences, no commentary.
+- The JSON must match the schema exactly. Do not add extra fields.
+- `layout` must be one of: title, section, bullets, two_column, table, quote, closing.
+
+LAYOUT CATALOG
 {_LAYOUT_GUIDE}
 
 JSON SCHEMA

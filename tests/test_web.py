@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from app.config import load_settings
+from app.config import lan_url, load_settings
 from app.llm import LLMError, UsageInfo
 from app.sample import sample_deck
 from app.web import create_app
@@ -48,14 +48,16 @@ def generate(client: TestClient, name: str = "Báo cáo", desc: str = "Mô tả 
 
 def test_index_and_health(tmp_path: Path) -> None:
     client = make_client(tmp_path)
+    expected_url = lan_url(load_settings(CONFIG))
     response = client.get("/")
     assert response.status_code == 200
     assert 'name="name"' in response.text
     assert 'name="desc"' in response.text
+    assert expected_url in response.text
 
     health = client.get("/health")
     assert health.status_code == 200
-    assert health.json() == {"status": "ok"}
+    assert health.json() == {"status": "ok", "url": expected_url}
 
 
 def test_generate_creates_deck(tmp_path: Path) -> None:
@@ -84,11 +86,18 @@ def test_generate_rejects_short_name(tmp_path: Path) -> None:
     assert "Tên báo cáo" in response.text
 
 
-def test_generate_rejects_short_desc(tmp_path: Path) -> None:
+def test_generate_rejects_empty_desc(tmp_path: Path) -> None:
     client = make_client(tmp_path)
-    response = generate(client, desc="ngắn")
+    response = generate(client, desc="")
     assert response.status_code == 400
     assert "Mô tả" in response.text
+
+
+def test_generate_accepts_long_desc(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    long_desc = "Mô tả bệnh nhân và kế hoạch điều trị. " * 500
+    response = generate(client, desc=long_desc)
+    assert response.status_code == 303
 
 
 def test_generate_failure_marks_failed(tmp_path: Path) -> None:
@@ -163,3 +172,33 @@ def test_static_asset(tmp_path: Path) -> None:
     response = client.get("/static/style.css")
     assert response.status_code == 200
     assert "text/css" in response.headers["content-type"]
+
+
+def test_review_page_lists_decks(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    location = generate(client).headers["location"]
+    slug = location.rsplit("/", 1)[-1]
+
+    response = client.get("/review")
+    assert response.status_code == 200
+    assert slug in response.text
+    assert f"/preview/{slug}/1" in response.text
+    assert "Xem slide" in response.text
+
+
+def test_review_page_empty(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    response = client.get("/review")
+    assert response.status_code == 200
+    assert "Chưa có deck nào" in response.text
+
+
+def test_index_shows_thumbnail(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    location = generate(client).headers["location"]
+    slug = location.rsplit("/", 1)[-1]
+
+    response = client.get("/")
+    assert response.status_code == 200
+    assert f"/preview/{slug}/1" in response.text
+    assert "thumb-sm" in response.text

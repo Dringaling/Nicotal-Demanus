@@ -64,6 +64,12 @@ def test_invalid_palette_color_is_rejected() -> None:
 
 
 def test_too_many_slides_is_rejected() -> None:
-    slides = [{"layout": "title", "title": f"Slide {i}"} for i in range(13)]
+    slides = [{"layout": "title", "title": f"Slide {i}"} for i in range(61)]
     with pytest.raises(ValidationError):
         DeckSpec.model_validate({"title": "Báo cáo", "slides": slides})
+
+
+def test_sixty_slides_are_accepted() -> None:
+    slides = [{"layout": "title", "title": f"Slide {i}"} for i in range(60)]
+    spec = DeckSpec.model_validate({"title": "Báo cáo", "slides": slides})
+    assert len(spec.slides) == 60

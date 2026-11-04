@@ -10,6 +10,11 @@
     <header class="topbar">
       <a class="brand" href="/">Demanus</a>
       <span class="tag">Sinh PPTX từ mô tả</span>
+      <nav class="nav-links">
+        <a href="/">Tạo</a>
+        <a href="/review">Review</a>
+      </nav>
+      {% if server_url %}<span class="server-url">{{ server_url }}</span>{% endif %}
     </header>
     <main class="container">
       {% block content %}{% endblock %}

@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from . import storage
-from .config import REPO_ROOT, Settings, load_settings
+from .config import REPO_ROOT, Settings, lan_url, load_settings
 from .llm import LLMClient, LLMError
 from .preview import render_preview
 from .render import render_deck
@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 WEB_DIR = REPO_ROOT / "web"
 MAX_NAME = 120
-MAX_DESC = 4000
 PPTX_MEDIA_TYPE = (
     "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 )
@@ -34,6 +33,7 @@ def create_app(
     factory = llm_factory or (lambda current: LLMClient(current))
     base = Path(root) if root is not None else REPO_ROOT
     output_dir = base / "output"
+    server_url = lan_url(settings)
 
     app = FastAPI(title="Demanus", version="0.1.0")
     templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
@@ -43,7 +43,11 @@ def create_app(
         return templates.TemplateResponse(
             request=request,
             name="index.html",
-            context={"decks": storage.list_outputs(root=base), "error": error},
+            context={
+                "decks": storage.list_outputs(root=base),
+                "error": error,
+                "server_url": server_url,
+            },
             status_code=status_code,
         )
 
@@ -60,9 +64,20 @@ def create_app(
     async def index(request: Request):
         return render_index(request)
 
+    @app.get("/review", response_class=HTMLResponse)
+    async def review(request: Request):
+        return templates.TemplateResponse(
+            request=request,
+            name="review.html",
+            context={
+                "decks": storage.list_outputs(root=base),
+                "server_url": server_url,
+            },
+        )
+
     @app.get("/health")
     async def health():
-        return {"status": "ok"}
+        return {"status": "ok", "url": server_url}
 
     @app.post("/generate")
     async def generate(
@@ -77,9 +92,9 @@ def create_app(
             return render_index(
                 request, "Tên báo cáo phải từ 1 đến 120 ký tự.", 400
             )
-        if not 10 <= len(desc) <= MAX_DESC:
+        if not desc:
             return render_index(
-                request, "Mô tả phải từ 10 đến 4000 ký tự.", 400
+                request, "Mô tả không được để trống.", 400
             )
 
         record = storage.create_input(name, desc, root=base)
@@ -125,6 +140,7 @@ def create_app(
                 "slug": slug,
                 "previews": previews,
                 "count": len(previews),
+                "server_url": server_url,
             },
         )
 

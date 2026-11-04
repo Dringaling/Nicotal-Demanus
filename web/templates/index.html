@@ -11,22 +11,32 @@
     </label>
     <label>
       Mô tả
-      <textarea name="desc" rows="8" maxlength="4000" required
+      <textarea name="desc" rows="8" required
                 placeholder="Mô tả nội dung, đối tượng, các phần cần có..."></textarea>
     </label>
     <button type="submit">Sinh file PPTX</button>
   </form>
+  <p class="muted">Truy cập từ máy khác trong LAN: <code>{{ server_url }}</code></p>
 </section>
 
 <section class="card">
-  <h2>Đã tạo</h2>
+  <div class="deck-head">
+    <h2>Đã tạo</h2>
+    <a class="button secondary" href="/review">Review tất cả</a>
+  </div>
   {% if decks %}
   <ul class="deck-list">
     {% for deck in decks %}
     <li>
+      {% if deck.has_preview %}
+      <a href="/deck/{{ deck.slug }}">
+        <img class="thumb-sm" src="/preview/{{ deck.slug }}/1" alt="Slide 1 của {{ deck.slug }}">
+      </a>
+      {% endif %}
       <a class="deck-name" href="/deck/{{ deck.slug }}">{{ deck.slug }}</a>
       <span class="meta">{{ deck.size_bytes }} bytes · {{ deck.modified_at }}</span>
-      <a class="button" href="/download/{{ deck.slug }}">Tải</a>
+      <a class="button" href="/deck/{{ deck.slug }}">Xem</a>
+      <a class="button secondary" href="/download/{{ deck.slug }}">Tải</a>
     </li>
     {% endfor %}
   </ul>

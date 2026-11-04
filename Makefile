@@ -3,7 +3,7 @@ SHELL := /bin/sh
 UV ?= uv
 UV_RUN := $(UV) run
 HOST ?= 0.0.0.0
-PORT ?= 8000
+PORT ?= 8765
 
 .DEFAULT_GOAL := help
 
