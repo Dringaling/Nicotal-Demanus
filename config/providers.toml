@@ -1,0 +1,30 @@
+[default]
+provider = "deepinfra"
+
+[deepinfra]
+base_url = "https://api.deepinfra.com/v1/openai"
+model = "deepseek-ai/DeepSeek-V4.1-Flash-1017"
+service_tier = "flex"
+api_key_env = "DEEPINFRA_FLEX_C79C"
+api_key_file = "secret/deepinfra_flex_c79c.env"
+fallback_models = []
+fail_fast = false
+timeout_seconds = 180
+max_retries = 3
+
+[deepinfra.generation]
+temperature = 0.4
+top_p = 0.95
+max_tokens = 8000
+response_format = "json_schema"
+
+[deepinfra.cache]
+prompt_version = "demanus-deck-v1"
+prompt_cache_key = "demanus-deck-v1"
+cache_ttl = "1h"
+local_cache = true
+local_cache_dir = "input/.cache"
+
+[server]
+host = "0.0.0.0"
+port = 8000

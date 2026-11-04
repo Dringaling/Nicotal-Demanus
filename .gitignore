@@ -12,3 +12,4 @@ tmp/
 input/
 output/
 templates/
+**/__pycache__/
