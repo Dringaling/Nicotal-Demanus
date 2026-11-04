@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ slug }} · Demanus{% endblock %}
+{% block content %}
+<section class="card deck">
+  <div class="deck-head">
+    <h1>{{ slug }}</h1>
+    <div class="actions">
+      <a class="button" href="/download/{{ slug }}">Tải PPTX</a>
+      <form method="post" action="/api/decks/{{ slug }}/delete"
+            onsubmit="return confirm('Xoá deck này?')">
+        <button class="danger" type="submit">Xoá</button>
+      </form>
+    </div>
+  </div>
+
+  {% if previews %}
+  <div class="carousel" data-count="{{ count }}">
+    <button class="nav prev" type="button" aria-label="Slide trước">‹</button>
+    <img id="slide" src="/preview/{{ slug }}/1" alt="Slide 1">
+    <button class="nav next" type="button" aria-label="Slide sau">›</button>
+  </div>
+  <p class="counter"><span id="current">1</span> / {{ count }}</p>
+  {% else %}
+  <p class="muted">Chưa có preview.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h1>Tạo bài trình bày</h1>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <form method="post" action="/generate" class="form">
+    <label>
+      Tên báo cáo
+      <input name="name" maxlength="120" required
+             placeholder="Báo cáo tổng quan lâm sàng">
+    </label>
+    <label>
+      Mô tả
+      <textarea name="desc" rows="8" maxlength="4000" required
+                placeholder="Mô tả nội dung, đối tượng, các phần cần có..."></textarea>
+    </label>
+    <button type="submit">Sinh file PPTX</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Đã tạo</h2>
+  {% if decks %}
+  <ul class="deck-list">
+    {% for deck in decks %}
+    <li>
+      <a class="deck-name" href="/deck/{{ deck.slug }}">{{ deck.slug }}</a>
+      <span class="meta">{{ deck.size_bytes }} bytes · {{ deck.modified_at }}</span>
+      <a class="button" href="/download/{{ deck.slug }}">Tải</a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">Chưa có file nào.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -9,7 +9,7 @@ secret/
 tmp/
 .tmp
 
-input/
-output/
-templates/
+/input/
+/output/
+/templates/
 **/__pycache__/

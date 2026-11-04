@@ -1,137 +1,93 @@
-from pptx import Presentation
-from pptx.util import Inches, Pt
-from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN
+from __future__ import annotations
 
-def build_presentation():
-    prs = Presentation()
+import argparse
+import asyncio
+from pathlib import Path
 
-    # Thiết lập kích thước slide 16:9 widescreen tiêu chuẩn (13.33 x 7.5 inches)
-    prs.slide_width = Inches(13.333)
-    prs.slide_height = Inches(7.5)
+from app.config import load_settings
+from app.render import render_deck
+from app.sample import sample_deck
 
-    # Bảng màu trang nhã (Dark Navy & Slate)
-    NAVY = RGBColor(24, 43, 73)
-    DARK_GRAY = RGBColor(50, 50, 50)
-    LIGHT_GRAY = RGBColor(240, 242, 245)
 
-    # ==========================================
-    # SLIDE 1: Title Slide (Layout 0)
-    # ==========================================
-    title_layout = prs.slide_layouts[0]
-    slide1 = prs.slides.add_slide(title_layout)
+def cmd_serve(args: argparse.Namespace) -> None:
+    import uvicorn
 
-    title = slide1.shapes.title
-    subtitle = slide1.placeholders[1]
+    settings = load_settings()
+    host = args.host or settings.server.host
+    port = args.port or settings.server.port
+    uvicorn.run("app.web:app", host=host, port=port, reload=args.reload)
 
-    title.text = "Báo Cáo Tổng Quan Lâm Sàng"
-    title.text_frame.paragraphs[0].font.name = "Arial"
-    title.text_frame.paragraphs[0].font.size = Pt(40)
-    title.text_frame.paragraphs[0].font.bold = True
-    title.text_frame.paragraphs[0].font.color.rgb = NAVY
 
-    subtitle.text = "Chẩn đoán phân biệt & Hướng tiếp cận điều trị\nBác sĩ thực hiện: BS. Duyen"
-    subtitle.text_frame.paragraphs[0].font.size = Pt(20)
-    subtitle.text_frame.paragraphs[0].font.color.rgb = DARK_GRAY
+def cmd_smoke(args: argparse.Namespace) -> None:
+    from app.preview import render_preview
 
-    # ==========================================
-    # SLIDE 2: Nội dung phân cấp Bullet Points (Layout 1)
-    # ==========================================
-    bullet_layout = prs.slide_layouts[1]
-    slide2 = prs.slides.add_slide(bullet_layout)
+    out_path = Path(args.out or "output/_smoke.pptx")
+    spec = sample_deck()
+    render_deck(spec, out_path)
+    render_preview(out_path, spec, out_path.parent / out_path.stem / "preview")
+    print(f"Đã tạo {out_path}")
 
-    # Tiêu đề slide
-    s2_title = slide2.shapes.title
-    s2_title.text = "Triệu Chứng & Tiêu Chuẩn Chẩn Đoán"
-    s2_title.text_frame.paragraphs[0].font.color.rgb = NAVY
-    s2_title.text_frame.paragraphs[0].font.bold = True
 
-    # Nội dung phân cấp
-    body_shape = slide2.placeholders[1]
-    tf = body_shape.text_frame
-    tf.word_wrap = True
+def cmd_generate(args: argparse.Namespace) -> None:
+    from app.llm import LLMClient
+    from app.preview import render_preview
+    from app.storage import allocate_output, create_input, update_status
 
-    # Bullet cấp 1
-    p1 = tf.paragraphs[0]
-    p1.text = "Triệu chứng cơ năng chính"
-    p1.level = 0
-    p1.font.size = Pt(20)
-    p1.font.bold = True
+    settings = load_settings()
+    record = create_input(args.name, args.desc)
+    update_status(record.id, "generating")
 
-    # Bullet cấp 2
-    p2 = tf.add_paragraph()
-    p2.text = "Khởi phát đột ngột kèm sốt nhẹ hoặc không sốt."
-    p2.level = 1
-    p2.font.size = Pt(16)
+    try:
+        spec, usage = asyncio.run(
+            LLMClient(settings).generate_spec(args.name, args.desc)
+        )
+        out_path = allocate_output(args.name, record.id)
+        render_deck(spec, out_path)
+        render_preview(
+            out_path, spec, out_path.parent / out_path.stem / "preview"
+        )
+        update_status(record.id, "done")
+    except Exception:
+        update_status(record.id, "failed")
+        raise
 
-    p3 = tf.add_paragraph()
-    p3.text = "Ngứa nhiều, phân bố rải rác vùng cẳng tay và thân mình."
-    p3.level = 1
-    p3.font.size = Pt(16)
+    print(f"Đã tạo {out_path}")
+    print(
+        "usage: "
+        f"prompt_tokens={usage.prompt_tokens} "
+        f"cached_tokens={usage.cached_tokens} "
+        f"estimated_cost={usage.estimated_cost} "
+        f"from_cache={usage.from_cache}"
+    )
 
-    # Bullet cấp 1 tiếp theo
-    p4 = tf.add_paragraph()
-    p4.text = "Chẩn đoán phân biệt cần loại trừ"
-    p4.level = 0
-    p4.font.size = Pt(20)
-    p4.font.bold = True
 
-    p5 = tf.add_paragraph()
-    p5.text = "Sẩn ngứa do côn trùng cắn (Arthropod bites) vs Thủy đậu giai đoạn sớm."
-    p5.level = 1
-    p5.font.size = Pt(16)
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="demanus")
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # ==========================================
-    # SLIDE 3: Bảng dữ liệu / So sánh (Layout trống 6)
-    # ==========================================
-    blank_layout = prs.slide_layouts[6]
-    slide3 = prs.slides.add_slide(blank_layout)
+    serve = subparsers.add_parser("serve", help="Chạy server LAN")
+    serve.add_argument("--host", default=None)
+    serve.add_argument("--port", type=int, default=None)
+    serve.add_argument("--reload", action="store_true")
+    serve.set_defaults(func=cmd_serve)
 
-    # Thêm tiêu đề thủ công bằng Textbox
-    title_box = slide3.shapes.add_textbox(Inches(0.8), Inches(0.6), Inches(11.7), Inches(0.8))
-    t_frame = title_box.text_frame
-    tp = t_frame.paragraphs[0]
-    tp.text = "Bảng So Sánh Đặc Điểm Lâm Sàng"
-    tp.font.size = Pt(28)
-    tp.font.bold = True
-    tp.font.color.rgb = NAVY
+    smoke = subparsers.add_parser("smoke", help="Sinh deck mẫu offline")
+    smoke.add_argument("--out", default=None)
+    smoke.set_defaults(func=cmd_smoke)
 
-    # Tạo bảng: 3 hàng, 3 cột
-    rows, cols = 3, 3
-    left, top, width, height = Inches(0.8), Inches(1.8), Inches(11.7), Inches(3.5)
-    table_shape = slide3.shapes.add_table(rows, cols, left, top, width, height)
-    table = table_shape.table
+    generate = subparsers.add_parser("generate", help="Sinh deck từ mô tả")
+    generate.add_argument("name")
+    generate.add_argument("desc")
+    generate.set_defaults(func=cmd_generate)
 
-    # Đặt độ rộng các cột
-    table.columns[0].width = Inches(3.2)
-    table.columns[1].width = Inches(4.25)
-    table.columns[2].width = Inches(4.25)
+    return parser
 
-    # Dữ liệu bảng
-    headers = ["Đặc điểm", "Sẩn ngứa do côn trùng", "Thủy đậu (Giai đoạn sớm)"]
-    row_1 = ["Hình thái tổn thương", "Sẩn phù, chấm xuất huyết ở trung tâm", "Dát sẩn tiến triển nhanh thành mụn nước"]
-    row_2 = ["Phân bố", "Vùng da hở, cẳng tay, cẳng chân, thân mình", "Thân mình lan ra mặt và chi, nhiều lứa tuổi"]
 
-    data = [headers, row_1, row_2]
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    args.func(args)
 
-    for r_idx, row_data in enumerate(data):
-        for c_idx, cell_value in enumerate(row_data):
-            cell = table.cell(r_idx, c_idx)
-            cell.text = cell_value
-            p = cell.text_frame.paragraphs[0]
-            p.alignment = PP_ALIGN.LEFT
-            p.font.size = Pt(15)
-            
-            # Tô đậm hàng tiêu đề
-            if r_idx == 0:
-                p.font.bold = True
-                p.font.color.rgb = NAVY
-                cell.fill.solid()
-                cell.fill.fore_color.rgb = LIGHT_GRAY
-
-    # Lưu bài thuyết trình
-    prs.save("Bao_Cao_Lam_Sang.pptx")
-    print("Đã tạo file Bao_Cao_Lam_Sang.pptx thành công.")
 
 if __name__ == "__main__":
-    build_presentation()
+    main()
