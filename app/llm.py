@@ -127,7 +127,10 @@ class LLMClient:
             "max_tokens": generation.max_tokens,
             "stream": False,
             "prompt_cache_key": self.provider.cache.prompt_cache_key,
-            "prompt_cache_options": {"ttl": self.provider.cache.cache_ttl},
+            "prompt_cache_options": {
+                "mode": "explicit",
+                "ttl": self.provider.cache.cache_ttl,
+            },
             "response_format": response_format,
         }
         if self.provider.fallback_models:
@@ -143,7 +146,11 @@ class LLMClient:
         template: str,
     ) -> list[dict[str, str]]:
         return [
-            {"role": "system", "content": build_system_prompt()},
+            {
+                "role": "system",
+                "content": build_system_prompt(),
+                "cache_control": {"type": "ephemeral"},
+            },
             {
                 "role": "user",
                 "content": (
