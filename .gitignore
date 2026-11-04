@@ -8,3 +8,7 @@ secret/
 *.tmp
 tmp/
 .tmp
+
+input/
+output/
+templates/
