@@ -507,8 +507,13 @@ def test_index_lists_outputs_newest_first(tmp_path: Path) -> None:
     slugs = re.findall(r"<strong>([^<]+)</strong>", output_list)
     assert slugs == [newest, oldest]
 
-    summary = html.split('class="input-summary"', 1)[1].split("</button>", 1)[0]
-    assert f"/preview/{newest}/1" in summary
+    summary = html.split('class="input-summary"', 1)[1].split(
+        'class="input-details"', 1
+    )[0]
+    assert "thumb-sm" not in summary
+    assert "<img" not in summary
+    assert "expand-toggle" in summary
+    assert "Xem output" in summary
 
 
 def test_delete_single_output(tmp_path: Path) -> None:
@@ -1064,3 +1069,100 @@ def test_exit_reuse_mode(tmp_path: Path) -> None:
     fresh = client.get("/").text
     assert "Đang dùng input" not in fresh
     assert 'name="title"' in fresh
+
+
+def test_header_brand_and_nav(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/").text
+
+    assert "Nicotal - Demanus" in html
+    assert "<title>Nicotal - Demanus</title>" in html
+    assert html.count('class="nav-button"') == 2
+    assert ">Tạo<" in html
+    assert ">Review<" in html
+
+
+def test_header_css_gradient_and_3d() -> None:
+    root = Path(__file__).resolve().parents[1]
+    css = (root / "web" / "static" / "style.css").read_text(encoding="utf-8")
+
+    assert "background-clip: text" in css
+    assert "linear-gradient(120deg, #f7d488" in css
+    assert "border-bottom: 4px solid" in css
+    assert "box-shadow: 0 4px 0" in css
+
+
+def test_input_column_wider_than_form() -> None:
+    root = Path(__file__).resolve().parents[1]
+    css = (root / "web" / "static" / "style.css").read_text(encoding="utf-8")
+
+    assert (
+        "grid-template-columns: 260px minmax(0, 1.6fr) minmax(360px, 1fr)"
+        in css
+    )
+
+
+def test_input_summary_has_no_thumbnail(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+
+    html = client.get("/").text
+    summary = html.split('class="input-summary"', 1)[1].split(
+        'class="input-details"', 1
+    )[0]
+
+    assert "<img" not in summary
+    assert "thumb-sm" not in summary
+    assert "A" in summary
+
+
+def test_input_card_has_prominent_expand_button(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+
+    html = client.get("/").text
+
+    assert 'class="expand-toggle"' in html
+    assert "data-expand" in html
+    assert "data-expand-label" in html
+    assert "Xem output" in html
+
+
+def test_input_card_has_no_regen_controls(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+
+    html = client.get("/").text
+
+    assert 'class="regen-form"' not in html
+    assert 'aria-label="Template cho lần tạo lại"' not in html
+    assert "Tạo lại" not in html
+
+
+def test_single_generate_control(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+
+    html = client.get("/").text
+
+    assert html.count('<select name="template">') == 1
+    assert html.count("Sinh file PPTX") == 1
+
+
+def test_reuse_mode_has_single_generate_control(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+
+    html = client.get("/", params={"use": record.id}).text
+
+    assert html.count('<select name="template">') == 1
+    assert html.count("Sinh file PPTX") == 1
+
+
+def test_expand_js_updates_label() -> None:
+    root = Path(__file__).resolve().parents[1]
+    script = (root / "web" / "static" / "app.js").read_text(encoding="utf-8")
+
+    assert "data-expand-label" in script
+    assert "Thu gọn" in script
+    assert "Xem output" in script

@@ -52,32 +52,28 @@
         {% for item in inputs %}
         {% set record = item.record %}
         <li class="input-card">
-          <button class="input-summary" type="button" data-expand
-                  aria-expanded="false">
-            {% if item.newest and item.newest.has_preview %}
-            <img class="thumb-sm" src="/preview/{{ item.newest.slug }}/1"
-                 alt="Slide 1 của {{ record.title }}">
-            {% else %}
-            <span class="thumb-sm thumb placeholder">Chưa có preview</span>
-            {% endif %}
-            <span class="input-summary-main">
+          <div class="input-summary">
+            <div class="input-summary-main">
               <span class="input-title">
-                <strong>{{ record.title }}</strong>
+                <strong class="input-name">{{ record.title }}</strong>
                 <span class="status status-{{ record.status }}">{{ record.status }}</span>
+                <span class="meta">{{ item.outputs | length }} output</span>
               </span>
-              <span class="meta">{{ record.created_at }} · {{ record.template }}
-                · {{ item.outputs | length }} output</span>
-              {% if item.description %}<span class="muted">{{ item.description }}</span>{% endif %}
-              <span class="chips">
-                {% for tag in record.tags %}
-                <a class="tag-chip" href="/?tag={{ tag | urlencode }}">{{ tag }}</a>
-                {% endfor %}
-              </span>
-            </span>
-            <span class="chevron" aria-hidden="true">▾</span>
-          </button>
+              <span class="meta">{{ record.created_at }} · {{ record.template }}</span>
+            </div>
+            <button class="expand-toggle" type="button" data-expand
+                    aria-expanded="false">
+              <span data-expand-label>Xem output</span>
+              <span class="chevron" aria-hidden="true">▾</span>
+            </button>
+          </div>
 
           <div class="input-details" hidden>
+            <div class="chips">
+              {% for tag in record.tags %}
+              <a class="tag-chip" href="/?tag={{ tag | urlencode }}">{{ tag }}</a>
+              {% endfor %}
+            </div>
             {% if item.outputs %}
             <ul class="output-list">
               {% for output in item.outputs %}
@@ -105,31 +101,6 @@
             {% else %}
             <p class="muted">Chưa có output nào.</p>
             {% endif %}
-
-            <form class="regen-form" method="post"
-                  action="/inputs/{{ record.id }}/generate">
-              <select name="template" aria-label="Template cho lần tạo lại">
-                {% if template_groups.pptx %}
-                <optgroup label="PPTX Templates">
-                  {% for template in template_groups.pptx %}
-                  <option value="{{ template.id }}"
-                          {% if item.selected_template == template.id %}selected{% endif %}
-                          title="{{ template.description }}">{{ template.display_name() }}</option>
-                  {% endfor %}
-                </optgroup>
-                {% endif %}
-                {% if template_groups.themes %}
-                <optgroup label="Themes">
-                  {% for template in template_groups.themes %}
-                  <option value="{{ template.id }}"
-                          {% if item.selected_template == template.id %}selected{% endif %}
-                          title="{{ template.description }}">{{ template.display_name() }}</option>
-                  {% endfor %}
-                </optgroup>
-                {% endif %}
-              </select>
-              <button type="submit">Tạo lại</button>
-            </form>
 
             <form class="tag-editor" method="post"
                   action="/inputs/{{ record.id }}/tags" data-tag-editor>

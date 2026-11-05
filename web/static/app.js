@@ -170,6 +170,10 @@
       button.setAttribute("aria-expanded", String(!expanded));
       card.classList.toggle("expanded", !expanded);
       details.hidden = expanded;
+      const label = button.querySelector("[data-expand-label]");
+      if (label) {
+        label.textContent = expanded ? "Xem output" : "Thu gọn";
+      }
     });
   });
 })();

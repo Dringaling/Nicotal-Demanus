@@ -91,7 +91,6 @@ def create_app(
         inputs = []
         for record in records:
             outputs = storage.outputs_for(record, root=base)
-            selected = get_template(record.template) if record.template else None
             inputs.append(
                 {
                     "record": record,
@@ -101,9 +100,6 @@ def create_app(
                     "outputs": list(reversed(outputs)),
                     "newest": outputs[-1] if outputs else None,
                     "has_output": bool(outputs),
-                    "selected_template": (
-                        selected.id if selected else record.template
-                    ),
                 }
             )
         return templates.TemplateResponse(
