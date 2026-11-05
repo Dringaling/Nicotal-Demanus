@@ -30,14 +30,17 @@ body {
   color: #ffffff;
 }
 
-.topbar-center {
-  display: flex;
-  flex-direction: column;
+.topbar-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
+  gap: 20px;
+  width: 100%;
+  max-width: 1200px;
 }
 
 .brand {
+  justify-self: start;
   font-size: 34px;
   font-weight: 800;
   letter-spacing: 1px;
@@ -293,11 +296,6 @@ body.overlay-open {
   color: var(--muted);
 }
 
-.nav-links {
-  display: flex;
-  gap: 16px;
-}
-
 .nav-button {
   display: inline-block;
   min-width: 132px;
@@ -313,6 +311,14 @@ body.overlay-open {
   border-bottom: 4px solid #a86b78;
   box-shadow: 0 4px 0 #8c5560, 0 10px 22px rgba(0, 0, 0, 0.35);
   transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.nav-create {
+  justify-self: center;
+}
+
+.nav-review {
+  justify-self: end;
 }
 
 .nav-button:hover {
@@ -500,6 +506,10 @@ body.overlay-open {
   gap: 10px;
   border-top: 1px solid #eef2f7;
   padding-top: 10px;
+}
+
+.input-details[hidden] {
+  display: none;
 }
 
 .output-list {
@@ -714,5 +724,22 @@ body.overlay-open {
 
   .input-scroll {
     max-height: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar-row {
+    gap: 10px;
+  }
+
+  .brand {
+    font-size: 22px;
+    letter-spacing: 0;
+  }
+
+  .nav-button {
+    min-width: 88px;
+    padding: 9px 14px;
+    font-size: 15px;
   }
 }

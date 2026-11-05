@@ -1077,9 +1077,10 @@ def test_header_brand_and_nav(tmp_path: Path) -> None:
 
     assert "Nicotal - Demanus" in html
     assert "<title>Nicotal - Demanus</title>" in html
-    assert html.count('class="nav-button"') == 2
-    assert ">Tạo<" in html
-    assert ">Review<" in html
+    assert 'class="topbar-row"' in html
+    assert html.count('class="nav-button ') == 2
+    assert 'class="nav-button nav-create" href="/">Tạo' in html
+    assert 'class="nav-button nav-review" href="/review">Review' in html
 
 
 def test_header_css_gradient_and_3d() -> None:
@@ -1166,3 +1167,18 @@ def test_expand_js_updates_label() -> None:
     assert "data-expand-label" in script
     assert "Thu gọn" in script
     assert "Xem output" in script
+
+
+def test_header_row_centers_create_button() -> None:
+    root = Path(__file__).resolve().parents[1]
+    css = (root / "web" / "static" / "style.css").read_text(encoding="utf-8")
+
+    assert "grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr)" in css
+    assert ".nav-create {\n  justify-self: center;" in css
+
+
+def test_input_details_hidden_rule() -> None:
+    root = Path(__file__).resolve().parents[1]
+    css = (root / "web" / "static" / "style.css").read_text(encoding="utf-8")
+
+    assert ".input-details[hidden]" in css
