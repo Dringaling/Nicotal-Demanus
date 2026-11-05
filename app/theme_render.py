@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import tomllib
 from pathlib import Path
 
 from pptx import Presentation
@@ -11,7 +10,7 @@ from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
 from .schema import DeckSpec, SlideSpec, TableBlock
-from .templates_catalog import TemplateMeta, resolve_path
+from .templates_catalog import TemplateMeta, load_theme_data
 
 logger = logging.getLogger(__name__)
 
@@ -442,15 +441,13 @@ def render_deck_theme(
     meta: TemplateMeta,
     out_path: Path,
 ) -> Path:
-    theme_path = resolve_path(meta.theme_file) if meta.theme_file else None
-    if theme_path is None or not theme_path.is_file():
+    try:
+        theme = load_theme_data(meta)
+    except Exception:
         from .render import render_deck
 
         logger.warning("Thiếu theme file cho %s, dùng flat renderer", meta.id)
         return render_deck(spec, out_path)
-
-    with theme_path.open("rb") as handle:
-        theme = tomllib.load(handle)
 
     prs = Presentation()
     prs.slide_width = SLIDE_WIDTH

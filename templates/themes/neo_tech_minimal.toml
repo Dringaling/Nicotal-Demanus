@@ -226,3 +226,216 @@ height_inch = 4.60
 metric_number = "< 1.5s"
 metric_label = "Thời gian sinh slide"
 metric_desc = "Pipeline xử lý trực tiếp trên RAM và xuất file PPTX tức thì trên web server LAN."
+# -------------------------------------------------------------
+# VARIANTS — cùng layout/typography, chỉ override palette/colors
+# -------------------------------------------------------------
+
+[variants.gruvbox]
+name = "Gruvbox"
+description = "Layout dạng Bento/Card khối nổi phong cách retro ấm áp, tỷ lệ 16:9, tối ưu tiếng Việt không dấu/có dấu."
+style = "gruvbox-retro"
+tags = ["dark", "retro", "gruvbox", "warm"]
+
+[variants.gruvbox.palette]
+bg = [40, 40, 40]
+card = [60, 56, 54]
+accent = [254, 128, 25]
+text = [251, 241, 199]
+muted = [168, 153, 132]
+
+[variants.gruvbox.colors]
+
+[variants.gruvbox.colors.background]
+hex = "#282828"
+rgb = [40, 40, 40]
+
+[variants.gruvbox.colors.card]
+bg_hex = "#3C3836"
+bg_rgb = [60, 56, 54]
+border_hex = "#504945"
+border_rgb = [80, 73, 69]
+border_width_pt = 1.0
+
+[variants.gruvbox.colors.accent]
+primary_hex = "#FE8019"
+primary_rgb = [254, 128, 25]
+secondary_hex = "#FB4934"
+secondary_rgb = [251, 73, 52]
+success_hex = "#B8BB26"
+success_rgb = [184, 187, 38]
+
+[variants.gruvbox.colors.text]
+primary_hex = "#FBF1C7"
+primary_rgb = [251, 241, 199]
+secondary_hex = "#A89984"
+secondary_rgb = [168, 153, 132]
+accent_hex = "#FE8019"
+accent_rgb = [254, 128, 25]
+
+[variants.soft_light]
+name = "Soft Light"
+description = "Layout dạng Bento/Card khối nổi nhẹ, nền sáng off-white, viền mềm độ tương phản thấp, tỷ lệ 16:9, tối ưu tiếng Việt không dấu/có dấu."
+style = "soft-light"
+tags = ["light", "minimal", "bento"]
+
+[variants.soft_light.palette]
+bg = [246, 247, 249]
+card = [255, 255, 255]
+accent = [94, 129, 172]
+text = [30, 41, 59]
+muted = [148, 163, 184]
+
+[variants.soft_light.colors]
+
+[variants.soft_light.colors.background]
+hex = "#F6F7F9"
+rgb = [246, 247, 249]
+
+[variants.soft_light.colors.card]
+bg_hex = "#FFFFFF"
+bg_rgb = [255, 255, 255]
+border_hex = "#E2E8F0"
+border_rgb = [226, 232, 240]
+border_width_pt = 1.0
+
+[variants.soft_light.colors.accent]
+primary_hex = "#5E81AC"
+primary_rgb = [94, 129, 172]
+secondary_hex = "#8FBCBB"
+secondary_rgb = [143, 188, 187]
+success_hex = "#A3BE8C"
+success_rgb = [163, 190, 140]
+
+[variants.soft_light.colors.text]
+primary_hex = "#1E293B"
+primary_rgb = [30, 41, 59]
+secondary_hex = "#64748B"
+secondary_rgb = [100, 116, 139]
+accent_hex = "#5E81AC"
+accent_rgb = [94, 129, 172]
+
+[variants.cappuccino]
+name = "Cappuccino"
+description = "Layout Bento/Card khối nổi ấm áp, tỷ lệ 16:9, tối ưu tiếng Việt với font Lexend, cảm giác quán cà phê ấm cúng."
+style = "bento-warm"
+tags = ["warm", "coffee", "bento", "cozy"]
+
+[variants.cappuccino.palette]
+bg = [245, 235, 220]
+card = [111, 78, 55]
+accent = [198, 134, 66]
+text = [59, 42, 32]
+muted = [138, 111, 92]
+
+[variants.cappuccino.colors]
+
+[variants.cappuccino.colors.background]
+hex = "#F5EBDC"
+rgb = [245, 235, 220]
+
+[variants.cappuccino.colors.card]
+bg_hex = "#6F4E37"
+bg_rgb = [111, 78, 55]
+border_hex = "#8A6F5C"
+border_rgb = [138, 111, 92]
+border_width_pt = 1.0
+
+[variants.cappuccino.colors.accent]
+primary_hex = "#C68642"
+primary_rgb = [198, 134, 66]
+secondary_hex = "#D9A066"
+secondary_rgb = [217, 160, 102]
+success_hex = "#7A9A65"
+success_rgb = [122, 154, 101]
+
+[variants.cappuccino.colors.text]
+primary_hex = "#3B2A20"
+primary_rgb = [59, 42, 32]
+secondary_hex = "#8A6F5C"
+secondary_rgb = [138, 111, 92]
+accent_hex = "#C68642"
+accent_rgb = [198, 134, 66]
+
+[variants.latte]
+name = "Latte"
+description = "Layout dạng Bento/Card khối nổi phong cách latte sáng ấm, nền kem nhạt, card ngà, điểm nhấn tan/amber dịu, tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "bento-light"
+tags = ["light", "warm", "bento", "latte"]
+
+[variants.latte.palette]
+bg = [247, 241, 230]
+card = [255, 251, 243]
+accent = [196, 138, 74]
+text = [58, 50, 44]
+muted = [138, 124, 110]
+
+[variants.latte.colors]
+
+[variants.latte.colors.background]
+hex = "#F7F1E6"
+rgb = [247, 241, 230]
+
+[variants.latte.colors.card]
+bg_hex = "#FFFBF3"
+bg_rgb = [255, 251, 243]
+border_hex = "#E7D9C4"
+border_rgb = [231, 217, 196]
+border_width_pt = 1.0
+
+[variants.latte.colors.accent]
+primary_hex = "#C48A4A"
+primary_rgb = [196, 138, 74]
+secondary_hex = "#D9A441"
+secondary_rgb = [217, 164, 65]
+success_hex = "#8FA97A"
+success_rgb = [143, 169, 122]
+
+[variants.latte.colors.text]
+primary_hex = "#3A322C"
+primary_rgb = [58, 50, 44]
+secondary_hex = "#8A7C6E"
+secondary_rgb = [138, 124, 110]
+accent_hex = "#C48A4A"
+accent_rgb = [196, 138, 74]
+
+[variants.cream_pink]
+name = "Cream Pink"
+description = "Giao diện phẳng tông kem và hồng phấn, thẻ hồng nhạt, điểm nhấn hồng rose, chữ mận đậm, khối phẳng tiêu đề mạnh, đổ bóng tối giản."
+style = "cream-pink-flat"
+tags = ["light", "cream", "pink", "flat"]
+
+[variants.cream_pink.palette]
+bg = [253, 246, 238]
+card = [252, 228, 231]
+accent = [225, 29, 72]
+text = [76, 5, 25]
+muted = [157, 116, 128]
+
+[variants.cream_pink.colors]
+
+[variants.cream_pink.colors.background]
+hex = "#FDF6EE"
+rgb = [253, 246, 238]
+
+[variants.cream_pink.colors.card]
+bg_hex = "#FCE4E7"
+bg_rgb = [252, 228, 231]
+border_hex = "#F4C6CE"
+border_rgb = [244, 198, 206]
+border_width_pt = 1.0
+
+[variants.cream_pink.colors.accent]
+primary_hex = "#E11D48"
+primary_rgb = [225, 29, 72]
+secondary_hex = "#F472B6"
+secondary_rgb = [244, 114, 182]
+success_hex = "#DB2777"
+success_rgb = [219, 39, 119]
+
+[variants.cream_pink.colors.text]
+primary_hex = "#4C0519"
+primary_rgb = [76, 5, 25]
+secondary_hex = "#9D7480"
+secondary_rgb = [157, 116, 128]
+accent_hex = "#E11D48"
+accent_rgb = [225, 29, 72]

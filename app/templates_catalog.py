@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import tomllib
@@ -12,6 +13,8 @@ from .template_profile import TemplateProfile, format_profile_layouts
 
 THEMES_DIR = REPO_ROOT / "templates" / "themes"
 _CACHE: dict[str, TemplateMeta] | None = None
+_ALIASES: dict[str, str] = {}
+_VARIANT_METADATA_KEYS = {"name", "description", "style", "tags"}
 
 
 @dataclass(frozen=True)
@@ -33,6 +36,10 @@ class TemplateMeta:
     theme_file: str = ""
     renderer: str = "theme"
     layout_map: dict[str, str] = field(default_factory=dict)
+    parent_id: str = ""
+    variant_id: str = ""
+    variant_name: str = ""
+    kind: str = "theme"
 
     def fingerprint(self) -> str:
         payload = json.dumps(asdict(self), sort_keys=True, ensure_ascii=False)
@@ -45,10 +52,21 @@ def _rgb(value: object, field_name: str) -> tuple[int, int, int]:
     return (int(value[0]), int(value[1]), int(value[2]))
 
 
-def _read_theme(path: Path) -> TemplateMeta:
-    with path.open("rb") as handle:
-        data = tomllib.load(handle)
+def _deep_merge(base: dict, override: dict) -> dict:
+    result = copy.deepcopy(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(result.get(key), dict):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = copy.deepcopy(value)
+    return result
 
+
+def _infer_kind(renderer: str) -> str:
+    return "pptx" if renderer in {"pptx", "boho", "copy"} else "theme"
+
+
+def _read_theme(path: Path, data: dict) -> TemplateMeta:
     theme = data.get("theme")
     if not isinstance(theme, dict):
         raise ConfigError(f"Thiếu bảng [theme] trong {path}")
@@ -61,6 +79,7 @@ def _read_theme(path: Path) -> TemplateMeta:
     if not isinstance(layout_raw, dict):
         raise ConfigError(f"[layout_map] phải là bảng TOML trong {path}")
 
+    renderer = str(theme.get("renderer", "theme"))
     return TemplateMeta(
         id=str(theme.get("id", path.stem)),
         name=str(theme.get("name", path.stem)),
@@ -81,24 +100,91 @@ def _read_theme(path: Path) -> TemplateMeta:
         ),
         assets_dir=str(theme.get("assets_dir", "")),
         theme_file=str(path),
-        renderer=str(theme.get("renderer", "theme")),
+        renderer=renderer,
         layout_map={
             str(key): str(value) for key, value in layout_raw.items()
         },
+        kind=str(theme.get("kind", _infer_kind(renderer))),
+    )
+
+
+def _read_variant(
+    path: Path,
+    data: dict,
+    base: TemplateMeta,
+    variant_id: str,
+    variant: dict,
+) -> TemplateMeta:
+    palette = data.get("palette")
+    if not isinstance(palette, dict):
+        raise ConfigError(f"Thiếu bảng [palette] trong {path}")
+    merged = _deep_merge(palette, variant.get("palette") or {})
+
+    variant_name = str(variant.get("name", variant_id))
+
+    def pick(key: str, default):
+        return variant[key] if key in variant else default
+
+    return TemplateMeta(
+        id=f"{base.id}__{variant_id}",
+        name=f"{base.name} - {variant_name}",
+        file=base.file,
+        font=base.font,
+        bg_color=_rgb(merged.get("bg"), "palette.bg"),
+        card_color=_rgb(merged.get("card"), "palette.card"),
+        accent_color=_rgb(merged.get("accent"), "palette.accent"),
+        text_color=_rgb(merged.get("text"), "palette.text"),
+        muted_color=_rgb(merged.get("muted"), "palette.muted"),
+        description=str(pick("description", base.description)),
+        style=str(pick("style", base.style)),
+        tags=tuple(str(tag) for tag in pick("tags", base.tags)),
+        accent_secondary=(
+            _rgb(merged["accent_secondary"], "palette.accent_secondary")
+            if "accent_secondary" in merged
+            else base.accent_secondary
+        ),
+        assets_dir=base.assets_dir,
+        theme_file=str(path),
+        renderer=base.renderer,
+        layout_map=base.layout_map,
+        parent_id=base.id,
+        variant_id=variant_id,
+        variant_name=variant_name,
+        kind=base.kind,
     )
 
 
 def refresh_templates() -> list[TemplateMeta]:
-    global _CACHE
+    global _CACHE, _ALIASES
     if not THEMES_DIR.is_dir():
         _CACHE = {}
+        _ALIASES = {}
         return []
 
     templates: dict[str, TemplateMeta] = {}
+    aliases: dict[str, str] = {}
     for path in sorted(THEMES_DIR.glob("*.toml")):
-        meta = _read_theme(path)
-        templates[meta.id] = meta
+        with path.open("rb") as handle:
+            data = tomllib.load(handle)
+        base = _read_theme(path, data)
+        templates[base.id] = base
+
+        variants = data.get("variants") or {}
+        if not isinstance(variants, dict):
+            raise ConfigError(f"[variants] phải là bảng TOML trong {path}")
+        for variant_id, variant in variants.items():
+            if not isinstance(variant, dict):
+                raise ConfigError(
+                    f"[variants.{variant_id}] phải là bảng TOML trong {path}"
+                )
+            meta = _read_variant(
+                path, data, base, str(variant_id), variant
+            )
+            templates[meta.id] = meta
+            aliases[str(variant_id)] = meta.id
+
     _CACHE = templates
+    _ALIASES = aliases
     return list(templates.values())
 
 
@@ -123,7 +209,34 @@ def get_template(template_id: str) -> TemplateMeta | None:
         if "-" in template_id
         else template_id.replace("_", "-")
     )
+    target = _ALIASES.get(template_id) or _ALIASES.get(alias)
+    if target is not None:
+        return _CACHE.get(target)
     return _CACHE.get(alias)
+
+
+def load_theme_data(meta: TemplateMeta) -> dict:
+    path = resolve_path(meta.theme_file) if meta.theme_file else None
+    if path is None or not path.is_file():
+        raise ConfigError(f"Thiếu theme file cho {meta.id}")
+
+    with path.open("rb") as handle:
+        data = tomllib.load(handle)
+
+    variants = data.pop("variants", {}) or {}
+    if meta.variant_id:
+        override = variants.get(meta.variant_id)
+        if not isinstance(override, dict):
+            raise ConfigError(
+                f"Thiếu variant '{meta.variant_id}' trong {path}"
+            )
+        override = {
+            key: value
+            for key, value in override.items()
+            if key not in _VARIANT_METADATA_KEYS
+        }
+        data = _deep_merge(data, override)
+    return data
 
 
 def resolve_path(value: str) -> Path:
