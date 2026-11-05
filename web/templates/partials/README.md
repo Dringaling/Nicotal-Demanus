@@ -1,4 +1,4 @@
-# Quy ước template
+# Quy ước template & design tokens
 
 ## Quy tắc chọn include hay macro
 
@@ -43,30 +43,64 @@ Khi thêm khối mới:
 2. Nếu khối tĩnh dùng một lần → thêm file vào `partials/` và `include`.
 3. Cập nhật bảng trên.
 
-## CSS design tokens
+## Bảng màu (đóng băng 16 màu)
 
-Khai báo trong `:root` của `web/static/style.css`. Không hardcode lại giá trị
-trong rule; dùng `var(--token)`.
+Chỉ dùng các màu dưới đây. Không thêm màu ngoài danh sách. Gradient phải lấy
+đúng **hai** màu trong bảng.
+
+| Token | Hex |
+|---|---|
+| `--color-wine-900` | `#1c0810` |
+| `--color-wine-800` | `#551008` |
+| `--color-wine-700` | `#7d1818` |
+| `--color-red-600` | `#b61030` |
+| `--color-red-500` | `#e24050` |
+| `--color-red-400` | `#ee7175` |
+| `--color-red-300` | `#f69d9d` |
+| `--color-cream-100` | `#fffff2` |
+| `--color-cream-200` | `#ead6aa` |
+| `--color-tan-300` | `#daa56d` |
+| `--color-tan-400` | `#ca713c` |
+| `--color-tan-500` | `#ae4c30` |
+| `--color-brown-600` | `#713410` |
+| `--color-olive-500` | `#657150` |
+| `--color-teal-500` | `#71958d` |
+| `--color-teal-300` | `#a5baae` |
+
+## Semantic aliases
+
+| Token | Trỏ tới | Dùng cho |
+|---|---|---|
+| `--navy` | `--color-wine-900` | Heading, nền tối |
+| `--blue` | `--color-red-600` | Nút hành động chính |
+| `--bg` | `--color-cream-200` | Nền trang |
+| `--card` | `--color-cream-100` | Nền card |
+| `--text` | `--color-wine-900` | Chữ chính |
+| `--muted` | `--color-olive-500` | Chữ phụ |
+| `--danger` | `--color-wine-700` | Hành động nguy hiểm |
+
+## Spacing (thang 8px)
+
+| Token | Giá trị |
+|---|---|
+| `--gap-sm` | `8px` |
+| `--gap-md` | `16px` |
+| `--gap-lg` | `24px` |
+
+Không hardcode `gap`/`padding`/`margin` ngoài thang này (ngoại lệ nhỏ 2–4px cho
+icon/badge).
+
+## Brand & button
 
 | Token | Giá trị / mục đích |
 |---|---|
-| `--navy` | Màu nền tối chủ đạo |
-| `--blue` | Màu nhấn mặc định |
-| `--bg` | Nền trang |
-| `--card` | Nền card |
-| `--text` | Màu chữ chính |
-| `--muted` | Màu chữ phụ |
-| `--danger` | Màu hành động nguy hiểm |
-| `--gold` | Vàng gradient thương hiệu |
-| `--rose` | Hồng gradient thương hiệu |
-| `--rose-deep` | Hồng đậm cuối gradient |
-| `--rose-border` | Viền dưới nút 3D |
-| `--rose-shadow` | Bóng khối nút 3D |
-| `--rose-ink` | Màu chữ trên nút |
+| `--brand-gradient` | Gradient chữ brand, 2 màu palette |
+| `--button-gradient` | Gradient nền nút, 2 màu palette |
+| `--button-border` | Viền dưới nút 3D |
+| `--button-shadow` | Bóng khối nút 3D |
+| `--button-ink` | Màu chữ trên nút |
 | `--brand-border` | Viền dưới brand |
-| `--brand-gradient` | Gradient chữ brand |
-| `--button-gradient` | Gradient nền nút |
-| `--brand-size` / `--brand-size-sm` | Cỡ chữ brand (desktop/mobile) |
+| `--brand-size` / `--brand-size-sm` | Cỡ chữ brand desktop/mobile |
 | `--nav-size` / `--nav-size-sm` | Cỡ chữ nút |
 | `--nav-padding` / `--nav-padding-sm` | Padding nút |
 | `--nav-min` / `--nav-min-sm` | Chiều rộng tối thiểu nút |
@@ -74,7 +108,14 @@ trong rule; dùng `var(--token)`.
 | `--nav-shadow` / `--nav-shadow-hover` / `--nav-shadow-active` | Bóng nút 3D |
 | `--card-radius` | Bo góc card |
 | `--card-shadow` | Bóng card |
-| `--gap` | Khoảng cách grid/card |
 
-Khi thêm token: đặt tên theo mục đích (không theo giá trị), thêm vào `:root`,
-dùng ở rule tương ứng, và cập nhật bảng này.
+## Quy tắc an toàn khi sửa UI
+
+- Giữ nguyên class/`data-*` mà `web/static/app.js` đang bắt
+  (`data-expand`, `data-delete-trigger`, `data-tag-editor`, `data-reuse-tags`,
+  `data-check-url`, `data-overlay`...).
+- Không đổi cấu trúc `<select name="template">` hoặc số nút submit; test và
+  luồng tạo deck phụ thuộc vào đó.
+- Thêm màu mới hoặc token mới phải cập nhật bảng trong file này và
+  `AGENTS.md`; không thêm biến CSS nếu có thể dùng token sẵn có.
+- Sau mỗi thay đổi UI: chạy `uv run pytest tests/test_web.py -q`.

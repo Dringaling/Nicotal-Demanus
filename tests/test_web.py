@@ -1078,9 +1078,11 @@ def test_header_brand_and_nav(tmp_path: Path) -> None:
     assert "Nicotal - Demanus" in html
     assert "<title>Nicotal - Demanus</title>" in html
     assert 'class="topbar-row"' in html
-    assert html.count('class="nav-button ') == 2
-    assert 'class="nav-button nav-create" href="/">Tạo' in html
-    assert 'class="nav-button nav-review" href="/review">Review' in html
+    assert '<nav class="nav-links">' in html
+    assert html.count('class="nav-button"') == 2
+    assert 'href="/">Tạo</a>' in html
+    assert 'href="/review">Review</a>' in html
+    assert html.index('class="brand"') < html.index('class="nav-links"')
 
 
 def test_header_css_gradient_and_3d() -> None:
@@ -1091,7 +1093,7 @@ def test_header_css_gradient_and_3d() -> None:
     assert "--brand-gradient: linear-gradient(" in css
     assert "--button-gradient: linear-gradient(" in css
     assert "background: var(--brand-gradient)" in css
-    assert "border-bottom: 4px solid var(--rose-border)" in css
+    assert "border-bottom: 4px solid var(--button-border)" in css
     assert "box-shadow: var(--nav-shadow)" in css
 
 
@@ -1171,12 +1173,12 @@ def test_expand_js_updates_label() -> None:
     assert "Xem output" in script
 
 
-def test_header_row_centers_create_button() -> None:
+def test_header_row_spreads_brand_and_buttons() -> None:
     root = Path(__file__).resolve().parents[1]
     css = (root / "web" / "static" / "style.css").read_text(encoding="utf-8")
 
-    assert "grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr)" in css
-    assert ".nav-create {\n  justify-self: center;" in css
+    assert "justify-content: space-between" in css
+    assert ".nav-links {" in css
 
 
 def test_input_details_hidden_rule() -> None:
@@ -1223,7 +1225,9 @@ def test_css_design_tokens() -> None:
         "--nav-padding",
         "--nav-shadow",
         "--card-radius",
-        "--gap",
+        "--gap-sm",
+        "--gap-md",
+        "--gap-lg",
     ):
         assert f"{token}:" in css
 
@@ -1263,3 +1267,51 @@ def test_static_blocks_stay_includes() -> None:
 
     assert '{% include "partials/header.html" %}' in base
     assert '{% include "partials/delete_overlay.html" %}' in index
+
+
+PALETTE = {
+    "#b61030",
+    "#e24050",
+    "#ee7175",
+    "#f69d9d",
+    "#fffff2",
+    "#ead6aa",
+    "#daa56d",
+    "#ca713c",
+    "#ae4c30",
+    "#7d1818",
+    "#551008",
+    "#713410",
+    "#657150",
+    "#71958d",
+    "#a5baae",
+    "#1c0810",
+}
+
+
+def test_css_palette_is_frozen() -> None:
+    root = Path(__file__).resolve().parents[1]
+    css = (root / "web" / "static" / "style.css").read_text(encoding="utf-8")
+
+    palette_tokens = re.findall(
+        r"--color-[a-z0-9-]+:\s*(#[0-9a-fA-F]{6})", css
+    )
+    assert len(palette_tokens) == 16
+    assert set(color.lower() for color in palette_tokens) == PALETTE
+
+
+def test_css_has_no_colors_outside_palette() -> None:
+    root = Path(__file__).resolve().parents[1]
+    css = (root / "web" / "static" / "style.css").read_text(encoding="utf-8")
+
+    used = {color.lower() for color in re.findall(r"#[0-9a-fA-F]{6}", css)}
+    assert used <= PALETTE
+
+
+def test_css_spacing_scale() -> None:
+    root = Path(__file__).resolve().parents[1]
+    css = (root / "web" / "static" / "style.css").read_text(encoding="utf-8")
+
+    assert "--gap-sm: 8px;" in css
+    assert "--gap-md: 16px;" in css
+    assert "--gap-lg: 24px;" in css
