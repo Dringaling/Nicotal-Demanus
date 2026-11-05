@@ -1,28 +1,29 @@
 {% extends "base.html" %}
+{% from "macros.html" import tags_sidebar, search_bar, input_list, create_form, reuse_form %}
 {% block content %}
 {% if message %}<p class="flash">{{ message }}</p>{% endif %}
 <datalist id="tag-suggestions">
   {% for tag in tags %}<option value="{{ tag }}"></option>{% endfor %}
 </datalist>
 <div class="layout">
-  {% include "partials/tags_sidebar.html" %}
+  {{ tags_sidebar(tags, counts, active_tag, query) }}
 
   <section class="card input-column">
     <div class="deck-head">
       <h2>Input{% if active_tag %} · {{ active_tag }}{% endif %}</h2>
       <a class="button secondary" href="/review">Review deck</a>
     </div>
-    {% include "partials/search_bar.html" %}
+    {{ search_bar(active_tag, query) }}
     <div class="input-scroll">
-      {% include "partials/input_list.html" %}
+      {{ input_list(inputs) }}
     </div>
   </section>
 
   <section class="card form-column">
     {% if reuse %}
-    {% include "partials/reuse_form.html" %}
+    {{ reuse_form(reuse, error, template_groups) }}
     {% else %}
-    {% include "partials/create_form.html" %}
+    {{ create_form(form, error, template_groups) }}
     {% endif %}
     <p class="muted">Truy cập từ máy khác trong LAN: <code>{{ server_url }}</code></p>
   </section>

@@ -1,3 +1,9 @@
+{#
+  Macro library cho giao diện Demanus.
+  Quy ước: khối động/lặp lại dùng macro có tham số rõ ràng;
+  khối tĩnh dùng một lần (header, overlay) giữ include.
+#}
+
 {% macro template_select(groups, selected) -%}
 <select name="template">
   {% if groups.pptx %}
@@ -20,3 +26,276 @@
   {% endif %}
 </select>
 {%- endmacro %}
+
+
+{% macro title_field(value) %}
+<label>
+  Tiêu đề
+  <div class="title-row">
+    <input name="title" maxlength="200" required
+           value="{{ value }}"
+           data-check-url="/api/inputs/check-title"
+           placeholder="Kiểm soát nhiễm khuẩn trong nội nha">
+    <span class="field-ok" data-title-ok hidden aria-hidden="true">✓</span>
+  </div>
+  <p class="field-error" data-title-error hidden role="alert"></p>
+</label>
+{% endmacro %}
+
+
+{% macro textarea_field(name, label, value="", rows=3, required=false, placeholder="") %}
+<label>
+  {{ label }}
+  <textarea name="{{ name }}" rows="{{ rows }}"
+            {% if required %}required{% endif %}
+            placeholder="{{ placeholder }}">{{ value }}</textarea>
+</label>
+{% endmacro %}
+
+
+{% macro tag_input(value) %}
+<label>
+  Tags
+  <div class="tag-input" id="tag-input">
+    <div class="tag-chips" id="tag-chips"></div>
+    <input id="tag-entry" list="tag-suggestions"
+           placeholder="Nhập tag rồi Enter">
+  </div>
+  <input type="hidden" name="tags" id="tags-hidden"
+         value="{{ value }}">
+</label>
+{% endmacro %}
+
+
+{% macro readonly_text(label, value) %}
+<label>
+  {{ label }}
+  <input class="readonly-field" value="{{ value }}" readonly>
+</label>
+{% endmacro %}
+
+
+{% macro readonly_textarea(label, value, rows=3) %}
+<label>
+  {{ label }}
+  <textarea class="readonly-field" rows="{{ rows }}" readonly>{{ value }}</textarea>
+</label>
+{% endmacro %}
+
+
+{% macro tag_editor(record) %}
+<form class="tag-editor" method="post"
+      action="/inputs/{{ record.id }}/tags" data-tag-editor>
+  <input type="hidden" name="tags"
+         value="{{ record.tags | join(',') }}">
+  <div class="tag-chips" data-tag-chips></div>
+  <input class="tag-entry" list="tag-suggestions"
+         placeholder="Thêm tag rồi Enter">
+  <button class="button secondary" type="submit">Lưu tag</button>
+</form>
+{% endmacro %}
+
+
+{% macro reuse_tag_editor(input_id, tags) %}
+<label>
+  Tags
+  <div class="tag-input" data-reuse-tags data-input-id="{{ input_id }}">
+    <div class="tag-chips" data-tag-chips></div>
+    <input class="tag-entry" list="tag-suggestions"
+           placeholder="Nhập tag rồi Enter">
+  </div>
+  <input type="hidden" name="tags" data-tags-hidden
+         value="{{ tags | join(',') }}">
+  <p class="field-error" data-tags-error hidden role="alert"></p>
+</label>
+{% endmacro %}
+
+
+{% macro output_item(record, output) %}
+<li class="output-item">
+  {% if output.has_preview %}
+  <img class="thumb-sm" src="/preview/{{ output.slug }}/1"
+       alt="Slide 1 của {{ output.slug }}">
+  {% else %}
+  <span class="thumb-sm thumb placeholder">—</span>
+  {% endif %}
+  <div class="output-main">
+    <strong>{{ output.slug }}</strong>
+    <p class="meta">{{ output.size_bytes }} bytes · {{ output.modified_at }}</p>
+  </div>
+  <a class="button" href="/deck/{{ output.slug }}">Xem</a>
+  <a class="button secondary" href="/download/{{ output.slug }}">Tải</a>
+  <form method="post"
+        action="/inputs/{{ record.id }}/outputs/{{ output.slug }}/delete"
+        onsubmit="return confirm('Xoá output này?')">
+    <button class="danger" type="submit">Xoá</button>
+  </form>
+</li>
+{% endmacro %}
+
+
+{% macro input_card(item) %}
+{% set record = item.record %}
+<li class="input-card">
+  <div class="input-summary">
+    <div class="input-summary-main">
+      <span class="input-title">
+        <strong class="input-name">{{ record.title }}</strong>
+        <span class="status status-{{ record.status }}">{{ record.status }}</span>
+        <span class="meta">{{ item.outputs | length }} output</span>
+      </span>
+      <span class="meta">{{ record.created_at }} · {{ record.template }}</span>
+    </div>
+    <button class="expand-toggle" type="button" data-expand
+            aria-expanded="false">
+      <span data-expand-label>Xem output</span>
+      <span class="chevron" aria-hidden="true">▾</span>
+    </button>
+  </div>
+
+  <div class="input-details" hidden>
+    <div class="chips">
+      {% for tag in record.tags %}
+      <a class="tag-chip" href="/?tag={{ tag | urlencode }}">{{ tag }}</a>
+      {% endfor %}
+    </div>
+    {% if item.outputs %}
+    <ul class="output-list">
+      {% for output in item.outputs %}
+      {{ output_item(record, output) }}
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">Chưa có output nào.</p>
+    {% endif %}
+
+    {{ tag_editor(record) }}
+
+    <div class="card-actions">
+      <a class="button secondary" href="/?use={{ record.id }}">Dùng input này</a>
+      <button class="danger" type="button"
+              data-delete-trigger
+              data-input-id="{{ record.id }}"
+              data-input-title="{{ record.title }}"
+              data-output-count="{{ item.outputs | length }}"
+              data-action="/inputs/{{ record.id }}/delete">Xoá input</button>
+    </div>
+    <noscript>
+      <form method="post" action="/inputs/{{ record.id }}/delete">
+        <input type="hidden" name="confirm" value="yes">
+        <button class="danger" type="submit">Xoá input (không có JS)</button>
+      </form>
+    </noscript>
+  </div>
+</li>
+{% endmacro %}
+
+
+{% macro input_list(inputs) %}
+{% if inputs %}
+<ul class="input-list">
+  {% for item in inputs %}
+  {{ input_card(item) }}
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">Chưa có input nào.</p>
+{% endif %}
+{% endmacro %}
+
+
+{% macro tags_sidebar(tags, counts, active_tag, query) %}
+<aside class="card sidebar">
+  <div class="deck-head">
+    <h2>Tags</h2>
+    {% if active_tag %}<a class="meta" href="/{% if query %}?q={{ query | urlencode }}{% endif %}">Bỏ lọc</a>{% endif %}
+  </div>
+  {% if tags %}
+  <ul class="tag-list">
+    {% for tag in tags %}
+    <li>
+      <a class="tag-link {% if active_tag == tag %}active{% endif %}"
+         href="/?tag={{ tag | urlencode }}{% if query %}&q={{ query | urlencode }}{% endif %}">
+        {{ tag }} <span class="count">{{ counts.get(tag, 0) }}</span>
+      </a>
+      <form method="post" action="/tags/{{ tag | urlencode }}/delete"
+            onsubmit="return confirm('Xoá tag này?')">
+        <button class="icon danger" type="submit" title="Xoá tag">×</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">Chưa có tag.</p>
+  {% endif %}
+</aside>
+{% endmacro %}
+
+
+{% macro search_bar(active_tag, query) %}
+<form class="search-bar" method="get" action="/">
+  {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
+  <input type="search" name="q" value="{{ query }}"
+         placeholder="Tìm theo tên..." aria-label="Tìm input theo tên">
+  <button type="submit">Tìm</button>
+  {% if query %}
+  <a class="button secondary" title="Xoá tìm kiếm"
+     href="/{% if active_tag %}?tag={{ active_tag | urlencode }}{% endif %}">x</a>
+  {% endif %}
+</form>
+{% endmacro %}
+
+
+{% macro create_form(form, error, groups) %}
+<h1>Tạo bài trình bày</h1>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<form method="post" action="/generate" class="form">
+  {{ title_field(form.get('title', '')) }}
+  {{ textarea_field(
+      'description',
+      'Mô tả',
+      form.get('description', ''),
+      3,
+      true,
+      'Slide làm nội dung gì, khoảng bao nhiêu slide...'
+  ) }}
+  {{ textarea_field(
+      'details',
+      'Chi tiết',
+      form.get('details', ''),
+      10,
+      true,
+      'Nội dung chi tiết từng slide...'
+  ) }}
+  {{ tag_input(form.get('tags', '')) }}
+  <label>
+    Template
+    {{ template_select(groups, form.get('template', 'flat')) }}
+  </label>
+  <button type="submit">Sinh file PPTX</button>
+</form>
+{% endmacro %}
+
+
+{% macro reuse_form(reuse, error, groups) %}
+<div class="deck-head">
+  <h1>Dùng lại input</h1>
+  <a class="button secondary" href="/">Tạo mới</a>
+</div>
+<p class="reuse-banner">Đang dùng input:
+  <strong>{{ reuse.title }}</strong>
+  <span class="meta">({{ reuse.id }})</span></p>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<form method="post" action="/inputs/{{ reuse.id }}/generate" class="form"
+      data-reuse-form>
+  {{ readonly_text('Tiêu đề', reuse.title) }}
+  {{ readonly_textarea('Mô tả', reuse.description, 3) }}
+  {{ readonly_textarea('Chi tiết', reuse.details, 10) }}
+  {{ reuse_tag_editor(reuse.id, reuse.tags) }}
+  <label>
+    Template
+    {{ template_select(groups, reuse.template) }}
+  </label>
+  <button type="submit">Sinh file PPTX</button>
+</form>
+{% endmacro %}

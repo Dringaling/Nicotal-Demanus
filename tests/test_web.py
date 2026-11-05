@@ -1191,30 +1191,25 @@ def test_template_partials_exist() -> None:
     templates = root / "web" / "templates"
 
     assert (templates / "macros.html").is_file()
-    for name in (
-        "header",
-        "tags_sidebar",
-        "search_bar",
-        "input_list",
-        "input_card",
-        "tag_editor",
-        "create_form",
-        "reuse_form",
-        "delete_overlay",
-    ):
+    assert (templates / "partials" / "README.md").is_file()
+    for name in ("header", "delete_overlay"):
         assert (templates / "partials" / f"{name}.html").is_file()
+    assert not (templates / "partials" / "input_card.html").exists()
 
 
-def test_index_uses_partials() -> None:
+def test_index_uses_macros() -> None:
     root = Path(__file__).resolve().parents[1]
     text = (root / "web" / "templates" / "index.html").read_text(
         encoding="utf-8"
     )
 
-    assert '{% include "partials/tags_sidebar.html" %}' in text
-    assert '{% include "partials/input_list.html" %}' in text
-    assert '{% include "partials/create_form.html" %}' in text
-    assert '{% include "partials/reuse_form.html" %}' in text
+    assert '{% from "macros.html" import' in text
+    assert "tags_sidebar(tags, counts, active_tag, query)" in text
+    assert "search_bar(active_tag, query)" in text
+    assert "input_list(inputs)" in text
+    assert "create_form(form, error, template_groups)" in text
+    assert "reuse_form(reuse, error, template_groups)" in text
+    assert '{% include "partials/delete_overlay.html" %}' in text
 
 
 def test_css_design_tokens() -> None:
@@ -1231,3 +1226,40 @@ def test_css_design_tokens() -> None:
         "--gap",
     ):
         assert f"{token}:" in css
+
+
+def test_macros_have_explicit_parameters() -> None:
+    root = Path(__file__).resolve().parents[1]
+    text = (root / "web" / "templates" / "macros.html").read_text(
+        encoding="utf-8"
+    )
+
+    for signature in (
+        "{% macro template_select(groups, selected)",
+        "{% macro title_field(value)",
+        "{% macro textarea_field(name, label",
+        "{% macro tag_input(value)",
+        "{% macro tag_editor(record)",
+        "{% macro reuse_tag_editor(input_id, tags)",
+        "{% macro output_item(record, output)",
+        "{% macro input_card(item)",
+        "{% macro input_list(inputs)",
+        "{% macro tags_sidebar(tags, counts, active_tag, query)",
+        "{% macro search_bar(active_tag, query)",
+        "{% macro create_form(form, error, groups)",
+        "{% macro reuse_form(reuse, error, groups)",
+    ):
+        assert signature in text
+
+
+def test_static_blocks_stay_includes() -> None:
+    root = Path(__file__).resolve().parents[1]
+    base = (root / "web" / "templates" / "base.html").read_text(
+        encoding="utf-8"
+    )
+    index = (root / "web" / "templates" / "index.html").read_text(
+        encoding="utf-8"
+    )
+
+    assert '{% include "partials/header.html" %}' in base
+    assert '{% include "partials/delete_overlay.html" %}' in index
