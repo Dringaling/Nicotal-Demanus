@@ -20,8 +20,8 @@ response_format = "json_schema"
 chunk_chars = 8000
 
 [deepinfra.cache]
-prompt_version = "demanus-deck-v2"
-prompt_cache_key = "demanus-deck-v2"
+prompt_version = "demanus-deck-v3"
+prompt_cache_key = "demanus-deck-v3"
 cache_ttl = "1h"
 local_cache = true
 local_cache_dir = "input/.cache"

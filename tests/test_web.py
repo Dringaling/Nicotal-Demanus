@@ -4,6 +4,9 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE_TYPE
+from pptx.util import Inches
 
 from app.config import lan_url, load_settings
 from app.llm import LLMError, UsageInfo
@@ -202,3 +205,116 @@ def test_index_shows_thumbnail(tmp_path: Path) -> None:
     assert response.status_code == 200
     assert f"/preview/{slug}/1" in response.text
     assert "thumb-sm" in response.text
+
+
+def test_index_has_template_select(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    response = client.get("/")
+    assert response.status_code == 200
+    assert 'name="template"' in response.text
+    assert "flat" in response.text
+    assert "dividing-fractions" in response.text
+    assert "boho-minimalist" in response.text
+    assert "boho-copy" in response.text
+    assert "neo-tech-minimal" in response.text
+
+
+def test_generate_with_dividing_template(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    response = client.post(
+        "/generate",
+        data={
+            "name": "Báo cáo",
+            "desc": "Mô tả chi tiết về bệnh nhân",
+            "template": "dividing-fractions",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    slug = response.headers["location"].rsplit("/", 1)[-1]
+    prs = Presentation(tmp_path / "output" / f"{slug}.pptx")
+    assert prs.slide_width == Inches(10)
+    assert prs.slide_height == Inches(5.625)
+
+
+def test_generate_with_boho_template(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    response = client.post(
+        "/generate",
+        data={
+            "name": "Báo cáo",
+            "desc": "Mô tả chi tiết về bệnh nhân",
+            "template": "boho-minimalist",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    slug = response.headers["location"].rsplit("/", 1)[-1]
+    prs = Presentation(tmp_path / "output" / f"{slug}.pptx")
+    assert prs.slide_width == Inches(13.333)
+    first = prs.slides[0]
+    pictures = [
+        shape
+        for shape in first.shapes
+        if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+    ]
+    assert pictures
+
+
+def test_generate_with_unknown_template(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    response = client.post(
+        "/generate",
+        data={
+            "name": "Báo cáo",
+            "desc": "Mô tả chi tiết về bệnh nhân",
+            "template": "khong-ton-tai",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert "Template không hợp lệ" in response.text
+
+
+def test_generate_with_copy_template(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    response = client.post(
+        "/generate",
+        data={
+            "name": "Báo cáo",
+            "desc": "Mô tả chi tiết về bệnh nhân",
+            "template": "boho-copy",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    slug = response.headers["location"].rsplit("/", 1)[-1]
+    prs = Presentation(tmp_path / "output" / f"{slug}.pptx")
+    assert prs.slide_width == Inches(20)
+    assert prs.slide_height == Inches(11.25)
+    first = prs.slides[0]
+    pictures = [
+        shape
+        for shape in first.shapes
+        if shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+    ]
+    assert pictures
+
+
+def test_generate_with_theme_template(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    response = client.post(
+        "/generate",
+        data={
+            "name": "Báo cáo",
+            "desc": "Mô tả chi tiết về bệnh nhân",
+            "template": "neo-tech-minimal",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    slug = response.headers["location"].rsplit("/", 1)[-1]
+    prs = Presentation(tmp_path / "output" / f"{slug}.pptx")
+    assert prs.slide_width == Inches(13.333)
+    assert prs.slide_height == Inches(7.5)
+    assert len(prs.slides[0].shapes) >= 2

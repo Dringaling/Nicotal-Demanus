@@ -29,7 +29,7 @@ class InputRecord:
     desc: str
     created_at: str
     template: str = "flat"
-    prompt_version: str = "demanus-deck-v2"
+    prompt_version: str = "demanus-deck-v3"
     status: str = "pending"
 
     def to_dict(self) -> dict:
@@ -91,7 +91,7 @@ def create_input(
     name: str,
     desc: str,
     template: str = "flat",
-    prompt_version: str = "demanus-deck-v2",
+    prompt_version: str = "demanus-deck-v3",
     root: Path | None = None,
 ) -> InputRecord:
     base = Path(root) if root is not None else REPO_ROOT

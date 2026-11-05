@@ -4,7 +4,7 @@ import json
 
 from .schema import DeckSpec
 
-PROMPT_VERSION = "demanus-deck-v2"
+PROMPT_VERSION = "demanus-deck-v3"
 
 
 def deck_json_schema() -> dict:
@@ -67,5 +67,15 @@ JSON SCHEMA
 """
 
 
-def build_system_prompt() -> str:
-    return SYSTEM_PROMPT
+def build_system_prompt(template_profile: str | None = None) -> str:
+    if not template_profile:
+        return SYSTEM_PROMPT
+    instructions = """\
+TEMPLATE CONTEXT
+The deck will be rendered into the template described below. Use this context:
+- Respect the placeholder sizes. Keep titles short and bullets concise.
+- Prefer the template's accent colors for emphasis; do not specify colors in the JSON.
+- If a slide would benefit from a visual, mention one of the layout media names in
+  the `note` field. Do not put image names in slide text.
+"""
+    return SYSTEM_PROMPT + "\n\n" + instructions + "\n" + template_profile

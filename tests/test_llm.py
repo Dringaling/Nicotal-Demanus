@@ -85,7 +85,7 @@ async def test_payload_uses_flex_and_cache_key(tmp_path: Path) -> None:
 
     body = seen[0]
     assert body["service_tier"] == "flex"
-    assert body["prompt_cache_key"] == "demanus-deck-v2"
+    assert body["prompt_cache_key"] == "demanus-deck-v3"
     assert body["model"] == "deepseek-ai/DeepSeek-V4.1-Flash-1017"
     assert body["response_format"]["type"] == "json_schema"
 
@@ -356,3 +356,39 @@ async def test_chunk_failure_reports_index(tmp_path: Path) -> None:
 
     with pytest.raises(LLMError, match="chunk 2/"):
         await client.generate_spec("Báo cáo", "a" * 25)
+
+
+async def test_template_context_in_system_prompt(tmp_path: Path) -> None:
+    seen: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(json.loads(request.content))
+        return httpx.Response(200, json=chat_response(valid_content()))
+
+    client = make_client(make_settings(tmp_path), handler, tmp_path)
+    await client.generate_spec(
+        "Báo cáo",
+        "Mô tả chi tiết về bệnh nhân",
+        template="dividing-fractions",
+    )
+
+    system = seen[0]["messages"][0]["content"]
+    user = seen[0]["messages"][-1]["content"]
+    assert "TEMPLATE CONTEXT" in system
+    assert "TITLE_AND_BODY" in system
+    assert "accent: #4285F4" in system
+    assert "TEMPLATE: dividing-fractions" in user
+
+
+async def test_flat_template_has_no_template_context(tmp_path: Path) -> None:
+    seen: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(json.loads(request.content))
+        return httpx.Response(200, json=chat_response(valid_content()))
+
+    client = make_client(make_settings(tmp_path), handler, tmp_path)
+    await client.generate_spec("Báo cáo", "Mô tả chi tiết về bệnh nhân")
+
+    system = seen[0]["messages"][0]["content"]
+    assert "TEMPLATE CONTEXT" not in system

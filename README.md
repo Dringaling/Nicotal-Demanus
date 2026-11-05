@@ -50,6 +50,20 @@ Trên Windows, dùng Git Bash/WSL để chạy `make`, hoặc chạy trực ti�
 - Giao diện: `/` tạo deck, `/review` xem thumbnail tất cả deck,
   `/deck/<slug>` lật slide.
 
+## Template
+
+- `config/templates.toml` — metadata: màu, font Lexend, mô tả, `layout_map`,
+  `renderer`.
+- `flat` — thiết kế flat mặc định.
+- `template` — dùng `.pptx` làm gốc, fill placeholder (vd. `dividing-fractions`).
+- `boho` — dùng asset trích từ template (nền giấy + cọ) trong
+  `templates/assets/boho/`.
+- `copy` — copy slide mẫu, thay text; không gửi template vào prompt.
+- `theme` — dựng theo TOML layout (vd. `neo-tech-minimal` trong
+  `templates/themes/`).
+- Font luôn Lexend. Preview web chỉ mô phỏng; mở PowerPoint/LibreOffice để xem
+  đúng.
+
 ## Cấu trúc
 
 - `app/config.py` — nạp cấu hình, secret, đường dẫn.
@@ -58,6 +72,15 @@ Trên Windows, dùng Git Bash/WSL để chạy `make`, hoặc chạy trực ti�
 - `app/llm.py` — client DeepInfra, retry, cache.
 - `app/render.py` — `DeckSpec` → `.pptx`.
 - `app/template_render.py` — dựng `.pptx` từ template gốc (prototype).
+- `app/template_profile.py` — metadata template (khổ, màu, placeholder, media)
+  để đưa vào prompt.
+- `app/templates_catalog.py` — đọc `config/templates.toml`, design tokens.
+- `app/boho_render.py` — dựng nền giấy/cọ boho từ asset.
+- `app/copy_slide_render.py` — copy slide mẫu, thay text.
+- `app/theme_render.py` — dựng theo TOML layout (Neo Tech Minimalist).
+- `config/templates.toml` — metadata template.
+- `templates/assets/boho/` — asset đã trích (tracked).
+- `templates/themes/` — TOML layout theme (tracked).
 - `app/storage.py` — `input/<hash>.toml`, `output/<slug>.pptx`.
 - `app/preview.py` — `.pptx` → PNG 150 DPI.
 - `app/web.py` — FastAPI + Jinja2.

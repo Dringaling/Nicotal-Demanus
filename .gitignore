@@ -11,5 +11,8 @@ tmp/
 
 /input/
 /output/
-/templates/
 **/__pycache__/
+.pytest_cache/
+/templates/*
+!/templates/themes/
+!/templates/themes/*.toml

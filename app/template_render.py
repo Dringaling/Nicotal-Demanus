@@ -7,16 +7,7 @@ from pptx.dml.color import RGBColor
 from pptx.util import Inches, Pt
 
 from .schema import BulletItem, DeckSpec, SlideSpec, TableBlock
-
-LAYOUT_MAP = {
-    "title": "TITLE",
-    "section": "SECTION_HEADER",
-    "bullets": "TITLE_AND_BODY",
-    "two_column": "TITLE_AND_TWO_COLUMNS",
-    "table": "TITLE_ONLY",
-    "quote": "MAIN_POINT",
-    "closing": "TITLE",
-}
+from .template_profile import SEMANTIC_LAYOUTS
 
 _TITLE_SIZE = 26
 _BODY_SIZE = 16
@@ -48,6 +39,7 @@ def _set_title(slide, text: str, size: int = _TITLE_SIZE) -> None:
     shape.text = text
     for paragraph in shape.text_frame.paragraphs:
         for run in paragraph.runs:
+            run.font.name = "Lexend"
             run.font.size = Pt(size)
 
 
@@ -59,6 +51,7 @@ def _set_placeholder_text(slide, idx: int, text: str, size: int | None = None):
         if size:
             for paragraph in shape.text_frame.paragraphs:
                 for run in paragraph.runs:
+                    run.font.name = "Lexend"
                     run.font.size = Pt(size)
         return shape
     return None
@@ -84,6 +77,7 @@ def _fill_bullets(
         paragraph.text = item.text
         paragraph.level = item.level
         for run in paragraph.runs:
+            run.font.name = "Lexend"
             run.font.size = Pt(base_size if item.level == 0 else base_size - 2)
 
 
@@ -96,6 +90,7 @@ def _fill_column(shape, heading, bullets, base_size: int = _COLUMN_SIZE) -> None
         paragraph = frame.paragraphs[0]
         paragraph.text = heading
         for run in paragraph.runs:
+            run.font.name = "Lexend"
             run.font.bold = True
             run.font.size = Pt(base_size + 1)
         first = False
@@ -105,6 +100,7 @@ def _fill_column(shape, heading, bullets, base_size: int = _COLUMN_SIZE) -> None
         paragraph.text = item.text
         paragraph.level = item.level
         for run in paragraph.runs:
+            run.font.name = "Lexend"
             run.font.size = Pt(base_size if item.level == 0 else base_size - 2)
 
 
@@ -144,6 +140,7 @@ def _add_table(slide, prs: Presentation, block: TableBlock) -> None:
             paragraph = cell.text_frame.paragraphs[0]
             run = paragraph.add_run()
             run.text = value
+            run.font.name = "Lexend"
             run.font.size = Pt(11 if row_index == 0 else 10)
             run.font.bold = row_index == 0
             run.font.color.rgb = white if row_index == 0 else text_color
@@ -160,6 +157,7 @@ def _add_subtitle_box(slide, prs: Presentation, text: str) -> None:
     paragraph = box.text_frame.paragraphs[0]
     run = paragraph.add_run()
     run.text = text
+    run.font.name = "Lexend"
     run.font.size = Pt(14)
 
 
@@ -235,7 +233,9 @@ def render_deck_with_template(
 
     fallback = _layout_by_name(prs, "TITLE_AND_BODY") or prs.slide_layouts[-1]
     for slide_spec in spec.slides:
-        layout_name = LAYOUT_MAP.get(slide_spec.layout, "TITLE_AND_BODY")
+        layout_name = SEMANTIC_LAYOUTS.get(
+            slide_spec.layout, "TITLE_AND_BODY"
+        )
         layout = _layout_by_name(prs, layout_name) or fallback
         slide = prs.slides.add_slide(layout)
         renderer = _RENDERERS.get(slide_spec.layout, _render_bullets)

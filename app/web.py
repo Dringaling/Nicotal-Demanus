@@ -10,10 +10,20 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from . import storage
+from .boho_render import render_deck_boho
 from .config import REPO_ROOT, Settings, lan_url, load_settings
+from .copy_slide_render import render_deck_copy_slides
 from .llm import LLMClient, LLMError
 from .preview import render_preview
 from .render import render_deck
+from .template_render import render_deck_with_template
+from .templates_catalog import (
+    apply_template_palette,
+    get_template,
+    list_templates,
+    template_file,
+)
+from .theme_render import render_deck_theme
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +44,7 @@ def create_app(
     base = Path(root) if root is not None else REPO_ROOT
     output_dir = base / "output"
     server_url = lan_url(settings)
+    template_options = list_templates()
 
     app = FastAPI(title="Demanus", version="0.1.0")
     templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
@@ -47,6 +58,7 @@ def create_app(
                 "decks": storage.list_outputs(root=base),
                 "error": error,
                 "server_url": server_url,
+                "templates": template_options,
             },
             status_code=status_code,
         )
@@ -84,9 +96,14 @@ def create_app(
         request: Request,
         name: str = Form(""),
         desc: str = Form(""),
+        template: str = Form("flat"),
     ):
         name = name.strip()
         desc = desc.strip()
+
+        meta = get_template(template)
+        if meta is None:
+            return render_index(request, "Template không hợp lệ.", 400)
 
         if not 1 <= len(name) <= MAX_NAME:
             return render_index(
@@ -97,14 +114,33 @@ def create_app(
                 request, "Mô tả không được để trống.", 400
             )
 
-        record = storage.create_input(name, desc, root=base)
+        record = storage.create_input(
+            name, desc, template=template, root=base
+        )
         storage.update_status(record.id, "generating", root=base)
 
         try:
             client = factory(settings)
-            spec, _usage = await client.generate_spec(name, desc)
+            prompt_template = "flat" if meta.renderer == "copy" else template
+            spec, _usage = await client.generate_spec(
+                name, desc, template=prompt_template
+            )
             out_path = storage.allocate_output(name, record.id, root=base)
-            render_deck(spec, out_path)
+
+            if meta.renderer == "flat":
+                render_deck(spec, out_path)
+            elif meta.renderer == "boho":
+                render_deck_boho(spec, meta, out_path)
+            elif meta.renderer == "copy":
+                render_deck_copy_slides(spec, meta, out_path)
+            elif meta.renderer == "theme":
+                render_deck_theme(spec, meta, out_path)
+            else:
+                template_path = template_file(meta)
+                if template_path is None:
+                    render_deck(spec, out_path)
+                else:
+                    render_deck_with_template(spec, template_path, out_path)
 
             slug = out_path.stem
             sidecar = out_path.parent / slug
@@ -112,7 +148,11 @@ def create_app(
             (sidecar / "spec.json").write_text(
                 spec.model_dump_json(indent=2), encoding="utf-8"
             )
-            render_preview(out_path, spec, sidecar / "preview")
+            render_preview(
+                out_path,
+                apply_template_palette(spec, meta),
+                sidecar / "preview",
+            )
             storage.update_status(record.id, "done", root=base)
         except Exception as exc:
             storage.update_status(record.id, "failed", root=base)

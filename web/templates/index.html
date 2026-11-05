@@ -14,6 +14,16 @@
       <textarea name="desc" rows="8" required
                 placeholder="Mô tả nội dung, đối tượng, các phần cần có..."></textarea>
     </label>
+    <label>
+      Template
+      <select name="template">
+        {% for template in templates %}
+        <option value="{{ template.id }}" title="{{ template.description }}">
+          {{ template.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
     <button type="submit">Sinh file PPTX</button>
   </form>
   <p class="muted">Truy cập từ máy khác trong LAN: <code>{{ server_url }}</code></p>

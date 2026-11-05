@@ -13,6 +13,8 @@ import httpx
 from .config import REPO_ROOT, Settings, load_secret
 from .prompts import build_system_prompt
 from .schema import DeckSpec, SlideSpec
+from .template_profile import load_profile_from_path
+from .templates_catalog import format_template_context, get_template, template_file
 
 logger = logging.getLogger(__name__)
 
@@ -55,9 +57,18 @@ def _cache_key(
     desc: str,
     template: str,
     chunk_chars: int,
+    context_hash: str,
 ) -> str:
     payload = "\x00".join(
-        [prompt_version, model, name, desc, template, str(chunk_chars)]
+        [
+            prompt_version,
+            model,
+            name,
+            desc,
+            template,
+            str(chunk_chars),
+            context_hash,
+        ]
     )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
@@ -252,11 +263,12 @@ class LLMClient:
         template: str,
         index: int,
         total: int,
+        template_profile: str | None = None,
     ) -> list[dict[str, Any]]:
         return [
             {
                 "role": "system",
-                "content": build_system_prompt(),
+                "content": build_system_prompt(template_profile),
                 "cache_control": {"type": "ephemeral"},
             },
             {
@@ -391,6 +403,20 @@ class LLMClient:
         template: str = "flat",
     ) -> tuple[DeckSpec, UsageInfo]:
         chunk_chars = self.provider.generation.chunk_chars
+        meta = get_template(template) if template != "flat" else None
+        profile = None
+        if meta is not None:
+            path = template_file(meta)
+            if path is not None:
+                profile = load_profile_from_path(
+                    str(path), tuple(meta.layout_map.items())
+                )
+        context = format_template_context(meta, profile) if meta else None
+        context_hash = (
+            hashlib.sha256(context.encode("utf-8")).hexdigest()[:16]
+            if context
+            else ""
+        )
         key = _cache_key(
             self.provider.cache.prompt_version,
             self.provider.model,
@@ -398,6 +424,7 @@ class LLMClient:
             desc,
             template,
             chunk_chars,
+            context_hash,
         )
         cached = self._read_cache(key)
         if cached is not None:
@@ -409,7 +436,9 @@ class LLMClient:
         usages: list[UsageInfo] = []
 
         for index, chunk in enumerate(chunks, start=1):
-            messages = self._messages(name, chunk, template, index, total)
+            messages = self._messages(
+                name, chunk, template, index, total, context
+            )
             try:
                 spec, usage = await self._request_spec(messages)
             except LLMError as exc:
