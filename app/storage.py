@@ -42,14 +42,29 @@ class InputRecord:
     prompt_version: str = "demanus-deck-v4"
     status: str = "pending"
     output_slug: str = ""
+    output_slugs: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        data = asdict(self)
+        data["output_slug"] = self.output_slugs[-1] if self.output_slugs else ""
+        return data
 
     @classmethod
     def from_dict(cls, data: dict) -> "InputRecord":
         allowed = {field.name for field in fields(cls)}
-        return cls(**{key: value for key, value in data.items() if key in allowed})
+        values = {key: value for key, value in data.items() if key in allowed}
+        raw_slugs = values.get("output_slugs")
+        if isinstance(raw_slugs, list):
+            values["output_slugs"] = [str(slug) for slug in raw_slugs if slug]
+        else:
+            values.pop("output_slugs", None)
+        record = cls(**values)
+        if not record.output_slugs and record.output_slug:
+            record.output_slugs = [record.output_slug]
+        record.output_slug = (
+            record.output_slugs[-1] if record.output_slugs else ""
+        )
+        return record
 
 
 @dataclass
@@ -91,6 +106,15 @@ def normalize_title(title: str) -> str:
 
 def _title_key(title: str) -> str:
     return normalize_title(title).casefold()
+
+
+def normalize_search(text: str) -> str:
+    value = str(text).replace("đ", "d").replace("Đ", "D")
+    value = unicodedata.normalize("NFKD", value)
+    value = "".join(ch for ch in value if not unicodedata.combining(ch))
+    value = value.casefold()
+    value = re.sub(r"[^a-z0-9\s]", " ", value)
+    return re.sub(r"\s+", " ", value).strip()
 
 
 def validate_title(title: str) -> str:
@@ -213,7 +237,11 @@ def _merge_tags(tags: list[str], root: Path) -> None:
     _write_tags(sorted(merged.values(), key=str.casefold), root)
 
 
-def list_inputs(tag: str | None = None, root: Path | None = None) -> list[InputRecord]:
+def list_inputs(
+    tag: str | None = None,
+    search: str | None = None,
+    root: Path | None = None,
+) -> list[InputRecord]:
     base = Path(root) if root is not None else REPO_ROOT
     records: list[InputRecord] = []
     for path in _record_paths(base):
@@ -228,6 +256,13 @@ def list_inputs(tag: str | None = None, root: Path | None = None) -> list[InputR
             record
             for record in records
             if any(item.casefold() == key for item in record.tags)
+        ]
+    query = normalize_search(search or "")
+    if query:
+        records = [
+            record
+            for record in records
+            if query in normalize_search(record.title)
         ]
     records.sort(key=lambda record: record.created_at, reverse=True)
     return records
@@ -314,16 +349,91 @@ def update_status(
     return record
 
 
+def append_output(
+    input_id: str,
+    slug: str,
+    root: Path | None = None,
+) -> InputRecord:
+    if not slug:
+        raise StorageError("Slug output không hợp lệ")
+    record = get_input(input_id, root)
+    if slug not in record.output_slugs:
+        record.output_slugs.append(slug)
+    record.output_slug = record.output_slugs[-1]
+    base = Path(root) if root is not None else REPO_ROOT
+    _save_record(record, base)
+    return record
+
+
 def update_output(
     input_id: str,
     slug: str,
     root: Path | None = None,
 ) -> InputRecord:
+    return append_output(input_id, slug, root)
+
+
+def remove_output(
+    input_id: str,
+    slug: str,
+    root: Path | None = None,
+    delete_file: bool = True,
+) -> InputRecord:
     record = get_input(input_id, root)
-    record.output_slug = slug
+    if slug not in record.output_slugs:
+        raise StorageError(f"Không tìm thấy output: {slug}")
+    record.output_slugs = [item for item in record.output_slugs if item != slug]
+    record.output_slug = record.output_slugs[-1] if record.output_slugs else ""
     base = Path(root) if root is not None else REPO_ROOT
     _save_record(record, base)
+    if delete_file:
+        try:
+            delete_output(slug, root=base)
+        except FileNotFoundError:
+            pass
     return record
+
+
+def set_input_tags(
+    input_id: str,
+    tags: list[str] | None,
+    root: Path | None = None,
+) -> InputRecord:
+    record = get_input(input_id, root)
+    cleaned = normalize_tags(tags)
+    record.tags = cleaned
+    base = Path(root) if root is not None else REPO_ROOT
+    _save_record(record, base)
+    _merge_tags(cleaned, base)
+    return record
+
+
+def outputs_for(
+    record: InputRecord,
+    root: Path | None = None,
+) -> list[OutputRecord]:
+    base = Path(root) if root is not None else REPO_ROOT
+    directory = _output_dir(base)
+    results: list[OutputRecord] = []
+    for slug in record.output_slugs:
+        path = directory / f"{slug}.pptx"
+        if not path.is_file():
+            continue
+        preview_dir = directory / slug / "preview"
+        has_preview = preview_dir.is_dir() and any(preview_dir.glob("slide-*.png"))
+        stat = path.stat()
+        results.append(
+            OutputRecord(
+                slug=slug,
+                path=path,
+                size_bytes=stat.st_size,
+                modified_at=datetime.fromtimestamp(
+                    stat.st_mtime, tz=timezone.utc
+                ).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                has_preview=has_preview,
+            )
+        )
+    return results
 
 
 def tag_counts(root: Path | None = None) -> dict[str, int]:
@@ -371,11 +481,15 @@ def delete_input(
     path = _input_dir(base) / f"{record.id}.toml"
     if path.is_file():
         path.unlink()
-    if delete_output_file and record.output_slug:
-        try:
-            delete_output(record.output_slug, root=base)
-        except FileNotFoundError:
-            pass
+    if delete_output_file:
+        slugs = list(record.output_slugs)
+        if not slugs and record.output_slug:
+            slugs = [record.output_slug]
+        for slug in slugs:
+            try:
+                delete_output(slug, root=base)
+            except FileNotFoundError:
+                pass
 
 
 def migrate_legacy_inputs(root: Path | None = None) -> int:
@@ -391,6 +505,8 @@ def migrate_legacy_inputs(root: Path | None = None) -> int:
         with path.open("rb") as handle:
             data = tomllib.load(handle)
         if "title" in data and "details_hash" in data:
+            if "output_slugs" not in data and data.get("output_slug"):
+                _save_record(InputRecord.from_dict(data), base)
             continue
         if "name" in data and "desc" in data:
             legacy.append((path, data))
@@ -429,7 +545,10 @@ def migrate_legacy_inputs(root: Path | None = None) -> int:
             )
             record.created_at = str(data.get("created_at", record.created_at))
             record.status = str(data.get("status", "done"))
-            record.output_slug = _infer_output_slug(title, base)
+            inferred = _infer_output_slug(title, base)
+            if inferred:
+                record.output_slugs = [inferred]
+                record.output_slug = inferred
             _save_record(record, base)
             migrated += 1
 

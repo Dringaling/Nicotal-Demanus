@@ -1,17 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
+<datalist id="tag-suggestions">
+  {% for tag in tags %}<option value="{{ tag }}"></option>{% endfor %}
+</datalist>
 <div class="layout">
   <aside class="card sidebar">
     <div class="deck-head">
       <h2>Tags</h2>
-      {% if active_tag %}<a class="meta" href="/">Bỏ lọc</a>{% endif %}
+      {% if active_tag %}<a class="meta" href="/{% if query %}?q={{ query | urlencode }}{% endif %}">Bỏ lọc</a>{% endif %}
     </div>
     {% if tags %}
     <ul class="tag-list">
       {% for tag in tags %}
       <li>
         <a class="tag-link {% if active_tag == tag %}active{% endif %}"
-           href="/?tag={{ tag | urlencode }}">
+           href="/?tag={{ tag | urlencode }}{% if query %}&q={{ query | urlencode }}{% endif %}">
           {{ tag }} <span class="count">{{ counts.get(tag, 0) }}</span>
         </a>
         <form method="post" action="/tags/{{ tag | urlencode }}/delete"
@@ -26,90 +29,104 @@
     {% endif %}
   </aside>
 
-  <div class="main">
-    <section class="card">
-      <h1>Tạo bài trình bày</h1>
-      {% if error %}<p class="error">{{ error }}</p>{% endif %}
-      <form method="post" action="/generate" class="form">
-        <label>
-          Tiêu đề
-          <input name="title" maxlength="200" required
-                 value="{{ form.get('title', '') }}"
-                 placeholder="Kiểm soát nhiễm khuẩn trong nội nha">
-        </label>
-        <label>
-          Mô tả
-          <textarea name="description" rows="3" required
-                    placeholder="Slide làm nội dung gì, khoảng bao nhiêu slide...">{{ form.get('description', '') }}</textarea>
-        </label>
-        <label>
-          Chi tiết
-          <textarea name="details" rows="10" required
-                    placeholder="Nội dung chi tiết từng slide...">{{ form.get('details', '') }}</textarea>
-        </label>
-        <label>
-          Tags
-          <div class="tag-input" id="tag-input">
-            <div class="tag-chips" id="tag-chips"></div>
-            <input id="tag-entry" list="tag-suggestions"
-                   placeholder="Nhập tag rồi Enter">
-            <datalist id="tag-suggestions">
-              {% for tag in tags %}<option value="{{ tag }}"></option>{% endfor %}
-            </datalist>
-          </div>
-          <input type="hidden" name="tags" id="tags-hidden"
-                 value="{{ form.get('tags', '') }}">
-        </label>
-        <label>
-          Template
-          <select name="template">
-            {% for template in templates %}
-            <option value="{{ template.id }}"
-                    {% if form.get('template', 'flat') == template.id %}selected{% endif %}
-                    title="{{ template.description }}">{{ template.name }}</option>
-            {% endfor %}
-          </select>
-        </label>
-        <button type="submit">Sinh file PPTX</button>
-      </form>
-      <p class="muted">Truy cập từ máy khác trong LAN: <code>{{ server_url }}</code></p>
-    </section>
+  <section class="card input-column">
+    <div class="deck-head">
+      <h2>Input{% if active_tag %} · {{ active_tag }}{% endif %}</h2>
+      <a class="button secondary" href="/review">Review deck</a>
+    </div>
+    <form class="search-bar" method="get" action="/">
+      {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
+      <input type="search" name="q" value="{{ query }}"
+             placeholder="Tìm theo tên..." aria-label="Tìm input theo tên">
+      <button type="submit">Tìm</button>
+      {% if query %}
+      <a class="button secondary" title="Xoá tìm kiếm"
+         href="/{% if active_tag %}?tag={{ active_tag | urlencode }}{% endif %}">x</a>
+      {% endif %}
+    </form>
 
-    <section class="card">
-      <div class="deck-head">
-        <h2>Input{% if active_tag %} · {{ active_tag }}{% endif %}</h2>
-        <a class="button secondary" href="/review">Review deck</a>
-      </div>
+    <div class="input-scroll">
       {% if inputs %}
       <ul class="input-list">
         {% for item in inputs %}
         {% set record = item.record %}
-        <li class="input-item">
-          <div class="input-main">
-            <div class="input-title">
-              <strong>{{ record.title }}</strong>
-              <span class="status status-{{ record.status }}">{{ record.status }}</span>
-            </div>
-            <p class="meta">{{ record.created_at }} · {{ record.template }}</p>
-            {% if item.description %}<p class="muted">{{ item.description }}</p>{% endif %}
-            <div class="chips">
-              {% for tag in record.tags %}
-              <a class="tag-chip" href="/?tag={{ tag | urlencode }}">{{ tag }}</a>
-              {% endfor %}
-            </div>
-          </div>
-          <div class="input-actions">
-            {% if item.has_output %}
-            <a href="/deck/{{ record.output_slug }}">
-              <img class="thumb-sm" src="/preview/{{ record.output_slug }}/1"
-                   alt="Slide 1 của {{ record.title }}">
-            </a>
-            <a class="button" href="/deck/{{ record.output_slug }}">Xem</a>
-            <a class="button secondary" href="/download/{{ record.output_slug }}">Tải</a>
+        <li class="input-card">
+          <button class="input-summary" type="button" data-expand
+                  aria-expanded="false">
+            {% if item.newest %}
+            <img class="thumb-sm" src="/preview/{{ item.newest.slug }}/1"
+                 alt="Slide 1 của {{ record.title }}">
+            {% else %}
+            <span class="thumb-sm thumb placeholder">—</span>
             {% endif %}
+            <span class="input-summary-main">
+              <span class="input-title">
+                <strong>{{ record.title }}</strong>
+                <span class="status status-{{ record.status }}">{{ record.status }}</span>
+              </span>
+              <span class="meta">{{ record.created_at }} · {{ record.template }}
+                · {{ item.outputs | length }} output</span>
+              {% if item.description %}<span class="muted">{{ item.description }}</span>{% endif %}
+              <span class="chips">
+                {% for tag in record.tags %}
+                <a class="tag-chip" href="/?tag={{ tag | urlencode }}">{{ tag }}</a>
+                {% endfor %}
+              </span>
+            </span>
+            <span class="chevron" aria-hidden="true">▾</span>
+          </button>
+
+          <div class="input-details" hidden>
+            {% if item.outputs %}
+            <ul class="output-list">
+              {% for output in item.outputs %}
+              <li class="output-item">
+                <img class="thumb-sm" src="/preview/{{ output.slug }}/1"
+                     alt="Slide 1 của {{ output.slug }}">
+                <div class="output-main">
+                  <strong>{{ output.slug }}</strong>
+                  <p class="meta">{{ output.size_bytes }} bytes · {{ output.modified_at }}</p>
+                </div>
+                <a class="button" href="/deck/{{ output.slug }}">Xem</a>
+                <a class="button secondary" href="/download/{{ output.slug }}">Tải</a>
+                <form method="post"
+                      action="/inputs/{{ record.id }}/outputs/{{ output.slug }}/delete"
+                      onsubmit="return confirm('Xoá output này?')">
+                  <button class="danger" type="submit">Xoá</button>
+                </form>
+              </li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <p class="muted">Chưa có output nào.</p>
+            {% endif %}
+
+            <form class="regen-form" method="post"
+                  action="/inputs/{{ record.id }}/generate">
+              <select name="template" aria-label="Template cho lần tạo lại">
+                {% for template in templates %}
+                <option value="{{ template.id }}"
+                        {% if record.template == template.id %}selected{% endif %}
+                        title="{{ template.description }}">{{ template.name }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit">Tạo lại</button>
+            </form>
+
+            <form class="tag-editor" method="post"
+                  action="/inputs/{{ record.id }}/tags" data-tag-editor>
+              <input type="hidden" name="tags"
+                     value="{{ record.tags | join(',') }}">
+              <div class="tag-chips" data-tag-chips></div>
+              <input class="tag-entry" list="tag-suggestions"
+                     placeholder="Thêm tag rồi Enter">
+              <button class="button secondary" type="submit">Lưu tag</button>
+            </form>
+
             <form method="post" action="/inputs/{{ record.id }}/delete"
                   onsubmit="return confirm('Xoá input này?')">
-              <button class="danger" type="submit">Xoá</button>
+              <input type="hidden" name="confirm" value="yes">
+              <button class="danger" type="submit">Xoá input</button>
             </form>
           </div>
         </li>
@@ -118,7 +135,52 @@
       {% else %}
       <p class="muted">Chưa có input nào.</p>
       {% endif %}
-    </section>
-  </div>
+    </div>
+  </section>
+
+  <section class="card form-column">
+    <h1>Tạo bài trình bày</h1>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form method="post" action="/generate" class="form">
+      <label>
+        Tiêu đề
+        <input name="title" maxlength="200" required
+               value="{{ form.get('title', '') }}"
+               placeholder="Kiểm soát nhiễm khuẩn trong nội nha">
+      </label>
+      <label>
+        Mô tả
+        <textarea name="description" rows="3" required
+                  placeholder="Slide làm nội dung gì, khoảng bao nhiêu slide...">{{ form.get('description', '') }}</textarea>
+      </label>
+      <label>
+        Chi tiết
+        <textarea name="details" rows="10" required
+                  placeholder="Nội dung chi tiết từng slide...">{{ form.get('details', '') }}</textarea>
+      </label>
+      <label>
+        Tags
+        <div class="tag-input" id="tag-input">
+          <div class="tag-chips" id="tag-chips"></div>
+          <input id="tag-entry" list="tag-suggestions"
+                 placeholder="Nhập tag rồi Enter">
+        </div>
+        <input type="hidden" name="tags" id="tags-hidden"
+               value="{{ form.get('tags', '') }}">
+      </label>
+      <label>
+        Template
+        <select name="template">
+          {% for template in templates %}
+          <option value="{{ template.id }}"
+                  {% if form.get('template', 'flat') == template.id %}selected{% endif %}
+                  title="{{ template.description }}">{{ template.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button type="submit">Sinh file PPTX</button>
+    </form>
+    <p class="muted">Truy cập từ máy khác trong LAN: <code>{{ server_url }}</code></p>
+  </section>
 </div>
 {% endblock %}

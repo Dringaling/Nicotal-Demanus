@@ -34,6 +34,23 @@ PPTX_MEDIA_TYPE = (
 )
 
 
+def write_deck(spec, meta, out_path: Path) -> None:
+    if meta.renderer == "flat":
+        render_deck(spec, out_path)
+    elif meta.renderer == "boho":
+        render_deck_boho(spec, meta, out_path)
+    elif meta.renderer == "copy":
+        render_deck_copy_slides(spec, meta, out_path)
+    elif meta.renderer == "theme":
+        render_deck_theme(spec, meta, out_path)
+    else:
+        template_path = template_file(meta)
+        if template_path is None:
+            render_deck(spec, out_path)
+        else:
+            render_deck_with_template(spec, template_path, out_path)
+
+
 def create_app(
     settings: Settings | None = None,
     llm_factory: Callable[[Settings], LLMClient] | None = None,
@@ -62,24 +79,23 @@ def create_app(
         status_code: int = 200,
         form: dict | None = None,
         active_tag: str | None = None,
+        query: str | None = None,
     ):
-        records = storage.list_inputs(tag=active_tag, root=base)
+        records = storage.list_inputs(
+            tag=active_tag, search=query, root=base
+        )
         inputs = []
         for record in records:
-            output_path = (
-                output_dir / f"{record.output_slug}.pptx"
-                if record.output_slug
-                else None
-            )
+            outputs = storage.outputs_for(record, root=base)
             inputs.append(
                 {
                     "record": record,
                     "description": storage.read_text(
                         record.description_hash, base
                     )[:160],
-                    "has_output": bool(
-                        output_path and output_path.is_file()
-                    ),
+                    "outputs": list(reversed(outputs)),
+                    "newest": outputs[-1] if outputs else None,
+                    "has_output": bool(outputs),
                 }
             )
         return templates.TemplateResponse(
@@ -90,6 +106,7 @@ def create_app(
                 "tags": storage.list_tags(root=base),
                 "counts": storage.tag_counts(root=base),
                 "active_tag": active_tag,
+                "query": query or "",
                 "templates": template_options,
                 "server_url": server_url,
                 "error": error,
@@ -107,9 +124,49 @@ def create_app(
             raise HTTPException(status_code=404, detail="Không tìm thấy deck")
         return path
 
+    async def render_record(record: storage.InputRecord, template: str) -> str:
+        meta = get_template(template)
+        if meta is None:
+            raise storage.StorageError("Template không hợp lệ.")
+
+        storage.update_status(record.id, "generating", root=base)
+        try:
+            client = factory(settings)
+            prompt_template = "flat" if meta.renderer == "copy" else template
+            spec, _usage = await client.generate_spec(
+                record.title,
+                storage.read_text(record.details_hash, base),
+                template=prompt_template,
+                description=storage.read_text(record.description_hash, base),
+            )
+            out_path = storage.allocate_output(record.title, record.id, root=base)
+            write_deck(spec, meta, out_path)
+
+            slug = out_path.stem
+            sidecar = out_path.parent / slug
+            sidecar.mkdir(parents=True, exist_ok=True)
+            (sidecar / "spec.json").write_text(
+                spec.model_dump_json(indent=2), encoding="utf-8"
+            )
+            render_preview(
+                out_path,
+                apply_template_palette(spec, meta),
+                sidecar / "preview",
+            )
+            storage.append_output(record.id, slug, root=base)
+            storage.update_status(record.id, "done", root=base)
+        except Exception:
+            storage.update_status(record.id, "failed", root=base)
+            raise
+        return slug
+
     @app.get("/", response_class=HTMLResponse)
-    async def index(request: Request, tag: str | None = Query(None)):
-        return render_index(request, active_tag=tag)
+    async def index(
+        request: Request,
+        tag: str | None = Query(None),
+        q: str | None = Query(None),
+    ):
+        return render_index(request, active_tag=tag, query=q)
 
     @app.get("/review", response_class=HTMLResponse)
     async def review(request: Request):
@@ -176,49 +233,9 @@ def create_app(
         except storage.StorageError as exc:
             return render_index(request, str(exc), 400, form)
 
-        storage.update_status(record.id, "generating", root=base)
-
         try:
-            client = factory(settings)
-            prompt_template = "flat" if meta.renderer == "copy" else template
-            spec, _usage = await client.generate_spec(
-                title,
-                details,
-                template=prompt_template,
-                description=description,
-            )
-            out_path = storage.allocate_output(title, record.id, root=base)
-
-            if meta.renderer == "flat":
-                render_deck(spec, out_path)
-            elif meta.renderer == "boho":
-                render_deck_boho(spec, meta, out_path)
-            elif meta.renderer == "copy":
-                render_deck_copy_slides(spec, meta, out_path)
-            elif meta.renderer == "theme":
-                render_deck_theme(spec, meta, out_path)
-            else:
-                template_path = template_file(meta)
-                if template_path is None:
-                    render_deck(spec, out_path)
-                else:
-                    render_deck_with_template(spec, template_path, out_path)
-
-            slug = out_path.stem
-            sidecar = out_path.parent / slug
-            sidecar.mkdir(parents=True, exist_ok=True)
-            (sidecar / "spec.json").write_text(
-                spec.model_dump_json(indent=2), encoding="utf-8"
-            )
-            render_preview(
-                out_path,
-                apply_template_palette(spec, meta),
-                sidecar / "preview",
-            )
-            storage.update_output(record.id, slug, root=base)
-            storage.update_status(record.id, "done", root=base)
+            slug = await render_record(record, template)
         except Exception as exc:
-            storage.update_status(record.id, "failed", root=base)
             logger.exception("Sinh PPTX thất bại cho input %s", record.id)
             message = "Không thể sinh file. Vui lòng thử lại."
             if isinstance(exc, LLMError):
@@ -227,8 +244,61 @@ def create_app(
 
         return RedirectResponse(f"/deck/{slug}", status_code=303)
 
+    @app.post("/inputs/{input_id}/generate")
+    async def regenerate(input_id: str, template: str = Form("flat")):
+        try:
+            record = storage.get_input(input_id, root=base)
+        except (storage.StorageError, FileNotFoundError) as exc:
+            raise HTTPException(
+                status_code=404, detail="Không tìm thấy input"
+            ) from exc
+        if get_template(template) is None:
+            raise HTTPException(status_code=400, detail="Template không hợp lệ")
+
+        try:
+            slug = await render_record(record, template)
+        except LLMError as exc:
+            raise HTTPException(
+                status_code=500, detail=f"Lỗi gọi model: {exc}"
+            ) from exc
+        except Exception as exc:
+            logger.exception("Sinh lại PPTX thất bại cho input %s", record.id)
+            raise HTTPException(
+                status_code=500, detail="Không thể sinh file"
+            ) from exc
+        return RedirectResponse(f"/deck/{slug}", status_code=303)
+
+    @app.post("/inputs/{input_id}/tags")
+    async def update_input_tags(input_id: str, tags: str = Form("")):
+        tag_list = [tag.strip() for tag in tags.split(",") if tag.strip()]
+        try:
+            storage.set_input_tags(input_id, tag_list, root=base)
+        except FileNotFoundError as exc:
+            raise HTTPException(
+                status_code=404, detail="Không tìm thấy input"
+            ) from exc
+        except storage.StorageError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return RedirectResponse("/", status_code=303)
+
+    @app.post("/inputs/{input_id}/outputs/{slug}/delete")
+    async def delete_input_output(input_id: str, slug: str):
+        try:
+            storage.remove_output(input_id, slug, root=base)
+        except FileNotFoundError as exc:
+            raise HTTPException(
+                status_code=404, detail="Không tìm thấy input"
+            ) from exc
+        except storage.StorageError as exc:
+            raise HTTPException(
+                status_code=404, detail="Không tìm thấy output"
+            ) from exc
+        return RedirectResponse("/", status_code=303)
+
     @app.post("/inputs/{input_id}/delete")
-    async def delete_input(input_id: str):
+    async def delete_input(input_id: str, confirm: str = Form("")):
+        if confirm != "yes":
+            raise HTTPException(status_code=400, detail="Thiếu xác nhận xoá")
         try:
             storage.delete_input(input_id, root=base)
         except (storage.StorageError, FileNotFoundError) as exc:
@@ -244,18 +314,31 @@ def create_app(
 
     @app.get("/api/inputs")
     async def api_inputs():
-        return [
-            {
-                "id": record.id,
-                "title": record.title,
-                "tags": record.tags,
-                "status": record.status,
-                "created_at": record.created_at,
-                "template": record.template,
-                "output_slug": record.output_slug,
-            }
-            for record in storage.list_inputs(root=base)
-        ]
+        payload = []
+        for record in storage.list_inputs(root=base):
+            outputs = storage.outputs_for(record, root=base)
+            payload.append(
+                {
+                    "id": record.id,
+                    "title": record.title,
+                    "tags": record.tags,
+                    "status": record.status,
+                    "created_at": record.created_at,
+                    "template": record.template,
+                    "output_slug": record.output_slug,
+                    "output_slugs": record.output_slugs,
+                    "outputs": [
+                        {
+                            "slug": output.slug,
+                            "size_bytes": output.size_bytes,
+                            "modified_at": output.modified_at,
+                            "has_preview": output.has_preview,
+                        }
+                        for output in outputs
+                    ],
+                }
+            )
+        return payload
 
     @app.get("/api/tags")
     async def api_tags():

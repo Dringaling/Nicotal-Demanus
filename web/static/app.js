@@ -90,3 +90,95 @@
   });
   render();
 })();
+
+(function () {
+  document.querySelectorAll("[data-expand]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const card = button.closest(".input-card");
+      const details = card && card.querySelector(".input-details");
+      if (!details) {
+        return;
+      }
+      const expanded = button.getAttribute("aria-expanded") === "true";
+      button.setAttribute("aria-expanded", String(!expanded));
+      card.classList.toggle("expanded", !expanded);
+      details.hidden = expanded;
+    });
+  });
+})();
+
+(function () {
+  document.querySelectorAll("[data-tag-editor]").forEach((form) => {
+    const hidden = form.querySelector('input[name="tags"]');
+    const chips = form.querySelector("[data-tag-chips]");
+    const entry = form.querySelector(".tag-entry");
+    if (!hidden || !chips || !entry) {
+      return;
+    }
+
+    let values = (hidden.value || "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    let submitted = false;
+
+    function render() {
+      chips.innerHTML = "";
+      values.forEach((tag, index) => {
+        const chip = document.createElement("span");
+        chip.className = "tag-chip";
+        chip.textContent = tag;
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "×";
+        remove.addEventListener("click", () => {
+          values.splice(index, 1);
+          render();
+          save();
+        });
+        chip.appendChild(remove);
+        chips.appendChild(chip);
+      });
+      hidden.value = values.join(",");
+    }
+
+    function save() {
+      if (submitted) {
+        return;
+      }
+      submitted = true;
+      form.submit();
+    }
+
+    function add(value) {
+      const tag = value.trim().replace(/\s+/g, " ");
+      if (!tag) {
+        return false;
+      }
+      if (!values.some((item) => item.toLowerCase() === tag.toLowerCase())) {
+        values.push(tag);
+      }
+      entry.value = "";
+      render();
+      return true;
+    }
+
+    entry.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === ",") {
+        event.preventDefault();
+        if (add(entry.value)) {
+          save();
+        }
+      }
+    });
+    entry.addEventListener("blur", () => {
+      if (entry.value.trim() && add(entry.value)) {
+        save();
+      }
+    });
+    form.addEventListener("submit", () => {
+      submitted = true;
+    });
+    render();
+  });
+})();

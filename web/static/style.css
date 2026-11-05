@@ -42,7 +42,7 @@ body {
 }
 
 .container {
-  max-width: 1000px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 24px;
 }
@@ -263,8 +263,9 @@ button.danger {
 
 .layout {
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr);
+  grid-template-columns: 280px minmax(360px, 1fr) minmax(420px, 1.2fr);
   gap: 20px;
+  align-items: start;
 }
 
 .main {
@@ -273,6 +274,130 @@ button.danger {
 
 .sidebar {
   align-self: start;
+}
+
+.input-column,
+.form-column {
+  min-width: 0;
+}
+
+.input-scroll {
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.search-bar input[type="search"] {
+  flex: 1;
+}
+
+.input-card {
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.input-summary-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.input-summary-main .chips {
+  margin-top: 2px;
+}
+
+.chevron {
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+.input-card.expanded .chevron {
+  transform: rotate(180deg);
+}
+
+.input-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid #eef2f7;
+  padding-top: 10px;
+}
+
+.output-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.output-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.output-main {
+  flex: 1;
+  min-width: 140px;
+}
+
+.output-main p {
+  margin: 2px 0 0;
+}
+
+.regen-form,
+.tag-editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tag-editor {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 6px;
+}
+
+.tag-editor .tag-entry {
+  border: 0;
+  outline: 0;
+  flex: 1;
+  min-width: 120px;
+  padding: 4px;
 }
 
 .tag-list {
@@ -429,8 +554,12 @@ button.danger {
   color: #92400e;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1100px) {
   .layout {
     grid-template-columns: 1fr;
+  }
+
+  .input-scroll {
+    max-height: none;
   }
 }

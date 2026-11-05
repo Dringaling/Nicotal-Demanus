@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
@@ -307,7 +309,9 @@ def test_delete_input_keeps_tag(tmp_path: Path) -> None:
     )
 
     response = client.post(
-        f"/inputs/{record.id}/delete", follow_redirects=False
+        f"/inputs/{record.id}/delete",
+        data={"confirm": "yes"},
+        follow_redirects=False,
     )
     assert response.status_code == 303
     assert storage.list_inputs(root=tmp_path) == []
@@ -385,3 +389,226 @@ def test_generate_with_unknown_template(tmp_path: Path) -> None:
     response = generate(client, template="khong-ton-tai")
     assert response.status_code == 400
     assert "Template không hợp lệ" in response.text
+
+
+def test_index_three_columns(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/").text
+    assert ">Tags<" in html
+    assert "input-scroll" in html
+    assert html.index(">Tags<") < html.index(">Input") < html.index(
+        "Tạo bài trình bày"
+    )
+
+
+def test_add_tag_to_existing_input(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input(
+        "A", "Mô tả", "Chi tiết", tags=["dental"], root=tmp_path
+    )
+    response = client.post(
+        f"/inputs/{record.id}/tags",
+        data={"tags": "dental, research"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert storage.get_input(record.id, root=tmp_path).tags == [
+        "dental",
+        "research",
+    ]
+    assert "research" in storage.list_tags(root=tmp_path)
+
+
+def test_remove_tag_from_input_keeps_catalog(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input(
+        "A", "Mô tả", "Chi tiết", tags=["dental"], root=tmp_path
+    )
+    response = client.post(
+        f"/inputs/{record.id}/tags",
+        data={"tags": ""},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert storage.get_input(record.id, root=tmp_path).tags == []
+    assert "dental" in storage.list_tags(root=tmp_path)
+
+
+def test_delete_tag_purges_records(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input(
+        "A", "Mô tả", "Chi tiết", tags=["dental"], root=tmp_path
+    )
+    response = client.post("/tags/dental/delete", follow_redirects=False)
+    assert response.status_code == 303
+    assert storage.list_tags(root=tmp_path) == []
+    assert storage.get_input(record.id, root=tmp_path).tags == []
+
+
+def test_regenerate_appends_outputs(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+
+    for _ in range(2):
+        response = client.post(
+            f"/inputs/{record.id}/generate",
+            data={"template": "flat"},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+
+    loaded = storage.get_input(record.id, root=tmp_path)
+    assert len(loaded.output_slugs) == 2
+    assert loaded.output_slugs[0] != loaded.output_slugs[1]
+    assert loaded.output_slug == loaded.output_slugs[-1]
+    assert loaded.status == "done"
+
+
+def test_index_lists_outputs_newest_first(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input(
+        "Báo cáo nha khoa", "Mô tả", "Chi tiết", root=tmp_path
+    )
+    for _ in range(2):
+        client.post(
+            f"/inputs/{record.id}/generate",
+            data={"template": "flat"},
+            follow_redirects=False,
+        )
+
+    loaded = storage.get_input(record.id, root=tmp_path)
+    oldest, newest = loaded.output_slugs
+
+    html = client.get("/").text
+    output_list = html.split('class="output-list"', 1)[1]
+    slugs = re.findall(r"<strong>([^<]+)</strong>", output_list)
+    assert slugs == [newest, oldest]
+
+    summary = html.split('class="input-summary"', 1)[1].split("</button>", 1)[0]
+    assert f"/preview/{newest}/1" in summary
+
+
+def test_delete_single_output(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+    client.post(
+        f"/inputs/{record.id}/generate",
+        data={"template": "flat"},
+        follow_redirects=False,
+    )
+    loaded = storage.get_input(record.id, root=tmp_path)
+    slug = loaded.output_slugs[0]
+
+    response = client.post(
+        f"/inputs/{record.id}/outputs/{slug}/delete",
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+
+    loaded = storage.get_input(record.id, root=tmp_path)
+    assert loaded.output_slugs == []
+    assert loaded.output_slug == ""
+    assert not (tmp_path / "output" / f"{slug}.pptx").exists()
+    assert not (tmp_path / "output" / slug).exists()
+
+
+def test_delete_input_cascades_outputs(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+    client.post(
+        f"/inputs/{record.id}/generate",
+        data={"template": "flat"},
+        follow_redirects=False,
+    )
+    loaded = storage.get_input(record.id, root=tmp_path)
+    slug = loaded.output_slugs[0]
+
+    response = client.post(
+        f"/inputs/{record.id}/delete",
+        data={"confirm": "yes"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert storage.list_inputs(root=tmp_path) == []
+    assert not (tmp_path / "output" / f"{slug}.pptx").exists()
+
+
+def test_delete_input_requires_confirm(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+
+    response = client.post(
+        f"/inputs/{record.id}/delete", follow_redirects=False
+    )
+    assert response.status_code == 400
+    assert storage.get_input(record.id, root=tmp_path) is not None
+
+
+@pytest.mark.parametrize(
+    "query", ["bao cao", "BAO CAO", "  báo...cáo!! ", "BÁO CÁO"]
+)
+def test_search_accent_and_case_insensitive(
+    tmp_path: Path, query: str
+) -> None:
+    client = make_client(tmp_path)
+    storage.create_input(
+        "Báo cáo nha khoa", "Mô tả", "Chi tiết", root=tmp_path
+    )
+    response = client.get("/", params={"q": query})
+    assert response.status_code == 200
+    assert "Báo cáo nha khoa" in response.text
+
+
+def test_search_respects_tag_filter(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input(
+        "Báo cáo nha khoa", "Mô tả", "Chi tiết", tags=["dental"], root=tmp_path
+    )
+    storage.create_input(
+        "Báo cáo tim mạch", "Mô tả", "Chi tiết", tags=["cardio"], root=tmp_path
+    )
+
+    html = client.get("/", params={"tag": "dental", "q": "bao cao"}).text
+    assert "Báo cáo nha khoa" in html
+    assert "Báo cáo tim mạch" not in html
+
+
+def test_clear_search_keeps_tag(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input(
+        "Báo cáo nha khoa", "Mô tả", "Chi tiết", tags=["dental"], root=tmp_path
+    )
+    html = client.get("/", params={"tag": "dental", "q": "bao"}).text
+    assert 'href="/?tag=dental"' in html
+
+
+def test_api_inputs_include_outputs(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+    client.post(
+        f"/inputs/{record.id}/generate",
+        data={"template": "flat"},
+        follow_redirects=False,
+    )
+
+    loaded = storage.get_input(record.id, root=tmp_path)
+    payload = client.get("/api/inputs").json()[0]
+    assert payload["output_slugs"] == loaded.output_slugs
+    assert [item["slug"] for item in payload["outputs"]] == loaded.output_slugs
+    assert payload["outputs"][0]["has_preview"] is True
+
+
+def test_regenerate_failure_marks_failed(tmp_path: Path) -> None:
+    client = make_client(tmp_path, failing=True)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+
+    response = client.post(
+        f"/inputs/{record.id}/generate",
+        data={"template": "flat"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 500
+
+    loaded = storage.get_input(record.id, root=tmp_path)
+    assert loaded.status == "failed"
+    assert loaded.output_slugs == []
