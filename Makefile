@@ -7,7 +7,7 @@ PORT ?= 8765
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install uninstall lock sync server dev test smoke check clean clean-output install-preview
+.PHONY: help install uninstall lock sync server dev test smoke check clean clean-output install-preview licenses
 
 help: ## Hiển thị trợ giúp
 	@echo "Demanus commands:"
@@ -18,6 +18,10 @@ install: ## Tạo .venv và cài dependencies từ uv.lock
 
 install-preview: ## Cài thêm backend preview Aspose (tuỳ chọn)
 	$(UV) sync --extra preview-aspose
+
+licenses: ## Sinh THIRD_PARTY_LICENSES.md
+	$(UV_RUN) pip-licenses --format=markdown --with-urls --with-license-file \
+		--output-file THIRD_PARTY_LICENSES.md
 
 uninstall: ## Xoá .venv và cache
 	rm -rf .venv .pytest_cache

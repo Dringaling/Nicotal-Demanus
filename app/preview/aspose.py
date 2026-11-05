@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Preview backend dùng Aspose.Slides (thư viện độc quyền).
 
 Việc dùng thư viện này được cho phép bởi "Special Exception for Document

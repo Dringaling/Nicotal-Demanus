@@ -29,6 +29,17 @@ link the Aspose.Slides library through that module. Aspose.Slides is an optional
 dependency (`preview-aspose` extra) and is not required to build, run, or
 redistribute the core project.
 
+Mozilla Public License 2.0 modules
+----------------------------------
+
+The default license for every module authored for this project is
+AGPL-3.0-or-later. A module may instead be released under MPL-2.0 only when it
+must be combined with code that is incompatible with AGPLv3. Such modules are
+listed here and in LICENSES.md, and carry the header
+`SPDX-License-Identifier: MPL-2.0`.
+
+Currently there are no MPL-2.0 modules.
+
 Third-party components
 ----------------------
 

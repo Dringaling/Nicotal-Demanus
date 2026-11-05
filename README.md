@@ -114,6 +114,10 @@ Trên Windows, dùng Git Bash/WSL để chạy `make`, hoặc chạy trực ti�
 
 ## Giấy phép
 
-- Mã nguồn dự án: **AGPLv3** (`LICENSE`).
+- Mã nguồn dự án: **AGPLv3** (`LICENSE`), dùng cho mọi module mặc định.
+- **MPL-2.0** (`LICENSE.MPL-2.0`) chỉ dành cho module bắt buộc không tương
+  thích AGPLv3; hiện chưa có module nào như vậy.
 - Ngoại lệ đặc biệt cho module preview Aspose.Slides: xem `NOTICE`.
 - Chính sách giấy phép: `LICENSES.md`.
+- Danh sách dependency và giấy phép: `THIRD_PARTY_LICENSES.md`
+  (sinh bằng `make licenses`).
