@@ -1,4 +1,71 @@
 (function () {
+  const input = document.querySelector('input[name="title"][data-check-url]');
+  if (!input) {
+    return;
+  }
+
+  const error = document.querySelector("[data-title-error]");
+  const ok = document.querySelector("[data-title-ok]");
+  const submit = document.querySelector(
+    'form[action="/generate"] button[type="submit"]'
+  );
+  const url = input.dataset.checkUrl;
+  let timer = null;
+  let sequence = 0;
+
+  function setState(state, message) {
+    if (error) {
+      error.textContent = message || "";
+      error.hidden = state !== "error";
+    }
+    if (ok) {
+      ok.hidden = state !== "ok";
+    }
+    if (submit) {
+      submit.disabled = state === "error";
+    }
+  }
+
+  async function check() {
+    const value = input.value.replace(/[\r\n\t]+/g, " ");
+    if (!value.trim()) {
+      setState("idle");
+      return;
+    }
+
+    const current = ++sequence;
+    try {
+      const response = await fetch(
+        `${url}?title=${encodeURIComponent(value)}`
+      );
+      const data = await response.json();
+      if (current !== sequence) {
+        return;
+      }
+      if (data.duplicate || !data.valid) {
+        setState("error", data.message || "Tiêu đề không hợp lệ.");
+      } else {
+        setState("ok");
+      }
+    } catch (exc) {
+      setState("idle");
+    }
+  }
+
+  input.addEventListener("input", () => {
+    if (/[\r\n\t]/.test(input.value)) {
+      input.value = input.value.replace(/[\r\n\t]+/g, " ");
+    }
+    clearTimeout(timer);
+    timer = setTimeout(check, 300);
+  });
+
+  if (input.value.trim()) {
+    check();
+  }
+})();
+
+(function () {
   const carousel = document.querySelector(".carousel");
   if (!carousel) {
     return;

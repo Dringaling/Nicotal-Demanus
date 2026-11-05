@@ -17,6 +17,7 @@ STATUSES = {"pending", "generating", "done", "failed"}
 _ID_PATTERN = re.compile(r"^[0-9a-f]{8}(-\d+)?$")
 _SAFE_PART = re.compile(r"^[A-Za-z0-9._-]+$")
 _TITLE_FORBIDDEN = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
+_TITLE_ALLOWED = re.compile(r"^[\w\s\-!.,()\[\]&+%#@;]+$")
 _TAG_FORBIDDEN = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 
 
@@ -121,9 +122,40 @@ def validate_title(title: str) -> str:
     cleaned = normalize_title(title)
     if not 1 <= len(cleaned) <= 200:
         raise StorageError("Tiêu đề phải từ 1 đến 200 ký tự")
-    if _TITLE_FORBIDDEN.search(cleaned):
+    if _TITLE_FORBIDDEN.search(cleaned) or not _TITLE_ALLOWED.fullmatch(cleaned):
         raise StorageError("Tiêu đề chứa ký tự không hợp lệ")
     return cleaned
+
+
+@dataclass
+class TitleStatus:
+    valid: bool
+    duplicate: bool
+    normalized: str
+    message: str = ""
+    existing_id: str = ""
+
+
+def title_status(title: str, root: Path | None = None) -> TitleStatus:
+    base = Path(root) if root is not None else REPO_ROOT
+    cleaned = normalize_title(title)
+    if not cleaned:
+        return TitleStatus(False, False, cleaned, "Tiêu đề không được để trống")
+    if len(cleaned) > 200:
+        return TitleStatus(False, False, cleaned, "Tiêu đề tối đa 200 ký tự")
+    if _TITLE_FORBIDDEN.search(cleaned) or not _TITLE_ALLOWED.fullmatch(cleaned):
+        return TitleStatus(False, False, cleaned, "Tiêu đề chứa ký tự không hợp lệ")
+
+    existing = _find_record_by_title(cleaned, base)
+    if existing is not None:
+        return TitleStatus(
+            False,
+            True,
+            cleaned,
+            f"Tiêu đề đã tồn tại (id {existing.id}).",
+            existing.id,
+        )
+    return TitleStatus(True, False, cleaned)
 
 
 def normalize_tags(tags: list[str] | None) -> list[str]:

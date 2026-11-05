@@ -312,6 +312,17 @@ def create_app(
         storage.delete_tag(tag, root=base)
         return RedirectResponse("/", status_code=303)
 
+    @app.get("/api/inputs/check-title")
+    async def check_title(title: str = Query("")):
+        status = storage.title_status(title, root=base)
+        return {
+            "valid": status.valid,
+            "duplicate": status.duplicate,
+            "normalized": status.normalized,
+            "message": status.message,
+            "existing_id": status.existing_id,
+        }
+
     @app.get("/api/inputs")
     async def api_inputs():
         payload = []

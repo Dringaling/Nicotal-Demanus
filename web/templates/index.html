@@ -144,9 +144,14 @@
     <form method="post" action="/generate" class="form">
       <label>
         Tiêu đề
-        <input name="title" maxlength="200" required
-               value="{{ form.get('title', '') }}"
-               placeholder="Kiểm soát nhiễm khuẩn trong nội nha">
+        <div class="title-row">
+          <input name="title" maxlength="200" required
+                 value="{{ form.get('title', '') }}"
+                 data-check-url="/api/inputs/check-title"
+                 placeholder="Kiểm soát nhiễm khuẩn trong nội nha">
+          <span class="field-ok" data-title-ok hidden aria-hidden="true">✓</span>
+        </div>
+        <p class="field-error" data-title-error hidden role="alert"></p>
       </label>
       <label>
         Mô tả

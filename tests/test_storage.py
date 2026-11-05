@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 import tomllib
+import zlib
 
 from app import storage
 from app.storage import DuplicateTitleError, StorageError, slugify
@@ -353,3 +354,62 @@ def test_outputs_for_returns_existing_files(tmp_path: Path) -> None:
         storage.get_input(record.id, root=tmp_path), root=tmp_path
     )
     assert [output.slug for output in outputs] == ["a-1"]
+
+
+def test_title_status_valid(tmp_path: Path) -> None:
+    status = storage.title_status("Báo cáo nha khoa", root=tmp_path)
+    assert status.valid is True
+    assert status.duplicate is False
+    assert status.normalized == "Báo cáo nha khoa"
+    assert status.message == ""
+
+
+def test_title_status_empty(tmp_path: Path) -> None:
+    status = storage.title_status("   ", root=tmp_path)
+    assert status.valid is False
+    assert status.duplicate is False
+    assert status.message
+
+
+def test_title_status_too_long(tmp_path: Path) -> None:
+    status = storage.title_status("a" * 201, root=tmp_path)
+    assert status.valid is False
+    assert "200" in status.message
+
+
+def test_title_status_forbidden_chars(tmp_path: Path) -> None:
+    for title in ("a/b", "a\\b", "a:b", "a?b", "a*b", "a<b", "a>b", "a|b"):
+        status = storage.title_status(title, root=tmp_path)
+        assert status.valid is False, title
+        assert "ký tự" in status.message
+
+
+def test_title_status_normalizes_newlines(tmp_path: Path) -> None:
+    status = storage.title_status("Báo\ncáo", root=tmp_path)
+    assert status.valid is True
+    assert status.normalized == "Báo cáo"
+
+
+def test_title_status_duplicate_casefold(tmp_path: Path) -> None:
+    record = storage.create_input(
+        "Báo cáo", "Mô tả", "Chi tiết", root=tmp_path
+    )
+    status = storage.title_status("báo cáo", root=tmp_path)
+    assert status.duplicate is True
+    assert status.valid is False
+    assert status.existing_id == record.id
+
+
+def test_title_status_diacritics_differ(tmp_path: Path) -> None:
+    storage.create_input("báo cáo", "Mô tả", "Chi tiết", root=tmp_path)
+    status = storage.title_status("bao cao", root=tmp_path)
+    assert status.duplicate is False
+    assert status.valid is True
+
+
+def test_title_hash_uses_lowercase(tmp_path: Path) -> None:
+    record = storage.create_input(
+        "Báo cáo", "Mô tả", "Chi tiết", root=tmp_path
+    )
+    expected = f"{zlib.crc32('báo cáo'.encode('utf-8')) & 0xFFFFFFFF:08x}"
+    assert record.id == expected

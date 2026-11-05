@@ -612,3 +612,54 @@ def test_regenerate_failure_marks_failed(tmp_path: Path) -> None:
     loaded = storage.get_input(record.id, root=tmp_path)
     assert loaded.status == "failed"
     assert loaded.output_slugs == []
+
+
+def test_check_title_api_shape(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    response = client.get(
+        "/api/inputs/check-title", params={"title": "Báo cáo nha khoa"}
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert set(payload) == {
+        "valid",
+        "duplicate",
+        "normalized",
+        "message",
+        "existing_id",
+    }
+    assert payload["valid"] is True
+    assert payload["duplicate"] is False
+    assert payload["normalized"] == "Báo cáo nha khoa"
+
+
+def test_check_title_api_invalid(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    for title in ("", "a/b:c?d*e", "a" * 201):
+        payload = client.get(
+            "/api/inputs/check-title", params={"title": title}
+        ).json()
+        assert payload["valid"] is False, title
+        assert payload["message"]
+
+
+def test_check_title_api_duplicate(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input(
+        "Báo cáo", "Mô tả", "Chi tiết", root=tmp_path
+    )
+    payload = client.get(
+        "/api/inputs/check-title", params={"title": "báo cáo"}
+    ).json()
+    assert payload["duplicate"] is True
+    assert payload["existing_id"] == record.id
+
+
+def test_index_title_check_ui(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/").text
+    assert 'data-check-url="/api/inputs/check-title"' in html
+    assert "data-title-error" in html
+    assert "data-title-ok" in html
+    assert "field-error" in html
+    assert "field-ok" in html

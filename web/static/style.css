@@ -88,6 +88,30 @@ textarea {
   resize: vertical;
 }
 
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title-row input {
+  flex: 1;
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 500;
+  margin: 4px 0 0;
+}
+
+.field-ok {
+  color: #166534;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 button,
 .button {
   font: inherit;
