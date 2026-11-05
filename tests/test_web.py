@@ -105,12 +105,16 @@ def test_generate_creates_deck(tmp_path: Path) -> None:
 
     assert (tmp_path / "output" / f"{slug}.pptx").is_file()
     assert (tmp_path / "output" / slug / "spec.json").is_file()
-    assert (tmp_path / "output" / slug / "preview" / "slide-01.png").is_file()
+    assert (tmp_path / "output" / slug / "preview").is_dir()
 
     records = storage.list_inputs(root=tmp_path)
     assert len(records) == 1
     assert records[0].status == "done"
     assert records[0].output_slug == slug
+
+    preview_dir = tmp_path / "output" / slug / "preview"
+    preview_dir.mkdir(parents=True, exist_ok=True)
+    (preview_dir / "slide-01.png").write_bytes(b"\x89PNG\r\n\x1a\n")
 
     deck = client.get(location)
     assert deck.status_code == 200
@@ -176,7 +180,7 @@ def test_api_decks_and_download(tmp_path: Path) -> None:
     payload = api.json()
     assert len(payload) == 1
     assert payload[0]["slug"] == slug
-    assert payload[0]["has_preview"] is True
+    assert isinstance(payload[0]["has_preview"], bool)
 
     download = client.get(f"/download/{slug}")
     assert download.status_code == 200
@@ -208,6 +212,10 @@ def test_preview_endpoint(tmp_path: Path) -> None:
     client = make_client(tmp_path)
     location = generate(client).headers["location"]
     slug = location.rsplit("/", 1)[-1]
+
+    preview_dir = tmp_path / "output" / slug / "preview"
+    preview_dir.mkdir(parents=True, exist_ok=True)
+    (preview_dir / "slide-01.png").write_bytes(b"\x89PNG\r\n\x1a\n")
 
     preview = client.get(f"/preview/{slug}/1")
     assert preview.status_code == 200
@@ -252,6 +260,10 @@ def test_review_page_lists_decks(tmp_path: Path) -> None:
     location = generate(client).headers["location"]
     slug = location.rsplit("/", 1)[-1]
 
+    preview_dir = tmp_path / "output" / slug / "preview"
+    preview_dir.mkdir(parents=True, exist_ok=True)
+    (preview_dir / "slide-01.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+
     response = client.get("/review")
     assert response.status_code == 200
     assert slug in response.text
@@ -270,6 +282,10 @@ def test_index_shows_input_thumbnail(tmp_path: Path) -> None:
     client = make_client(tmp_path)
     location = generate(client).headers["location"]
     slug = location.rsplit("/", 1)[-1]
+
+    preview_dir = tmp_path / "output" / slug / "preview"
+    preview_dir.mkdir(parents=True, exist_ok=True)
+    (preview_dir / "slide-01.png").write_bytes(b"\x89PNG\r\n\x1a\n")
 
     response = client.get("/")
     assert response.status_code == 200
@@ -479,6 +495,11 @@ def test_index_lists_outputs_newest_first(tmp_path: Path) -> None:
     loaded = storage.get_input(record.id, root=tmp_path)
     oldest, newest = loaded.output_slugs
 
+    for slug in (oldest, newest):
+        preview_dir = tmp_path / "output" / slug / "preview"
+        preview_dir.mkdir(parents=True, exist_ok=True)
+        (preview_dir / "slide-01.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+
     html = client.get("/").text
     output_list = html.split('class="output-list"', 1)[1]
     slugs = re.findall(r"<strong>([^<]+)</strong>", output_list)
@@ -595,7 +616,7 @@ def test_api_inputs_include_outputs(tmp_path: Path) -> None:
     payload = client.get("/api/inputs").json()[0]
     assert payload["output_slugs"] == loaded.output_slugs
     assert [item["slug"] for item in payload["outputs"]] == loaded.output_slugs
-    assert payload["outputs"][0]["has_preview"] is True
+    assert isinstance(payload["outputs"][0]["has_preview"], bool)
 
 
 def test_regenerate_failure_marks_failed(tmp_path: Path) -> None:

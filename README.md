@@ -6,14 +6,15 @@ DeepInfra (service tier `flex`).
 ## Yêu cầu
 
 - `uv` (đã bao gồm Python 3.12).
-- Tùy chọn: LibreOffice để preview đúng fidelity (nếu không có, dùng fallback
-  Pillow).
+- Tùy chọn: LibreOffice (ưu tiên) hoặc Aspose.Slides để render preview đúng
+  fidelity. Không có backend nào thì web hiện "Chưa có preview".
 
 ## Cài đặt
 
 ```bash
 cd demanus
 make install          # hoặc: uv sync
+make install-preview  # tuỳ chọn: thêm Aspose.Slides cho preview
 ```
 
 ## Cấu hình
@@ -63,8 +64,7 @@ Trên Windows, dùng Git Bash/WSL để chạy `make`, hoặc chạy trực ti�
 - `theme` — dựng theo TOML layout (vd. `neo_tech_minimal`).
 - Bộ theme TOML: `neo_tech_minimal`, `gruvbox`, `soft_light`, `cappuccino`,
   `latte`, `cream_pink`.
-- Font luôn Lexend. Preview web chỉ mô phỏng; mở PowerPoint/LibreOffice để xem
-  đúng.
+- Font luôn Lexend.
 
 ## Windows
 
@@ -92,8 +92,28 @@ Trên Windows, dùng Git Bash/WSL để chạy `make`, hoặc chạy trực ti�
 - `templates/assets/boho/` — asset đã trích (tracked).
 - `templates/themes/` — TOML theme (tracked).
 - `app/storage.py` — input records/text/tags + `output/<slug>.pptx`.
-- `app/preview.py` — `.pptx` → PNG 150 DPI.
+- `app/preview/` — chọn backend preview: `libreoffice.py` (soffice → PDF →
+  PNG 150 DPI, toàn bộ slide) → `aspose.py` (tối đa 10 slide, rộng 640px) →
+  không preview. Không dùng Pillow.
 - `app/web.py` — FastAPI + Jinja2.
 - `web/` — template HTML, CSS, JS.
 - `templates/` — file `.pptx` mẫu gốc (giữ nguyên).
 - `install.bat`, `update.bat`, `Nicotal-Demanus.bat` — bộ cài Windows.
+
+## Preview
+
+- Backend được chọn tự động: **LibreOffice** (`soffice`) → **Aspose.Slides** →
+  **không preview**.
+- LibreOffice render toàn bộ slide ở 150 DPI.
+- Aspose render tối đa 10 slide đầu, ảnh rộng 640px; cài bằng
+  `make install-preview` hoặc `uv sync --extra preview-aspose`.
+- Không có backend thì `/preview/<slug>/<index>` trả 404 và giao diện hiện
+  "Chưa có preview".
+- Aspose.Slides là thư viện độc quyền; xem `NOTICE` cho ngoại lệ AGPLv3 và
+  `THIRD_PARTY_LICENSES.md` cho danh sách giấy phép bên thứ ba.
+
+## Giấy phép
+
+- Mã nguồn dự án: **AGPLv3** (`LICENSE`).
+- Ngoại lệ đặc biệt cho module preview Aspose.Slides: xem `NOTICE`.
+- Chính sách giấy phép: `LICENSES.md`.

@@ -43,6 +43,15 @@ if errorlevel 1 (
   exit /b 1
 )
 
+choice /C NY /M "Cai them preview Aspose (ton dung luong)"
+if errorlevel 2 (
+  echo Cai preview Aspose...
+  uv sync --extra preview-aspose
+  if errorlevel 1 (
+    echo [CANH BAO] Cai preview Aspose that bai. Bo qua.
+  )
+)
+
 echo Cai dat hoan tat.
 choice /C YN /M "Chay phan mem ngay"
 if errorlevel 2 exit /b 0

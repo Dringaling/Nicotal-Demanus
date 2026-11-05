@@ -34,6 +34,19 @@ wheels = [
 ]
 
 [[package]]
+name = "aspose-slides"
+version = "26.10.0"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d6/3e/f018e35ede3d9b812cb2bd55d696dfba13526e7c4817d54fd3ad391670c6/aspose_slides-26.10.0-py3-none-macosx_10_14_x86_64.whl", hash = "sha256:3a9edac004971792712892c65fde1341b92372784301524267815a7e1f950988", size = 48088780, upload-time = "2026-10-09T06:44:22.969Z" },
+    { url = "https://files.pythonhosted.org/packages/82/7e/b240d696f2bd9083067fbb23f2b81fca044a851c9fb9bb486778b6b14868/aspose_slides-26.10.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:e217b8e2fa53f2b031763c4d96bbb85f3808a851e90ad971978ec31ebdd538cb", size = 45875132, upload-time = "2026-10-09T06:44:30.505Z" },
+    { url = "https://files.pythonhosted.org/packages/92/64/3b0531fd56215260ca6bba019a58582569b140c21ad4425ee0452ad102b3/aspose_slides-26.10.0-py3-none-manylinux1_x86_64.whl", hash = "sha256:afec4eb10e3c84f93bc5e24340d35ed4aa5b183a6300c69ade0742b6013e0f02", size = 49052387, upload-time = "2026-10-09T06:44:39.408Z" },
+    { url = "https://files.pythonhosted.org/packages/53/a5/d66c729a4080e9ea724e4bbc02d96e32001376d6fd69b65fd236f7fbbcd5/aspose_slides-26.10.0-py3-none-manylinux2014_aarch64.whl", hash = "sha256:45eef2ac7cadaf85790106c275e980eb8ec20a66233d82e596bf40736d1a18e1", size = 46919292, upload-time = "2026-10-09T06:44:47.162Z" },
+    { url = "https://files.pythonhosted.org/packages/49/0f/9720cf10ab1c0fdb8ac7528780702ffb1946bd16dd06af790cd5fef7b2a0/aspose_slides-26.10.0-py3-none-win32.whl", hash = "sha256:90734c020a397e0f2ab6b259097a26cc60411b3266719c8c16e28dfd3945bcdd", size = 46204582, upload-time = "2026-10-09T06:44:54.378Z" },
+    { url = "https://files.pythonhosted.org/packages/74/35/4cb79a20e32d834b0fc89870c0c3dcfa0da51009acbbb731d488f90e7377/aspose_slides-26.10.0-py3-none-win_amd64.whl", hash = "sha256:79939c7b5180b12e67ed338f4b1bbd95ad65ed8d31d6bd1af4bee49a665eed49", size = 48998032, upload-time = "2026-10-09T06:45:02.606Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.10.23"
 source = { registry = "https://pypi.org/simple" }
@@ -68,13 +81,17 @@ dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
     { name = "jinja2" },
-    { name = "pillow" },
     { name = "pydantic" },
     { name = "pymupdf" },
     { name = "python-multipart" },
     { name = "python-pptx" },
     { name = "tomli-w" },
     { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.optional-dependencies]
+preview-aspose = [
+    { name = "aspose-slides" },
 ]
 
 [package.dev-dependencies]
@@ -85,10 +102,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aspose-slides", marker = "extra == 'preview-aspose'", specifier = ">=24.1" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "jinja2", specifier = ">=3.1" },
-    { name = "pillow", specifier = ">=10.4" },
     { name = "pydantic", specifier = ">=2.9" },
     { name = "pymupdf", specifier = ">=1.24" },
     { name = "python-multipart", specifier = ">=0.0.9" },
@@ -96,6 +113,7 @@ requires-dist = [
     { name = "tomli-w", specifier = ">=1.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
 ]
+provides-extras = ["preview-aspose"]
 
 [package.metadata.requires-dev]
 dev = [

@@ -7,7 +7,7 @@ PORT ?= 8765
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install uninstall lock sync server dev test smoke check clean clean-output
+.PHONY: help install uninstall lock sync server dev test smoke check clean clean-output install-preview
 
 help: ## Hiển thị trợ giúp
 	@echo "Demanus commands:"
@@ -15,6 +15,9 @@ help: ## Hiển thị trợ giúp
 
 install: ## Tạo .venv và cài dependencies từ uv.lock
 	$(UV) sync
+
+install-preview: ## Cài thêm backend preview Aspose (tuỳ chọn)
+	$(UV) sync --extra preview-aspose
 
 uninstall: ## Xoá .venv và cache
 	rm -rf .venv .pytest_cache

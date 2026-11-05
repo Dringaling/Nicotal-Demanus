@@ -53,11 +53,11 @@
         <li class="input-card">
           <button class="input-summary" type="button" data-expand
                   aria-expanded="false">
-            {% if item.newest %}
+            {% if item.newest and item.newest.has_preview %}
             <img class="thumb-sm" src="/preview/{{ item.newest.slug }}/1"
                  alt="Slide 1 của {{ record.title }}">
             {% else %}
-            <span class="thumb-sm thumb placeholder">—</span>
+            <span class="thumb-sm thumb placeholder">Chưa có preview</span>
             {% endif %}
             <span class="input-summary-main">
               <span class="input-title">
@@ -81,8 +81,12 @@
             <ul class="output-list">
               {% for output in item.outputs %}
               <li class="output-item">
+                {% if output.has_preview %}
                 <img class="thumb-sm" src="/preview/{{ output.slug }}/1"
                      alt="Slide 1 của {{ output.slug }}">
+                {% else %}
+                <span class="thumb-sm thumb placeholder">—</span>
+                {% endif %}
                 <div class="output-main">
                   <strong>{{ output.slug }}</strong>
                   <p class="meta">{{ output.size_bytes }} bytes · {{ output.modified_at }}</p>

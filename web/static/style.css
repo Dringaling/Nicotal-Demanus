@@ -255,6 +255,13 @@ button.danger {
   color: var(--muted);
 }
 
+.thumb-sm.placeholder {
+  width: 96px;
+  height: 54px;
+  font-size: 10px;
+  text-align: center;
+}
+
 .review-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
