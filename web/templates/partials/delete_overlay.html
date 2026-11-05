@@ -1,0 +1,16 @@
+<div class="overlay" data-overlay hidden>
+  <div class="overlay-card" role="dialog" aria-modal="true"
+       aria-labelledby="delete-dialog-title" data-dialog>
+    <h2 id="delete-dialog-title">Xoá input?</h2>
+    <p><strong data-delete-title></strong></p>
+    <p class="meta" data-delete-count></p>
+    <p class="warning">Không thể hoàn tác. Toàn bộ output của input sẽ bị xoá.</p>
+    <form method="post" action="" data-delete-form>
+      <input type="hidden" name="confirm" value="yes">
+      <div class="overlay-actions">
+        <button class="button secondary" type="button" data-close>Huỷ</button>
+        <button class="danger" type="submit">Xoá vĩnh viễn</button>
+      </div>
+    </form>
+  </div>
+</div>

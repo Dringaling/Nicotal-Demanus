@@ -1088,9 +1088,11 @@ def test_header_css_gradient_and_3d() -> None:
     css = (root / "web" / "static" / "style.css").read_text(encoding="utf-8")
 
     assert "background-clip: text" in css
-    assert "linear-gradient(120deg, #f7d488" in css
-    assert "border-bottom: 4px solid" in css
-    assert "box-shadow: 0 4px 0" in css
+    assert "--brand-gradient: linear-gradient(" in css
+    assert "--button-gradient: linear-gradient(" in css
+    assert "background: var(--brand-gradient)" in css
+    assert "border-bottom: 4px solid var(--rose-border)" in css
+    assert "box-shadow: var(--nav-shadow)" in css
 
 
 def test_input_column_wider_than_form() -> None:
@@ -1182,3 +1184,50 @@ def test_input_details_hidden_rule() -> None:
     css = (root / "web" / "static" / "style.css").read_text(encoding="utf-8")
 
     assert ".input-details[hidden]" in css
+
+
+def test_template_partials_exist() -> None:
+    root = Path(__file__).resolve().parents[1]
+    templates = root / "web" / "templates"
+
+    assert (templates / "macros.html").is_file()
+    for name in (
+        "header",
+        "tags_sidebar",
+        "search_bar",
+        "input_list",
+        "input_card",
+        "tag_editor",
+        "create_form",
+        "reuse_form",
+        "delete_overlay",
+    ):
+        assert (templates / "partials" / f"{name}.html").is_file()
+
+
+def test_index_uses_partials() -> None:
+    root = Path(__file__).resolve().parents[1]
+    text = (root / "web" / "templates" / "index.html").read_text(
+        encoding="utf-8"
+    )
+
+    assert '{% include "partials/tags_sidebar.html" %}' in text
+    assert '{% include "partials/input_list.html" %}' in text
+    assert '{% include "partials/create_form.html" %}' in text
+    assert '{% include "partials/reuse_form.html" %}' in text
+
+
+def test_css_design_tokens() -> None:
+    root = Path(__file__).resolve().parents[1]
+    css = (root / "web" / "static" / "style.css").read_text(encoding="utf-8")
+
+    for token in (
+        "--brand-gradient",
+        "--button-gradient",
+        "--brand-size",
+        "--nav-padding",
+        "--nav-shadow",
+        "--card-radius",
+        "--gap",
+    ):
+        assert f"{token}:" in css

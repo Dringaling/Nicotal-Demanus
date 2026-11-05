@@ -1,0 +1,22 @@
+{% macro template_select(groups, selected) -%}
+<select name="template">
+  {% if groups.pptx %}
+  <optgroup label="PPTX Templates">
+    {% for template in groups.pptx %}
+    <option value="{{ template.id }}"
+            {% if selected == template.id %}selected{% endif %}
+            title="{{ template.description }}">{{ template.display_name() }}</option>
+    {% endfor %}
+  </optgroup>
+  {% endif %}
+  {% if groups.themes %}
+  <optgroup label="Themes">
+    {% for template in groups.themes %}
+    <option value="{{ template.id }}"
+            {% if selected == template.id %}selected{% endif %}
+            title="{{ template.description }}">{{ template.display_name() }}</option>
+    {% endfor %}
+  </optgroup>
+  {% endif %}
+</select>
+{%- endmacro %}

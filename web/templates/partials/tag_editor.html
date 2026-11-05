@@ -1,0 +1,9 @@
+<form class="tag-editor" method="post"
+      action="/inputs/{{ record.id }}/tags" data-tag-editor>
+  <input type="hidden" name="tags"
+         value="{{ record.tags | join(',') }}">
+  <div class="tag-chips" data-tag-chips></div>
+  <input class="tag-entry" list="tag-suggestions"
+         placeholder="Thêm tag rồi Enter">
+  <button class="button secondary" type="submit">Lưu tag</button>
+</form>

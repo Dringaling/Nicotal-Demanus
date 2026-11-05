@@ -1,0 +1,24 @@
+<aside class="card sidebar">
+  <div class="deck-head">
+    <h2>Tags</h2>
+    {% if active_tag %}<a class="meta" href="/{% if query %}?q={{ query | urlencode }}{% endif %}">Bỏ lọc</a>{% endif %}
+  </div>
+  {% if tags %}
+  <ul class="tag-list">
+    {% for tag in tags %}
+    <li>
+      <a class="tag-link {% if active_tag == tag %}active{% endif %}"
+         href="/?tag={{ tag | urlencode }}{% if query %}&q={{ query | urlencode }}{% endif %}">
+        {{ tag }} <span class="count">{{ counts.get(tag, 0) }}</span>
+      </a>
+      <form method="post" action="/tags/{{ tag | urlencode }}/delete"
+            onsubmit="return confirm('Xoá tag này?')">
+        <button class="icon danger" type="submit" title="Xoá tag">×</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">Chưa có tag.</p>
+  {% endif %}
+</aside>

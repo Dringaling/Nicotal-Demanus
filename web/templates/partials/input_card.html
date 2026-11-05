@@ -1,0 +1,71 @@
+{% set record = item.record %}
+<li class="input-card">
+  <div class="input-summary">
+    <div class="input-summary-main">
+      <span class="input-title">
+        <strong class="input-name">{{ record.title }}</strong>
+        <span class="status status-{{ record.status }}">{{ record.status }}</span>
+        <span class="meta">{{ item.outputs | length }} output</span>
+      </span>
+      <span class="meta">{{ record.created_at }} · {{ record.template }}</span>
+    </div>
+    <button class="expand-toggle" type="button" data-expand
+            aria-expanded="false">
+      <span data-expand-label>Xem output</span>
+      <span class="chevron" aria-hidden="true">▾</span>
+    </button>
+  </div>
+
+  <div class="input-details" hidden>
+    <div class="chips">
+      {% for tag in record.tags %}
+      <a class="tag-chip" href="/?tag={{ tag | urlencode }}">{{ tag }}</a>
+      {% endfor %}
+    </div>
+    {% if item.outputs %}
+    <ul class="output-list">
+      {% for output in item.outputs %}
+      <li class="output-item">
+        {% if output.has_preview %}
+        <img class="thumb-sm" src="/preview/{{ output.slug }}/1"
+             alt="Slide 1 của {{ output.slug }}">
+        {% else %}
+        <span class="thumb-sm thumb placeholder">—</span>
+        {% endif %}
+        <div class="output-main">
+          <strong>{{ output.slug }}</strong>
+          <p class="meta">{{ output.size_bytes }} bytes · {{ output.modified_at }}</p>
+        </div>
+        <a class="button" href="/deck/{{ output.slug }}">Xem</a>
+        <a class="button secondary" href="/download/{{ output.slug }}">Tải</a>
+        <form method="post"
+              action="/inputs/{{ record.id }}/outputs/{{ output.slug }}/delete"
+              onsubmit="return confirm('Xoá output này?')">
+          <button class="danger" type="submit">Xoá</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">Chưa có output nào.</p>
+    {% endif %}
+
+    {% include "partials/tag_editor.html" %}
+
+    <div class="card-actions">
+      <a class="button secondary" href="/?use={{ record.id }}">Dùng input này</a>
+      <button class="danger" type="button"
+              data-delete-trigger
+              data-input-id="{{ record.id }}"
+              data-input-title="{{ record.title }}"
+              data-output-count="{{ item.outputs | length }}"
+              data-action="/inputs/{{ record.id }}/delete">Xoá input</button>
+    </div>
+    <noscript>
+      <form method="post" action="/inputs/{{ record.id }}/delete">
+        <input type="hidden" name="confirm" value="yes">
+        <button class="danger" type="submit">Xoá input (không có JS)</button>
+      </form>
+    </noscript>
+  </div>
+</li>

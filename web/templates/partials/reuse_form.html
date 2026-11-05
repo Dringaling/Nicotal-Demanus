@@ -1,0 +1,40 @@
+{% from "macros.html" import template_select %}
+<div class="deck-head">
+  <h1>Dùng lại input</h1>
+  <a class="button secondary" href="/">Tạo mới</a>
+</div>
+<p class="reuse-banner">Đang dùng input:
+  <strong>{{ reuse.title }}</strong>
+  <span class="meta">({{ reuse.id }})</span></p>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<form method="post" action="/inputs/{{ reuse.id }}/generate" class="form"
+      data-reuse-form>
+  <label>
+    Tiêu đề
+    <input class="readonly-field" value="{{ reuse.title }}" readonly>
+  </label>
+  <label>
+    Mô tả
+    <textarea class="readonly-field" rows="3" readonly>{{ reuse.description }}</textarea>
+  </label>
+  <label>
+    Chi tiết
+    <textarea class="readonly-field" rows="10" readonly>{{ reuse.details }}</textarea>
+  </label>
+  <label>
+    Tags
+    <div class="tag-input" data-reuse-tags data-input-id="{{ reuse.id }}">
+      <div class="tag-chips" data-tag-chips></div>
+      <input class="tag-entry" list="tag-suggestions"
+             placeholder="Nhập tag rồi Enter">
+    </div>
+    <input type="hidden" name="tags" data-tags-hidden
+           value="{{ reuse.tags | join(',') }}">
+    <p class="field-error" data-tags-error hidden role="alert"></p>
+  </label>
+  <label>
+    Template
+    {{ template_select(template_groups, reuse.template) }}
+  </label>
+  <button type="submit">Sinh file PPTX</button>
+</form>
