@@ -1,0 +1,15 @@
+[theme]
+id = "flat"
+name = "Flat Demanus"
+description = "Thiết kế flat mặc định, header nổi khối, font Lexend"
+style = "flat"
+tags = ["flat", "light", "medical"]
+renderer = "flat"
+font = "Lexend"
+
+[palette]
+bg = [255, 255, 255]
+card = [245, 247, 250]
+accent = [47, 111, 237]
+text = [31, 41, 55]
+muted = [107, 114, 128]

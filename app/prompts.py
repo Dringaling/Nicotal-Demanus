@@ -4,7 +4,7 @@ import json
 
 from .schema import DeckSpec
 
-PROMPT_VERSION = "demanus-deck-v3"
+PROMPT_VERSION = "demanus-deck-v4"
 
 
 def deck_json_schema() -> dict:

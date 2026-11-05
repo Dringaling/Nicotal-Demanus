@@ -1,0 +1,25 @@
+[theme]
+id = "operations-integers"
+name = "Operations with Integers"
+description = "16:9 10in, accent đỏ cam, layout bài học"
+style = "lesson"
+tags = ["light", "education", "red"]
+renderer = "pptx"
+font = "Lexend"
+pptx = "templates/Operations with Integers Lesson for High School.pptx"
+
+[palette]
+bg = [255, 255, 255]
+card = [255, 224, 224]
+accent = [239, 57, 31]
+text = [30, 30, 30]
+muted = [120, 120, 120]
+
+[layout_map]
+title = "TITLE"
+section = "SECTION_HEADER"
+bullets = "TITLE_AND_BODY"
+two_column = "TITLE_AND_TWO_COLUMNS"
+table = "TITLE_ONLY"
+quote = "MAIN_POINT"
+closing = "TITLE"

@@ -1,0 +1,26 @@
+[theme]
+id = "boho-copy"
+name = "Beige & Orange (copy slide)"
+description = "Copy slide mẫu rồi thay text; không gửi template vào prompt"
+style = "boho"
+tags = ["light", "warm", "copy"]
+renderer = "copy"
+font = "Lexend"
+pptx = "templates/Beige and Orange Minimalist Elegant Aesthetic Theme Presentation.pptx"
+
+[palette]
+bg = [249, 246, 240]
+card = [255, 252, 247]
+accent = [217, 119, 87]
+accent_secondary = [122, 140, 112]
+text = [45, 42, 40]
+muted = [120, 115, 110]
+
+[layout_map]
+title = "TITLE"
+section = "SECTION_HEADER"
+bullets = "OBJECT"
+two_column = "TWO_OBJECTS"
+table = "TITLE_ONLY"
+quote = "OBJECT"
+closing = "TITLE"

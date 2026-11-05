@@ -1,0 +1,25 @@
+[theme]
+id = "blue-medical"
+name = "Blue Medical Technology"
+description = "Nền trắng xanh, phong cách y khoa công nghệ"
+style = "medical"
+tags = ["light", "medical", "blue"]
+renderer = "pptx"
+font = "Lexend"
+pptx = "templates/Blue and White Minimalistic Medical Technology Breakthroughts Presentation.pptx"
+
+[palette]
+bg = [255, 255, 255]
+card = [240, 246, 255]
+accent = [5, 141, 199]
+text = [30, 41, 59]
+muted = [100, 116, 139]
+
+[layout_map]
+title = "TITLE"
+section = "SECTION_HEADER"
+bullets = "OBJECT"
+two_column = "TWO_OBJECTS"
+table = "TITLE_ONLY"
+quote = "OBJECT"
+closing = "TITLE"

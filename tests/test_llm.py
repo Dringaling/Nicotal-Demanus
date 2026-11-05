@@ -85,7 +85,7 @@ async def test_payload_uses_flex_and_cache_key(tmp_path: Path) -> None:
 
     body = seen[0]
     assert body["service_tier"] == "flex"
-    assert body["prompt_cache_key"] == "demanus-deck-v3"
+    assert body["prompt_cache_key"] == "demanus-deck-v4"
     assert body["model"] == "deepseek-ai/DeepSeek-V4.1-Flash-1017"
     assert body["response_format"]["type"] == "json_schema"
 
@@ -392,3 +392,22 @@ async def test_flat_template_has_no_template_context(tmp_path: Path) -> None:
 
     system = seen[0]["messages"][0]["content"]
     assert "TEMPLATE CONTEXT" not in system
+
+
+async def test_description_in_user_prompt(tmp_path: Path) -> None:
+    seen: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(json.loads(request.content))
+        return httpx.Response(200, json=chat_response(valid_content()))
+
+    client = make_client(make_settings(tmp_path), handler, tmp_path)
+    await client.generate_spec(
+        "Báo cáo",
+        "Chi tiết nội dung từng slide",
+        description="Mô tả ngắn về mục tiêu và số slide",
+    )
+
+    user = seen[0]["messages"][-1]["content"]
+    assert "DECK DESCRIPTION: Mô tả ngắn về mục tiêu và số slide" in user
+    assert "Chi tiết nội dung từng slide" in user

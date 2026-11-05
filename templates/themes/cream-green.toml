@@ -1,0 +1,25 @@
+[theme]
+id = "cream-green"
+name = "Cream Green Geometric"
+description = "Nền kem, khối hình học xanh rêu/đen"
+style = "geometric"
+tags = ["light", "green", "minimal"]
+renderer = "pptx"
+font = "Lexend"
+pptx = "templates/Cream, Green, and Black Geometric Blocks Clean Minimal Presentation .pptx"
+
+[palette]
+bg = [245, 241, 232]
+card = [255, 252, 245]
+accent = [76, 107, 79]
+text = [30, 30, 30]
+muted = [120, 115, 110]
+
+[layout_map]
+title = "TITLE"
+section = "SECTION_HEADER"
+bullets = "OBJECT"
+two_column = "TWO_OBJECTS"
+table = "TITLE_ONLY"
+quote = "OBJECT"
+closing = "TITLE"

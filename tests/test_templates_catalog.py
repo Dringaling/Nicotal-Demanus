@@ -18,11 +18,30 @@ def test_load_templates() -> None:
     assert "dividing-fractions" in ids
     assert "boho-minimalist" in ids
     assert "boho-copy" in ids
-    assert "neo-tech-minimal" in ids
+    assert "neo_tech_minimal" in ids
+    assert "gruvbox" in ids
+    assert "soft_light" in ids
+    assert "cappuccino" in ids
+    assert "latte" in ids
+    assert "cream_pink" in ids
+
+
+def test_generated_themes_use_theme_renderer() -> None:
+    for theme_id in (
+        "gruvbox",
+        "soft_light",
+        "cappuccino",
+        "latte",
+        "cream_pink",
+    ):
+        meta = get_template(theme_id)
+        assert meta is not None
+        assert meta.renderer == "theme"
+        assert meta.theme_file
 
 
 def test_theme_metadata() -> None:
-    meta = get_template("neo-tech-minimal")
+    meta = get_template("neo_tech_minimal")
     assert meta is not None
     assert meta.renderer == "theme"
     assert meta.theme_file

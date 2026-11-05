@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from typing import Callable
 
-from fastapi import FastAPI, Form, HTTPException, Request
+from fastapi import FastAPI, Form, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -28,7 +28,7 @@ from .theme_render import render_deck_theme
 logger = logging.getLogger(__name__)
 
 WEB_DIR = REPO_ROOT / "web"
-MAX_NAME = 120
+MAX_TITLE = 200
 PPTX_MEDIA_TYPE = (
     "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 )
@@ -44,21 +44,56 @@ def create_app(
     base = Path(root) if root is not None else REPO_ROOT
     output_dir = base / "output"
     server_url = lan_url(settings)
+
+    try:
+        storage.migrate_legacy_inputs(root=base)
+    except Exception:
+        logger.exception("Migrate input cũ thất bại")
+
     template_options = list_templates()
 
     app = FastAPI(title="Demanus", version="0.1.0")
     templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
     app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="static")
 
-    def render_index(request: Request, error: str | None = None, status_code: int = 200):
+    def render_index(
+        request: Request,
+        error: str | None = None,
+        status_code: int = 200,
+        form: dict | None = None,
+        active_tag: str | None = None,
+    ):
+        records = storage.list_inputs(tag=active_tag, root=base)
+        inputs = []
+        for record in records:
+            output_path = (
+                output_dir / f"{record.output_slug}.pptx"
+                if record.output_slug
+                else None
+            )
+            inputs.append(
+                {
+                    "record": record,
+                    "description": storage.read_text(
+                        record.description_hash, base
+                    )[:160],
+                    "has_output": bool(
+                        output_path and output_path.is_file()
+                    ),
+                }
+            )
         return templates.TemplateResponse(
             request=request,
             name="index.html",
             context={
-                "decks": storage.list_outputs(root=base),
-                "error": error,
-                "server_url": server_url,
+                "inputs": inputs,
+                "tags": storage.list_tags(root=base),
+                "counts": storage.tag_counts(root=base),
+                "active_tag": active_tag,
                 "templates": template_options,
+                "server_url": server_url,
+                "error": error,
+                "form": form or {},
             },
             status_code=status_code,
         )
@@ -73,8 +108,8 @@ def create_app(
         return path
 
     @app.get("/", response_class=HTMLResponse)
-    async def index(request: Request):
-        return render_index(request)
+    async def index(request: Request, tag: str | None = Query(None)):
+        return render_index(request, active_tag=tag)
 
     @app.get("/review", response_class=HTMLResponse)
     async def review(request: Request):
@@ -94,38 +129,65 @@ def create_app(
     @app.post("/generate")
     async def generate(
         request: Request,
-        name: str = Form(""),
-        desc: str = Form(""),
+        title: str = Form(""),
+        description: str = Form(""),
+        details: str = Form(""),
+        tags: str = Form(""),
         template: str = Form("flat"),
     ):
-        name = name.strip()
-        desc = desc.strip()
+        title = title.strip()
+        description = description.strip()
+        details = details.strip()
+        tag_list = [tag.strip() for tag in tags.split(",") if tag.strip()]
+        form = {
+            "title": title,
+            "description": description,
+            "details": details,
+            "tags": ",".join(tag_list),
+            "template": template,
+        }
 
         meta = get_template(template)
         if meta is None:
-            return render_index(request, "Template không hợp lệ.", 400)
+            return render_index(request, "Template không hợp lệ.", 400, form)
+        if not title:
+            return render_index(request, "Tiêu đề không được để trống.", 400, form)
+        if not description:
+            return render_index(request, "Mô tả không được để trống.", 400, form)
+        if not details:
+            return render_index(request, "Chi tiết không được để trống.", 400, form)
 
-        if not 1 <= len(name) <= MAX_NAME:
-            return render_index(
-                request, "Tên báo cáo phải từ 1 đến 120 ký tự.", 400
+        try:
+            record = storage.create_input(
+                title,
+                description,
+                details,
+                tags=tag_list,
+                template=template,
+                root=base,
             )
-        if not desc:
+        except storage.DuplicateTitleError as exc:
             return render_index(
-                request, "Mô tả không được để trống.", 400
+                request,
+                f"Tiêu đề đã tồn tại (id {exc.existing_id}).",
+                400,
+                form,
             )
+        except storage.StorageError as exc:
+            return render_index(request, str(exc), 400, form)
 
-        record = storage.create_input(
-            name, desc, template=template, root=base
-        )
         storage.update_status(record.id, "generating", root=base)
 
         try:
             client = factory(settings)
             prompt_template = "flat" if meta.renderer == "copy" else template
             spec, _usage = await client.generate_spec(
-                name, desc, template=prompt_template
+                title,
+                details,
+                template=prompt_template,
+                description=description,
             )
-            out_path = storage.allocate_output(name, record.id, root=base)
+            out_path = storage.allocate_output(title, record.id, root=base)
 
             if meta.renderer == "flat":
                 render_deck(spec, out_path)
@@ -153,6 +215,7 @@ def create_app(
                 apply_template_palette(spec, meta),
                 sidecar / "preview",
             )
+            storage.update_output(record.id, slug, root=base)
             storage.update_status(record.id, "done", root=base)
         except Exception as exc:
             storage.update_status(record.id, "failed", root=base)
@@ -160,9 +223,46 @@ def create_app(
             message = "Không thể sinh file. Vui lòng thử lại."
             if isinstance(exc, LLMError):
                 message = f"Lỗi gọi model: {exc}"
-            return render_index(request, message, 500)
+            return render_index(request, message, 500, form)
 
         return RedirectResponse(f"/deck/{slug}", status_code=303)
+
+    @app.post("/inputs/{input_id}/delete")
+    async def delete_input(input_id: str):
+        try:
+            storage.delete_input(input_id, root=base)
+        except (storage.StorageError, FileNotFoundError) as exc:
+            raise HTTPException(
+                status_code=404, detail="Không tìm thấy input"
+            ) from exc
+        return RedirectResponse("/", status_code=303)
+
+    @app.post("/tags/{tag}/delete")
+    async def delete_tag(tag: str):
+        storage.delete_tag(tag, root=base)
+        return RedirectResponse("/", status_code=303)
+
+    @app.get("/api/inputs")
+    async def api_inputs():
+        return [
+            {
+                "id": record.id,
+                "title": record.title,
+                "tags": record.tags,
+                "status": record.status,
+                "created_at": record.created_at,
+                "template": record.template,
+                "output_slug": record.output_slug,
+            }
+            for record in storage.list_inputs(root=base)
+        ]
+
+    @app.get("/api/tags")
+    async def api_tags():
+        return {
+            "tags": storage.list_tags(root=base),
+            "counts": storage.tag_counts(root=base),
+        }
 
     @app.get("/deck/{slug}", response_class=HTMLResponse)
     async def deck(request: Request, slug: str):
@@ -213,7 +313,7 @@ def create_app(
             raise HTTPException(
                 status_code=404, detail="Không tìm thấy deck"
             ) from exc
-        return RedirectResponse("/", status_code=303)
+        return RedirectResponse("/review", status_code=303)
 
     @app.get("/preview/{slug}/{index}")
     async def preview(slug: str, index: int):

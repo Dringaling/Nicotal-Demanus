@@ -54,6 +54,7 @@ def _cache_key(
     prompt_version: str,
     model: str,
     name: str,
+    description: str,
     desc: str,
     template: str,
     chunk_chars: int,
@@ -64,6 +65,7 @@ def _cache_key(
             prompt_version,
             model,
             name,
+            description,
             desc,
             template,
             str(chunk_chars),
@@ -264,6 +266,7 @@ class LLMClient:
         index: int,
         total: int,
         template_profile: str | None = None,
+        description: str = "",
     ) -> list[dict[str, Any]]:
         return [
             {
@@ -275,6 +278,7 @@ class LLMClient:
                 "role": "user",
                 "content": (
                     f"DECK NAME: {name}\n"
+                    f"DECK DESCRIPTION: {description}\n"
                     f"TEMPLATE: {template}\n"
                     f"CHUNK {index} OF {total}\n"
                     f"--- CHUNK START ({index}/{total}) ---\n"
@@ -401,6 +405,7 @@ class LLMClient:
         name: str,
         desc: str,
         template: str = "flat",
+        description: str = "",
     ) -> tuple[DeckSpec, UsageInfo]:
         chunk_chars = self.provider.generation.chunk_chars
         meta = get_template(template) if template != "flat" else None
@@ -421,6 +426,7 @@ class LLMClient:
             self.provider.cache.prompt_version,
             self.provider.model,
             name,
+            description,
             desc,
             template,
             chunk_chars,
@@ -437,7 +443,7 @@ class LLMClient:
 
         for index, chunk in enumerate(chunks, start=1):
             messages = self._messages(
-                name, chunk, template, index, total, context
+                name, chunk, template, index, total, context, description
             )
             try:
                 spec, usage = await self._request_spec(messages)

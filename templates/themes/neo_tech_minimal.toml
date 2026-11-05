@@ -2,6 +2,17 @@
 id = "neo_tech_minimal"
 name = "Neo Tech Minimalist"
 description = "Layout dạng Bento/Card khối nổi hiện đại, tỷ lệ 16:9, tối ưu tiếng Việt không dấu/có dấu."
+style = "bento-dark"
+tags = ["dark", "tech", "bento"]
+renderer = "theme"
+font = "Lexend"
+
+[palette]
+bg = [15, 23, 42]
+card = [30, 41, 59]
+accent = [56, 189, 248]
+text = [248, 250, 252]
+muted = [148, 163, 184]
 
 [canvas]
 width_inch = 13.333

@@ -1,0 +1,267 @@
+[theme]
+id = "gruvbox"
+name = "Gruvbox"
+description = "Layout dạng Bento/Card khối nổi phong cách retro ấm áp, tỷ lệ 16:9, tối ưu tiếng Việt không dấu/có dấu."
+style = "gruvbox-retro"
+tags = [
+    "dark",
+    "retro",
+    "gruvbox",
+    "warm",
+]
+renderer = "theme"
+font = "Lexend"
+
+[palette]
+bg = [
+    40,
+    40,
+    40,
+]
+card = [
+    60,
+    56,
+    54,
+]
+accent = [
+    254,
+    128,
+    25,
+]
+text = [
+    251,
+    241,
+    199,
+]
+muted = [
+    168,
+    153,
+    132,
+]
+
+[canvas]
+width_inch = 13.333
+height_inch = 7.5
+aspect_ratio = "16:9"
+
+[colors.background]
+hex = "#282828"
+rgb = [
+    40,
+    40,
+    40,
+]
+
+[colors.card]
+bg_hex = "#3C3836"
+bg_rgb = [
+    60,
+    56,
+    54,
+]
+border_hex = "#504945"
+border_rgb = [
+    80,
+    73,
+    69,
+]
+border_width_pt = 1.0
+
+[colors.accent]
+primary_hex = "#FE8019"
+primary_rgb = [
+    254,
+    128,
+    25,
+]
+secondary_hex = "#FB4934"
+secondary_rgb = [
+    251,
+    73,
+    52,
+]
+success_hex = "#B8BB26"
+success_rgb = [
+    184,
+    187,
+    38,
+]
+
+[colors.text]
+primary_hex = "#FBF1C7"
+primary_rgb = [
+    251,
+    241,
+    199,
+]
+secondary_hex = "#A89984"
+secondary_rgb = [
+    168,
+    153,
+    132,
+]
+accent_hex = "#FE8019"
+accent_rgb = [
+    254,
+    128,
+    25,
+]
+
+[typography]
+font_family = "Lexend"
+font_family_fallback = "Arial"
+
+[typography.title_hero]
+size_pt = 44
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.title_section]
+size_pt = 26
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.card_title]
+size_pt = 18
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.card_body]
+size_pt = 13
+bold = false
+line_spacing = 1.25
+color = "colors.text.secondary_rgb"
+
+[typography.tag]
+size_pt = 10
+bold = true
+color = "colors.accent.primary_rgb"
+
+[typography.big_metric]
+size_pt = 48
+bold = true
+color = "colors.accent.primary_rgb"
+
+[layouts.hero_title]
+id = "hero_cover"
+description = "Trang bìa mở đầu với Card căn giữa và Tag phân loại"
+
+[layouts.hero_title.card]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 2.0
+top_inch = 1.75
+width_inch = 9.333
+height_inch = 4.0
+fill = "colors.card.bg_rgb"
+border = "colors.card.border_rgb"
+corner_radius = 0.05
+
+[layouts.hero_title.elements.tag]
+type = "text"
+left_inch = 2.6
+top_inch = 2.3
+width_inch = 8.133
+height_inch = 0.4
+style = "typography.tag"
+default = "KHÔNG GIAN DỰ ÁN / BÁO CÁO"
+
+[layouts.hero_title.elements.title]
+type = "text"
+left_inch = 2.6
+top_inch = 2.8
+width_inch = 8.133
+height_inch = 1.6
+style = "typography.title_hero"
+default = "Tiêu đề bản thuyết trình"
+
+[layouts.hero_title.elements.subtitle]
+type = "text"
+left_inch = 2.6
+top_inch = 4.5
+width_inch = 8.133
+height_inch = 0.8
+style = "typography.card_body"
+default = "Mô tả ngắn gọn về mục tiêu, giải pháp hoặc lộ trình triển khai"
+
+[layouts.three_cards]
+id = "three_columns_cards"
+description = "Slide trình bày 3 nội dung, 3 tính năng hoặc 3 bước triển khai"
+
+[layouts.three_cards.header]
+left_inch = 1.0
+top_inch = 0.8
+width_inch = 11.333
+height_inch = 0.8
+style = "typography.title_section"
+default = "3 Trọng Tâm Phát Triển"
+
+[layouts.three_cards.grid_meta]
+count = 3
+top_inch = 2.0
+height_inch = 4.6
+width_inch = 3.5
+gap_inch = 0.416
+left_margin_inch = 1.0
+
+[layouts.three_cards.card_1]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 1.0
+top_inch = 2.0
+width_inch = 3.5
+height_inch = 4.6
+accent_bar_color = "colors.accent.primary_rgb"
+badge_text = "01 / GIAI ĐOẠN 1"
+title_default = "Phân tích yêu cầu"
+body_default = "Tổng hợp toàn bộ tài liệu đầu vào, lược đồ cơ sở dữ liệu và yêu cầu tích hợp mạng LAN."
+
+[layouts.three_cards.card_2]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 4.916
+top_inch = 2.0
+width_inch = 3.5
+height_inch = 4.6
+accent_bar_color = "colors.accent.secondary_rgb"
+badge_text = "02 / GIAI ĐOẠN 2"
+title_default = "Xây dựng lõi"
+body_default = "Tạo engine tự sinh mã với python-pptx, tối ưu bảng màu retro và font tiếng Việt Lexend."
+
+[layouts.three_cards.card_3]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 8.832
+top_inch = 2.0
+width_inch = 3.5
+height_inch = 4.6
+accent_bar_color = "colors.accent.success_rgb"
+badge_text = "03 / GIAI ĐOẠN 3"
+title_default = "Triển khai LAN"
+body_default = "Chạy máy chủ backend nội bộ, quản trị cơ chế lưu vết TOML an toàn trước khi công khai."
+
+[layouts.metric_highlights]
+id = "metrics_callout"
+description = "Slide làm nổi bật các con số then chốt, kết quả đạt được"
+
+[layouts.metric_highlights.header]
+left_inch = 1.0
+top_inch = 0.8
+width_inch = 11.333
+height_inch = 0.8
+style = "typography.title_section"
+default = "Kết Quả Đo Lường Hiệu Năng"
+
+[layouts.metric_highlights.card_left]
+left_inch = 1.0
+top_inch = 2.0
+width_inch = 5.45
+height_inch = 4.6
+metric_number = "99.8%"
+metric_label = "Độ chính xác bố cục"
+metric_desc = "Tự động căn chỉnh tọa độ vector chính xác không bị tràn chữ tiếng Việt nhờ font Lexend."
+
+[layouts.metric_highlights.card_right]
+left_inch = 6.88
+top_inch = 2.0
+width_inch = 5.45
+height_inch = 4.6
+metric_number = "< 1.5s"
+metric_label = "Thời gian sinh slide"
+metric_desc = "Pipeline xử lý trực tiếp trên RAM và xuất file PPTX tức thì trên web server LAN."

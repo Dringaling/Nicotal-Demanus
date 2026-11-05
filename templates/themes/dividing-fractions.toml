@@ -1,0 +1,25 @@
+[theme]
+id = "dividing-fractions"
+name = "Dividing Fractions Lesson"
+description = "16:9 10in, layout bài học, accent xanh dương"
+style = "lesson"
+tags = ["light", "education", "blue"]
+renderer = "pptx"
+font = "Lexend"
+pptx = "templates/Dividing Fractions by Fractions Lesson.pptx"
+
+[palette]
+bg = [255, 255, 255]
+card = [245, 245, 245]
+accent = [66, 133, 244]
+text = [33, 33, 33]
+muted = [120, 120, 120]
+
+[layout_map]
+title = "TITLE"
+section = "SECTION_HEADER"
+bullets = "TITLE_AND_BODY"
+two_column = "TITLE_AND_TWO_COLUMNS"
+table = "TITLE_ONLY"
+quote = "MAIN_POINT"
+closing = "TITLE"

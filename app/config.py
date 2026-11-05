@@ -25,8 +25,8 @@ class GenerationSettings:
 
 @dataclass(frozen=True)
 class CacheSettings:
-    prompt_version: str = "demanus-deck-v3"
-    prompt_cache_key: str = "demanus-deck-v3"
+    prompt_version: str = "demanus-deck-v4"
+    prompt_cache_key: str = "demanus-deck-v4"
     cache_ttl: str = "1h"
     local_cache: bool = True
     local_cache_dir: str = "input/.cache"
@@ -125,8 +125,8 @@ def load_settings(path: Path | None = None) -> Settings:
         chunk_chars=int(generation_raw.get("chunk_chars", 8000)),
     )
     cache = CacheSettings(
-        prompt_version=str(cache_raw.get("prompt_version", "demanus-deck-v3")),
-        prompt_cache_key=str(cache_raw.get("prompt_cache_key", "demanus-deck-v3")),
+        prompt_version=str(cache_raw.get("prompt_version", "demanus-deck-v4")),
+        prompt_cache_key=str(cache_raw.get("prompt_cache_key", "demanus-deck-v4")),
         cache_ttl=str(cache_raw.get("cache_ttl", "1h")),
         local_cache=bool(cache_raw.get("local_cache", True)),
         local_cache_dir=str(cache_raw.get("local_cache_dir", "input/.cache")),

@@ -10,7 +10,8 @@ from .config import REPO_ROOT, ConfigError
 from .schema import DeckSpec, Palette
 from .template_profile import TemplateProfile, format_profile_layouts
 
-CONFIG_PATH = REPO_ROOT / "config" / "templates.toml"
+THEMES_DIR = REPO_ROOT / "templates" / "themes"
+_CACHE: dict[str, TemplateMeta] | None = None
 
 
 @dataclass(frozen=True)
@@ -25,10 +26,12 @@ class TemplateMeta:
     text_color: tuple[int, int, int]
     muted_color: tuple[int, int, int]
     description: str
+    style: str = ""
+    tags: tuple[str, ...] = ()
     accent_secondary: tuple[int, int, int] | None = None
     assets_dir: str = ""
     theme_file: str = ""
-    renderer: str = "template"
+    renderer: str = "theme"
     layout_map: dict[str, str] = field(default_factory=dict)
 
     def fingerprint(self) -> str:
@@ -36,65 +39,91 @@ class TemplateMeta:
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
-def _rgb(value: object, field: str) -> tuple[int, int, int]:
+def _rgb(value: object, field_name: str) -> tuple[int, int, int]:
     if not isinstance(value, list) or len(value) != 3:
-        raise ConfigError(f"'{field}' phải là mảng 3 số RGB")
+        raise ConfigError(f"'{field_name}' phải là mảng 3 số RGB")
     return (int(value[0]), int(value[1]), int(value[2]))
 
 
-def load_templates(path: Path | None = None) -> dict[str, TemplateMeta]:
-    cfg_path = Path(path) if path is not None else CONFIG_PATH
-    if not cfg_path.is_file():
-        raise ConfigError(f"Không tìm thấy file metadata template: {cfg_path}")
+def _read_theme(path: Path) -> TemplateMeta:
+    with path.open("rb") as handle:
+        data = tomllib.load(handle)
 
-    with cfg_path.open("rb") as handle:
-        raw = tomllib.load(handle)
+    theme = data.get("theme")
+    if not isinstance(theme, dict):
+        raise ConfigError(f"Thiếu bảng [theme] trong {path}")
 
-    templates_raw = raw.get("templates")
-    if not isinstance(templates_raw, dict):
-        raise ConfigError(f"Thiếu bảng [templates] trong {cfg_path}")
+    palette = data.get("palette")
+    if not isinstance(palette, dict):
+        raise ConfigError(f"Thiếu bảng [palette] trong {path}")
 
-    result: dict[str, TemplateMeta] = {}
-    for template_id, data in templates_raw.items():
-        if not isinstance(data, dict):
-            raise ConfigError(f"[templates.{template_id}] phải là bảng TOML")
-        layout_raw = data.get("layout_map") or {}
-        if not isinstance(layout_raw, dict):
-            raise ConfigError(
-                f"[templates.{template_id}.layout_map] phải là bảng TOML"
-            )
-        result[template_id] = TemplateMeta(
-            id=template_id,
-            name=str(data.get("name", template_id)),
-            file=str(data.get("file", "")),
-            font=str(data.get("font", "Lexend")),
-            bg_color=_rgb(data.get("bg_color"), "bg_color"),
-            card_color=_rgb(data.get("card_color"), "card_color"),
-            accent_color=_rgb(data.get("accent_color"), "accent_color"),
-            text_color=_rgb(data.get("text_color"), "text_color"),
-            muted_color=_rgb(data.get("muted_color"), "muted_color"),
-            description=str(data.get("description", "")),
-            accent_secondary=(
-                _rgb(data["accent_secondary"], "accent_secondary")
-                if "accent_secondary" in data
-                else None
-            ),
-            assets_dir=str(data.get("assets_dir", "")),
-            theme_file=str(data.get("theme_file", "")),
-            renderer=str(data.get("renderer", "template")),
-            layout_map={
-                str(key): str(value) for key, value in layout_raw.items()
-            },
-        )
-    return result
+    layout_raw = data.get("layout_map") or {}
+    if not isinstance(layout_raw, dict):
+        raise ConfigError(f"[layout_map] phải là bảng TOML trong {path}")
+
+    return TemplateMeta(
+        id=str(theme.get("id", path.stem)),
+        name=str(theme.get("name", path.stem)),
+        file=str(theme.get("pptx", "")),
+        font=str(theme.get("font", "Lexend")),
+        bg_color=_rgb(palette.get("bg"), "palette.bg"),
+        card_color=_rgb(palette.get("card"), "palette.card"),
+        accent_color=_rgb(palette.get("accent"), "palette.accent"),
+        text_color=_rgb(palette.get("text"), "palette.text"),
+        muted_color=_rgb(palette.get("muted"), "palette.muted"),
+        description=str(theme.get("description", "")),
+        style=str(theme.get("style", "")),
+        tags=tuple(str(tag) for tag in theme.get("tags", [])),
+        accent_secondary=(
+            _rgb(palette["accent_secondary"], "palette.accent_secondary")
+            if "accent_secondary" in palette
+            else None
+        ),
+        assets_dir=str(theme.get("assets_dir", "")),
+        theme_file=str(path),
+        renderer=str(theme.get("renderer", "theme")),
+        layout_map={
+            str(key): str(value) for key, value in layout_raw.items()
+        },
+    )
+
+
+def refresh_templates() -> list[TemplateMeta]:
+    global _CACHE
+    if not THEMES_DIR.is_dir():
+        _CACHE = {}
+        return []
+
+    templates: dict[str, TemplateMeta] = {}
+    for path in sorted(THEMES_DIR.glob("*.toml")):
+        meta = _read_theme(path)
+        templates[meta.id] = meta
+    _CACHE = templates
+    return list(templates.values())
 
 
 def list_templates() -> list[TemplateMeta]:
-    return list(load_templates().values())
+    global _CACHE
+    if _CACHE is None:
+        refresh_templates()
+    return list(_CACHE.values()) if _CACHE else []
 
 
 def get_template(template_id: str) -> TemplateMeta | None:
-    return load_templates().get(template_id)
+    global _CACHE
+    if _CACHE is None:
+        refresh_templates()
+    if not _CACHE:
+        return None
+    meta = _CACHE.get(template_id)
+    if meta is not None:
+        return meta
+    alias = (
+        template_id.replace("-", "_")
+        if "-" in template_id
+        else template_id.replace("_", "-")
+    )
+    return _CACHE.get(alias)
 
 
 def resolve_path(value: str) -> Path:
@@ -124,6 +153,8 @@ def format_design_tokens(meta: TemplateMeta) -> str:
     lines = [
         f"Name: {meta.name}",
         f"Description: {meta.description}",
+        f"Style: {meta.style or '?'}",
+        f"Tags: {', '.join(meta.tags) if meta.tags else '?'}",
         "Design tokens:",
         f"- background: {hex_color(meta.bg_color)}",
         f"- card: {hex_color(meta.card_color)}",

@@ -31,7 +31,7 @@ def test_load_settings_reads_generation_and_cache() -> None:
     assert settings.provider.generation.max_tokens == 8000
     assert settings.provider.generation.response_format == "json_schema"
     assert settings.provider.generation.chunk_chars == 8000
-    assert settings.provider.cache.prompt_cache_key == "demanus-deck-v3"
+    assert settings.provider.cache.prompt_cache_key == "demanus-deck-v4"
     assert settings.provider.cache.local_cache is True
 
 
