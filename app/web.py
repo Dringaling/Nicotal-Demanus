@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Callable
+from urllib.parse import quote
 
 from fastapi import FastAPI, Form, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
@@ -81,6 +82,8 @@ def create_app(
         form: dict | None = None,
         active_tag: str | None = None,
         query: str | None = None,
+        reuse: dict | None = None,
+        message: str | None = None,
     ):
         records = storage.list_inputs(
             tag=active_tag, search=query, root=base
@@ -116,6 +119,8 @@ def create_app(
                 "server_url": server_url,
                 "error": error,
                 "form": form or {},
+                "reuse": reuse,
+                "message": message,
             },
             status_code=status_code,
         )
@@ -170,8 +175,40 @@ def create_app(
         request: Request,
         tag: str | None = Query(None),
         q: str | None = Query(None),
+        use: str | None = Query(None),
+        msg: str | None = Query(None),
     ):
-        return render_index(request, active_tag=tag, query=q)
+        reuse = None
+        if use:
+            try:
+                record = storage.get_input(use, root=base)
+            except (storage.StorageError, FileNotFoundError):
+                return render_index(
+                    request,
+                    "Không tìm thấy input.",
+                    404,
+                    active_tag=tag,
+                    query=q,
+                    message=msg,
+                )
+            selected = (
+                get_template(record.template) if record.template else None
+            )
+            reuse = {
+                "id": record.id,
+                "title": record.title,
+                "description": storage.read_text(record.description_hash, base),
+                "details": storage.read_text(record.details_hash, base),
+                "tags": record.tags,
+                "template": selected.id if selected else record.template,
+            }
+        return render_index(
+            request,
+            active_tag=tag,
+            query=q,
+            reuse=reuse,
+            message=msg,
+        )
 
     @app.get("/review", response_class=HTMLResponse)
     async def review(request: Request):
@@ -272,7 +309,11 @@ def create_app(
         return RedirectResponse(f"/deck/{slug}", status_code=303)
 
     @app.post("/inputs/{input_id}/generate")
-    async def regenerate(input_id: str, template: str = Form("flat")):
+    async def regenerate(
+        input_id: str,
+        template: str = Form("flat"),
+        tags: str | None = Form(None),
+    ):
         try:
             record = storage.get_input(input_id, root=base)
         except (storage.StorageError, FileNotFoundError) as exc:
@@ -281,6 +322,22 @@ def create_app(
             ) from exc
         if get_template(template) is None:
             raise HTTPException(status_code=400, detail="Template không hợp lệ")
+
+        if tags is not None:
+            tag_list = [tag.strip() for tag in tags.split(",") if tag.strip()]
+            try:
+                record = storage.set_input_tags(input_id, tag_list, root=base)
+            except storage.StorageError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+        if not storage.read_text(record.description_hash, base).strip():
+            raise HTTPException(
+                status_code=400, detail="Mô tả không được để trống."
+            )
+        if not storage.read_text(record.details_hash, base).strip():
+            raise HTTPException(
+                status_code=400, detail="Chi tiết không được để trống."
+            )
 
         try:
             slug = await render_record(record, template)
@@ -327,12 +384,20 @@ def create_app(
         if confirm != "yes":
             raise HTTPException(status_code=400, detail="Thiếu xác nhận xoá")
         try:
-            storage.delete_input(input_id, root=base)
+            record = storage.get_input(input_id, root=base)
         except (storage.StorageError, FileNotFoundError) as exc:
             raise HTTPException(
                 status_code=404, detail="Không tìm thấy input"
             ) from exc
-        return RedirectResponse("/", status_code=303)
+        if record.status == "generating":
+            raise HTTPException(
+                status_code=409, detail="Input đang được sinh, thử lại sau."
+            )
+        count = storage.delete_input(input_id, root=base)
+        message = f"Đã xoá input và {count} output."
+        return RedirectResponse(
+            f"/?msg={quote(message)}", status_code=303
+        )
 
     @app.post("/tags/{tag}/delete")
     async def delete_tag(tag: str):

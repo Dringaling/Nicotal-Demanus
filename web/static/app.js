@@ -249,3 +249,185 @@
     render();
   });
 })();
+
+(function () {
+  document.querySelectorAll("[data-reuse-tags]").forEach((root) => {
+    const inputId = root.dataset.inputId;
+    const chips = root.querySelector("[data-tag-chips]");
+    const entry = root.querySelector(".tag-entry");
+    const form = root.closest("form");
+    const hidden = form ? form.querySelector("[data-tags-hidden]") : null;
+    const error = form ? form.querySelector("[data-tags-error]") : null;
+    if (!inputId || !chips || !entry || !hidden) {
+      return;
+    }
+
+    let values = (hidden.value || "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    function showError(message) {
+      if (!error) {
+        return;
+      }
+      error.textContent = message || "";
+      error.hidden = !message;
+    }
+
+    async function save() {
+      try {
+        const body = new URLSearchParams();
+        body.set("tags", values.join(","));
+        const response = await fetch(`/inputs/${inputId}/tags`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body,
+        });
+        if (!response.ok) {
+          throw new Error("save failed");
+        }
+        hidden.value = values.join(",");
+        showError("");
+      } catch (exc) {
+        showError("Không lưu được tag. Thử lại.");
+      }
+    }
+
+    function render() {
+      chips.innerHTML = "";
+      values.forEach((tag, index) => {
+        const chip = document.createElement("span");
+        chip.className = "tag-chip";
+        chip.textContent = tag;
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "×";
+        remove.addEventListener("click", () => {
+          values.splice(index, 1);
+          render();
+          save();
+        });
+        chip.appendChild(remove);
+        chips.appendChild(chip);
+      });
+      hidden.value = values.join(",");
+    }
+
+    function add(value) {
+      const tag = value.trim().replace(/\s+/g, " ");
+      if (!tag) {
+        return false;
+      }
+      if (!values.some((item) => item.toLowerCase() === tag.toLowerCase())) {
+        values.push(tag);
+      }
+      entry.value = "";
+      render();
+      return true;
+    }
+
+    entry.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === ",") {
+        event.preventDefault();
+        if (add(entry.value)) {
+          save();
+        }
+      }
+    });
+    entry.addEventListener("blur", () => {
+      if (entry.value.trim() && add(entry.value)) {
+        save();
+      }
+    });
+    render();
+  });
+})();
+
+(function () {
+  const overlay = document.querySelector("[data-overlay]");
+  if (!overlay) {
+    return;
+  }
+
+  const dialog = overlay.querySelector("[data-dialog]");
+  const title = overlay.querySelector("[data-delete-title]");
+  const count = overlay.querySelector("[data-delete-count]");
+  const form = overlay.querySelector("[data-delete-form]");
+  const closeButton = overlay.querySelector("[data-close]");
+  let lastFocus = null;
+
+  function focusable() {
+    return Array.from(
+      dialog.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((element) => !element.disabled);
+  }
+
+  function open(trigger) {
+    lastFocus = trigger;
+    if (title) {
+      title.textContent = trigger.dataset.inputTitle || "";
+    }
+    if (count) {
+      const total = Number(trigger.dataset.outputCount || "0");
+      count.textContent = `${total} output sẽ bị xoá.`;
+    }
+    if (form) {
+      form.action = trigger.dataset.action || "";
+    }
+    overlay.hidden = false;
+    document.body.classList.add("overlay-open");
+    if (closeButton) {
+      closeButton.focus();
+    }
+  }
+
+  function close() {
+    overlay.hidden = true;
+    document.body.classList.remove("overlay-open");
+    if (lastFocus && typeof lastFocus.focus === "function") {
+      lastFocus.focus();
+    }
+  }
+
+  document.querySelectorAll("[data-delete-trigger]").forEach((trigger) => {
+    trigger.addEventListener("click", () => open(trigger));
+  });
+  if (closeButton) {
+    closeButton.addEventListener("click", close);
+  }
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) {
+      close();
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (overlay.hidden) {
+      return;
+    }
+    if (event.key === "Escape") {
+      close();
+      return;
+    }
+    if (event.key !== "Tab") {
+      return;
+    }
+    const items = focusable();
+    if (!items.length) {
+      return;
+    }
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
+})();

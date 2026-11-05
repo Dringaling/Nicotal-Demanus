@@ -508,12 +508,13 @@ def delete_input(
     input_id: str,
     root: Path | None = None,
     delete_output_file: bool = True,
-) -> None:
+) -> int:
     record = get_input(input_id, root)
     base = Path(root) if root is not None else REPO_ROOT
     path = _input_dir(base) / f"{record.id}.toml"
     if path.is_file():
         path.unlink()
+    deleted = 0
     if delete_output_file:
         slugs = list(record.output_slugs)
         if not slugs and record.output_slug:
@@ -523,6 +524,9 @@ def delete_input(
                 delete_output(slug, root=base)
             except FileNotFoundError:
                 pass
+            else:
+                deleted += 1
+    return deleted
 
 
 def migrate_legacy_inputs(root: Path | None = None) -> int:

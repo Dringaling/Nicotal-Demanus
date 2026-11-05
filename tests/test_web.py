@@ -809,3 +809,258 @@ def test_pptx_templates_not_mixed_into_themes(tmp_path: Path) -> None:
     themes = _group(client.get("/").text, "Themes")
     for template_id in ("blue-medical", "cream-green", "boho-copy"):
         assert f'value="{template_id}"' not in themes
+
+
+class RecordingClient:
+    calls: list[tuple[str, str, str]] = []
+
+    def __init__(self, settings) -> None:
+        self.settings = settings
+
+    async def generate_spec(
+        self,
+        name: str,
+        desc: str,
+        template: str = "flat",
+        description: str = "",
+    ):
+        RecordingClient.calls.append((name, desc, description))
+        return sample_deck(), UsageInfo()
+
+
+def make_recording_client(tmp_path: Path) -> TestClient:
+    settings = load_settings(CONFIG)
+    RecordingClient.calls = []
+    app = create_app(
+        settings,
+        llm_factory=lambda _: RecordingClient(settings),
+        root=tmp_path,
+    )
+    return TestClient(app)
+
+
+def test_reuse_mode_renders_readonly_form(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input(
+        "Báo cáo gốc",
+        "Mô tả gốc",
+        "Chi tiết gốc",
+        tags=["dental"],
+        root=tmp_path,
+    )
+
+    response = client.get("/", params={"use": record.id})
+
+    assert response.status_code == 200
+    html = response.text
+    assert "Đang dùng input" in html
+    assert f'action="/inputs/{record.id}/generate"' in html
+    assert "readonly" in html
+    assert 'name="title"' not in html
+    assert "Báo cáo gốc" in html
+    assert "Mô tả gốc" in html
+    assert "Chi tiết gốc" in html
+    assert "dental" in html
+    assert "Tạo mới" in html
+
+
+def test_reuse_missing_input(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    response = client.get("/", params={"use": "deadbeef"})
+    assert response.status_code == 404
+    assert "Không tìm thấy input" in response.text
+
+
+def test_reuse_generate_appends_output(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input(
+        "Báo cáo gốc", "Mô tả gốc", "Chi tiết gốc", root=tmp_path
+    )
+
+    response = client.post(
+        f"/inputs/{record.id}/generate",
+        data={"template": "flat"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    loaded = storage.get_input(record.id, root=tmp_path)
+    assert len(loaded.output_slugs) == 1
+    assert loaded.status == "done"
+
+
+def test_reuse_ignores_client_payload(tmp_path: Path) -> None:
+    client = make_recording_client(tmp_path)
+    record = storage.create_input(
+        "Gốc", "Mô tả gốc", "Chi tiết gốc", root=tmp_path
+    )
+
+    response = client.post(
+        f"/inputs/{record.id}/generate",
+        data={
+            "template": "flat",
+            "title": "Bị sửa",
+            "description": "Bị sửa",
+            "details": "Bị sửa",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert RecordingClient.calls[-1] == ("Gốc", "Chi tiết gốc", "Mô tả gốc")
+    assert storage.get_input(record.id, root=tmp_path).title == "Gốc"
+
+
+def test_reuse_submit_tags_fallback(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input(
+        "A", "Mô tả", "Chi tiết", tags=["old"], root=tmp_path
+    )
+
+    client.post(
+        f"/inputs/{record.id}/generate",
+        data={"template": "flat", "tags": "new, other"},
+        follow_redirects=False,
+    )
+
+    assert storage.get_input(record.id, root=tmp_path).tags == ["new", "other"]
+    assert "new" in storage.list_tags(root=tmp_path)
+
+
+def test_reuse_tag_save_endpoint(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input(
+        "A", "Mô tả", "Chi tiết", tags=["old"], root=tmp_path
+    )
+
+    html = client.get("/", params={"use": record.id}).text
+    assert "data-reuse-tags" in html
+    assert f'data-input-id="{record.id}"' in html
+
+    response = client.post(
+        f"/inputs/{record.id}/tags",
+        data={"tags": "old, new"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert storage.get_input(record.id, root=tmp_path).tags == ["old", "new"]
+
+
+def test_reuse_empty_details_rejected(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "", "", root=tmp_path)
+
+    response = client.post(
+        f"/inputs/{record.id}/generate",
+        data={"template": "flat"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 400
+    assert storage.get_input(record.id, root=tmp_path).output_slugs == []
+
+
+def test_reuse_with_variant_colors(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+
+    response = client.post(
+        f"/inputs/{record.id}/generate",
+        data={"template": "neo_tech_minimal__gruvbox"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    slug = response.headers["location"].rsplit("/", 1)[-1]
+
+    prs = Presentation(tmp_path / "output" / f"{slug}.pptx")
+    assert str(prs.slides[0].shapes[0].fill.fore_color.rgb) == "282828"
+
+
+def test_card_has_use_input_link(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+    html = client.get("/").text
+    assert f'href="/?use={record.id}"' in html
+    assert "Dùng input này" in html
+
+
+def test_delete_overlay_markup(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+    html = client.get("/").text
+
+    assert "data-overlay" in html
+    assert 'role="dialog"' in html
+    assert 'aria-modal="true"' in html
+    assert "Không thể hoàn tác" in html
+    assert "data-delete-trigger" in html
+    assert "Xoá vĩnh viễn" in html
+    assert "Huỷ" in html
+
+
+def test_no_native_window_confirm(tmp_path: Path) -> None:
+    root = Path(__file__).resolve().parents[1]
+    script = (root / "web" / "static" / "app.js").read_text(encoding="utf-8")
+    assert "window.confirm" not in script
+
+    client = make_client(tmp_path)
+    storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+    html = client.get("/").text
+    trigger = html.split("data-delete-trigger", 1)[1].split(">", 1)[0]
+    assert "confirm(" not in trigger
+
+
+def test_delete_flash_message(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+
+    response = client.post(
+        f"/inputs/{record.id}/delete",
+        data={"confirm": "yes"},
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert "Đã xoá input và 0 output." in response.text
+
+
+def test_delete_missing_outputs_still_deletes(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+    storage.append_output(record.id, "gone", root=tmp_path)
+
+    response = client.post(
+        f"/inputs/{record.id}/delete",
+        data={"confirm": "yes"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert storage.list_inputs(root=tmp_path) == []
+
+
+def test_delete_generating_input_conflict(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+    storage.update_status(record.id, "generating", root=tmp_path)
+
+    response = client.post(
+        f"/inputs/{record.id}/delete",
+        data={"confirm": "yes"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 409
+    assert storage.get_input(record.id, root=tmp_path) is not None
+
+
+def test_exit_reuse_mode(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+
+    reuse_html = client.get("/", params={"use": record.id}).text
+    assert "Đang dùng input" in reuse_html
+
+    fresh = client.get("/").text
+    assert "Đang dùng input" not in fresh
+    assert 'name="title"' in fresh
