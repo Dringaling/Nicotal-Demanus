@@ -108,11 +108,24 @@
             <form class="regen-form" method="post"
                   action="/inputs/{{ record.id }}/generate">
               <select name="template" aria-label="Template cho lần tạo lại">
-                {% for template in templates %}
-                <option value="{{ template.id }}"
-                        {% if record.template == template.id %}selected{% endif %}
-                        title="{{ template.description }}">{{ template.name }}</option>
-                {% endfor %}
+                {% if template_groups.pptx %}
+                <optgroup label="PPTX Templates">
+                  {% for template in template_groups.pptx %}
+                  <option value="{{ template.id }}"
+                          {% if item.selected_template == template.id %}selected{% endif %}
+                          title="{{ template.description }}">{{ template.display_name() }}</option>
+                  {% endfor %}
+                </optgroup>
+                {% endif %}
+                {% if template_groups.themes %}
+                <optgroup label="Themes">
+                  {% for template in template_groups.themes %}
+                  <option value="{{ template.id }}"
+                          {% if item.selected_template == template.id %}selected{% endif %}
+                          title="{{ template.description }}">{{ template.display_name() }}</option>
+                  {% endfor %}
+                </optgroup>
+                {% endif %}
               </select>
               <button type="submit">Tạo lại</button>
             </form>
@@ -180,11 +193,24 @@
       <label>
         Template
         <select name="template">
-          {% for template in templates %}
-          <option value="{{ template.id }}"
-                  {% if form.get('template', 'flat') == template.id %}selected{% endif %}
-                  title="{{ template.description }}">{{ template.name }}</option>
-          {% endfor %}
+          {% if template_groups.pptx %}
+          <optgroup label="PPTX Templates">
+            {% for template in template_groups.pptx %}
+            <option value="{{ template.id }}"
+                    {% if form.get('template', 'flat') == template.id %}selected{% endif %}
+                    title="{{ template.description }}">{{ template.display_name() }}</option>
+            {% endfor %}
+          </optgroup>
+          {% endif %}
+          {% if template_groups.themes %}
+          <optgroup label="Themes">
+            {% for template in template_groups.themes %}
+            <option value="{{ template.id }}"
+                    {% if form.get('template', 'flat') == template.id %}selected{% endif %}
+                    title="{{ template.description }}">{{ template.display_name() }}</option>
+            {% endfor %}
+          </optgroup>
+          {% endif %}
         </select>
       </label>
       <button type="submit">Sinh file PPTX</button>

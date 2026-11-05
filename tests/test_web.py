@@ -13,6 +13,7 @@ from app import storage
 from app.config import lan_url, load_settings
 from app.llm import LLMError, UsageInfo
 from app.sample import sample_deck
+from app.templates_catalog import list_templates
 from app.web import create_app
 
 CONFIG = Path(__file__).resolve().parents[1] / "config" / "providers.toml"
@@ -684,3 +685,126 @@ def test_index_title_check_ui(tmp_path: Path) -> None:
     assert "data-title-ok" in html
     assert "field-error" in html
     assert "field-ok" in html
+
+
+def _template_select(html: str, *, last: bool = False) -> str:
+    marker = '<select name="template">'
+    start = html.rindex(marker) if last else html.index(marker)
+    end = html.index("</select>", start)
+    return html[start:end]
+
+
+def _group(html: str, label: str) -> str:
+    marker = f'<optgroup label="{label}">'
+    start = html.index(marker) + len(marker)
+    return html[start : html.index("</optgroup>", start)]
+
+
+def test_template_dropdown_has_two_groups(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/").text
+    assert '<optgroup label="PPTX Templates">' in html
+    assert '<optgroup label="Themes">' in html
+
+
+def test_pptx_group_entries(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    pptx = _group(client.get("/").text, "PPTX Templates")
+    for template_id in (
+        "dividing-fractions",
+        "operations-integers",
+        "blue-medical",
+        "cream-green",
+        "boho-copy",
+        "boho-minimalist",
+    ):
+        assert f'value="{template_id}"' in pptx
+
+
+def test_themes_group_entries(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    themes = _group(client.get("/").text, "Themes")
+    for template_id in (
+        "flat",
+        "neo_tech_minimal",
+        "neo_tech_minimal__gruvbox",
+        "neo_tech_minimal__soft_light",
+        "neo_tech_minimal__cappuccino",
+        "neo_tech_minimal__latte",
+        "neo_tech_minimal__cream_pink",
+    ):
+        assert f'value="{template_id}"' in themes
+
+
+def test_default_and_variant_labels(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/").text
+    assert "Neo Tech Minimalist - Mặc định" in html
+    assert "Neo Tech Minimalist - Gruvbox" in html
+    assert "Flat Demanus - Mặc định" in html
+
+
+def test_flat_is_selected_by_default(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    select = _template_select(client.get("/").text, last=True)
+    option = re.search(r'<option value="flat"[^>]*>', select)
+    assert option is not None
+    assert "selected" in option.group(0)
+
+
+def test_default_before_variants(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    themes = _group(client.get("/").text, "Themes")
+    assert themes.index('value="neo_tech_minimal"') < themes.index(
+        'value="neo_tech_minimal__gruvbox"'
+    )
+
+
+def test_api_templates(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    payload = client.get("/api/templates").json()
+
+    assert set(payload) == {"pptx", "themes"}
+    pptx_ids = {item["id"] for item in payload["pptx"]}
+    theme_ids = {item["id"] for item in payload["themes"]}
+    assert "blue-medical" in pptx_ids
+    assert "neo_tech_minimal" not in pptx_ids
+    assert "neo_tech_minimal__gruvbox" in theme_ids
+    assert "flat" in theme_ids
+
+    variant = next(
+        item
+        for item in payload["themes"]
+        if item["id"] == "neo_tech_minimal__gruvbox"
+    )
+    assert variant["parent_id"] == "neo_tech_minimal"
+    assert variant["variant_id"] == "gruvbox"
+    assert variant["name"] == "Neo Tech Minimalist - Gruvbox"
+
+
+def test_generate_with_variant_uses_variant_colors(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    response = generate(client, template="neo_tech_minimal__gruvbox")
+    assert response.status_code == 303
+    slug = response.headers["location"].rsplit("/", 1)[-1]
+
+    prs = Presentation(tmp_path / "output" / f"{slug}.pptx")
+    assert str(prs.slides[0].shapes[0].fill.fore_color.rgb) == "282828"
+
+
+def test_empty_group_is_hidden(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.web.grouped_templates",
+        lambda: {"pptx": [], "themes": list_templates()},
+    )
+    client = make_client(tmp_path)
+    html = client.get("/").text
+    assert "PPTX Templates" not in html
+    assert '<optgroup label="Themes">' in html
+
+
+def test_pptx_templates_not_mixed_into_themes(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    themes = _group(client.get("/").text, "Themes")
+    for template_id in ("blue-medical", "cream-green", "boho-copy"):
+        assert f'value="{template_id}"' not in themes

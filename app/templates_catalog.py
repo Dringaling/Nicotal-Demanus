@@ -45,6 +45,11 @@ class TemplateMeta:
         payload = json.dumps(asdict(self), sort_keys=True, ensure_ascii=False)
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
+    def display_name(self) -> str:
+        if self.kind == "theme" and not self.variant_id:
+            return f"{self.name} - Mặc định"
+        return self.name
+
 
 def _rgb(value: object, field_name: str) -> tuple[int, int, int]:
     if not isinstance(value, list) or len(value) != 3:
@@ -193,6 +198,14 @@ def list_templates() -> list[TemplateMeta]:
     if _CACHE is None:
         refresh_templates()
     return list(_CACHE.values()) if _CACHE else []
+
+
+def grouped_templates() -> dict[str, list[TemplateMeta]]:
+    groups: dict[str, list[TemplateMeta]] = {"pptx": [], "themes": []}
+    for meta in list_templates():
+        key = "pptx" if meta.kind == "pptx" else "themes"
+        groups[key].append(meta)
+    return groups
 
 
 def get_template(template_id: str) -> TemplateMeta | None:

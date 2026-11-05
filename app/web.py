@@ -20,7 +20,7 @@ from .template_render import render_deck_with_template
 from .templates_catalog import (
     apply_template_palette,
     get_template,
-    list_templates,
+    grouped_templates,
     template_file,
 )
 from .theme_render import render_deck_theme
@@ -67,7 +67,7 @@ def create_app(
     except Exception:
         logger.exception("Migrate input cũ thất bại")
 
-    template_options = list_templates()
+    template_groups = grouped_templates()
 
     app = FastAPI(title="Demanus", version="0.1.0")
     templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
@@ -87,6 +87,7 @@ def create_app(
         inputs = []
         for record in records:
             outputs = storage.outputs_for(record, root=base)
+            selected = get_template(record.template) if record.template else None
             inputs.append(
                 {
                     "record": record,
@@ -96,6 +97,9 @@ def create_app(
                     "outputs": list(reversed(outputs)),
                     "newest": outputs[-1] if outputs else None,
                     "has_output": bool(outputs),
+                    "selected_template": (
+                        selected.id if selected else record.template
+                    ),
                 }
             )
         return templates.TemplateResponse(
@@ -107,7 +111,7 @@ def create_app(
                 "counts": storage.tag_counts(root=base),
                 "active_tag": active_tag,
                 "query": query or "",
-                "templates": template_options,
+                "template_groups": template_groups,
                 "server_url": server_url,
                 "error": error,
                 "form": form or {},
@@ -182,6 +186,28 @@ def create_app(
     @app.get("/health")
     async def health():
         return {"status": "ok", "url": server_url}
+
+    @app.get("/api/templates")
+    async def api_templates():
+        return {
+            "pptx": [
+                {
+                    "id": meta.id,
+                    "name": meta.display_name(),
+                    "description": meta.description,
+                }
+                for meta in template_groups["pptx"]
+            ],
+            "themes": [
+                {
+                    "id": meta.id,
+                    "name": meta.display_name(),
+                    "parent_id": meta.parent_id,
+                    "variant_id": meta.variant_id,
+                }
+                for meta in template_groups["themes"]
+            ],
+        }
 
     @app.post("/generate")
     async def generate(
