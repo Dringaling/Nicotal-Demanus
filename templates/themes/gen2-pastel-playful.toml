@@ -1,0 +1,369 @@
+[theme]
+id = "gen2-pastel-playful"
+name = "Pastel Playful Layout"
+description = "Giao diện pastel sáng, thẻ tròn bo góc lớn, số liệu phóng to, thân thiện và vui nhộn, tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "pastel-playful-layout"
+tags = [
+    "light",
+    "pastel",
+    "playful",
+    "rounded",
+]
+renderer = "theme"
+font = "Quicksand"
+title_layout = "center_card"
+header_layout = "badge"
+content_layout = "metric_tiles"
+
+[palette]
+bg = [
+    253,
+    248,
+    255,
+]
+card = [
+    255,
+    255,
+    255,
+]
+accent = [
+    167,
+    139,
+    250,
+]
+text = [
+    55,
+    48,
+    92,
+]
+muted = [
+    148,
+    138,
+    178,
+]
+
+[canvas]
+width_inch = 13.333
+height_inch = 7.5
+aspect_ratio = "16:9"
+
+[colors.background]
+hex = "#FDF8FF"
+rgb = [
+    253,
+    248,
+    255,
+]
+
+[colors.card]
+bg_hex = "#FFFFFF"
+bg_rgb = [
+    255,
+    255,
+    255,
+]
+border_hex = "#EDE4FF"
+border_rgb = [
+    237,
+    228,
+    255,
+]
+border_width_pt = 1.5
+
+[colors.accent]
+primary_hex = "#A78BFA"
+primary_rgb = [
+    167,
+    139,
+    250,
+]
+secondary_hex = "#FDA4AF"
+secondary_rgb = [
+    253,
+    164,
+    175,
+]
+success_hex = "#6EE7B7"
+success_rgb = [
+    110,
+    231,
+    183,
+]
+
+[colors.text]
+primary_hex = "#37305C"
+primary_rgb = [
+    55,
+    48,
+    92,
+]
+secondary_hex = "#948AB2"
+secondary_rgb = [
+    148,
+    138,
+    178,
+]
+accent_hex = "#A78BFA"
+accent_rgb = [
+    167,
+    139,
+    250,
+]
+
+[typography]
+font_family = "Quicksand"
+font_family_fallback = "Arial"
+
+[typography.title_hero]
+size_pt = 48
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.title_section]
+size_pt = 28
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.card_title]
+size_pt = 19
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.card_body]
+size_pt = 13
+bold = false
+line_spacing = 1.3
+color = "colors.text.secondary_rgb"
+
+[typography.tag]
+size_pt = 11
+bold = true
+color = "colors.accent.primary_rgb"
+
+[typography.big_metric]
+size_pt = 56
+bold = true
+color = "colors.accent.primary_rgb"
+
+[layouts.hero_title]
+id = "hero_cover"
+description = "Trang bìa pastel với thẻ tròn bo góc lớn, tag nổi bật và tiêu đề vui nhộn"
+
+[layouts.hero_title.card]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 1.4
+top_inch = 1.3
+width_inch = 10.533
+height_inch = 4.9
+fill = "colors.card.bg_rgb"
+border = "colors.card.border_rgb"
+corner_radius = 0.22
+
+[layouts.hero_title.elements.tag]
+type = "text"
+left_inch = 2.1
+top_inch = 1.95
+width_inch = 9.133
+height_inch = 0.45
+style = "typography.tag"
+default = "BÁO CÁO DỰ ÁN / PLAYFUL EDITION"
+
+[layouts.hero_title.elements.title]
+type = "text"
+left_inch = 2.1
+top_inch = 2.55
+width_inch = 9.133
+height_inch = 1.85
+style = "typography.title_hero"
+default = "Tiêu đề bản thuyết trình"
+
+[layouts.hero_title.elements.subtitle]
+type = "text"
+left_inch = 2.1
+top_inch = 4.55
+width_inch = 9.133
+height_inch = 0.95
+style = "typography.card_body"
+default = "Mô tả ngắn gọn về mục tiêu, giải pháp hoặc lộ trình triển khai"
+
+[layouts.three_cards]
+id = "three_columns_cards"
+description = "Slide 3 thẻ tròn pastel, mỗi thẻ có badge màu riêng và nội dung ngắn gọn"
+
+[layouts.three_cards.header]
+left_inch = 1.2
+top_inch = 0.7
+width_inch = 10.933
+height_inch = 0.85
+style = "typography.title_section"
+default = "3 Trọng Tâm Phát Triển"
+
+[layouts.three_cards.grid_meta]
+count = 3
+top_inch = 1.95
+height_inch = 4.75
+width_inch = 3.45
+gap_inch = 0.45
+left_margin_inch = 1.2
+
+[layouts.three_cards.card_1]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 1.2
+top_inch = 1.95
+width_inch = 3.45
+height_inch = 4.75
+accent_bar_color = "colors.accent.primary_rgb"
+badge_text = "01 / GIAI ĐOẠN 1"
+title_default = "Phân tích yêu cầu"
+body_default = "Tổng hợp toàn bộ tài liệu đầu vào, lược đồ cơ sở dữ liệu và yêu cầu tích hợp mạng LAN."
+
+[layouts.three_cards.card_2]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 5.1
+top_inch = 1.95
+width_inch = 3.45
+height_inch = 4.75
+accent_bar_color = "colors.accent.secondary_rgb"
+badge_text = "02 / GIAI ĐOẠN 2"
+title_default = "Xây dựng lõi"
+body_default = "Tạo engine tự sinh mã với python-pptx, tối ưu bảng màu và font tiếng Việt Quicksand."
+
+[layouts.three_cards.card_3]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 9.0
+top_inch = 1.95
+width_inch = 3.45
+height_inch = 4.75
+accent_bar_color = "colors.accent.success_rgb"
+badge_text = "03 / GIAI ĐOẠN 3"
+title_default = "Triển khai LAN"
+body_default = "Chạy máy chủ backend nội bộ, quản trị cơ chế lưu vết TOML an toàn trước khi công khai."
+
+[layouts.metric_highlights]
+id = "metrics_callout"
+description = "Slide làm nổi bật các con số then chốt với thẻ tròn pastel và số liệu phóng to"
+
+[layouts.metric_highlights.header]
+left_inch = 1.2
+top_inch = 0.7
+width_inch = 10.933
+height_inch = 0.85
+style = "typography.title_section"
+default = "Kết Quả Đo Lường Hiệu Năng"
+
+[layouts.metric_highlights.card_left]
+left_inch = 1.2
+top_inch = 1.95
+width_inch = 5.3
+height_inch = 4.75
+metric_number = "99.8%"
+metric_label = "Độ chính xác bố cục"
+metric_desc = "Tự động căn chỉnh tọa độ vector chính xác không bị tràn chữ tiếng Việt nhờ font Quicksand."
+
+[layouts.metric_highlights.card_right]
+left_inch = 6.83
+top_inch = 1.95
+width_inch = 5.3
+height_inch = 4.75
+metric_number = "< 1.5s"
+metric_label = "Thời gian sinh slide"
+metric_desc = "Pipeline xử lý trực tiếp trên RAM và xuất file PPTX tức thì trên web server LAN."
+
+[variants.alt]
+name = "Alt"
+description = "Đảo sáng/tối, giữ nguyên layout và accent."
+style = "pastel-playful-layout-alt"
+tags = [
+    "generated",
+    "variant",
+]
+
+[variants.alt.palette]
+bg = [
+    55,
+    48,
+    92,
+]
+card = [
+    55,
+    48,
+    92,
+]
+accent = [
+    167,
+    139,
+    250,
+]
+text = [
+    253,
+    248,
+    255,
+]
+muted = [
+    148,
+    138,
+    178,
+]
+
+[variants.alt.colors.background]
+hex = "#37305C"
+rgb = [
+    55,
+    48,
+    92,
+]
+
+[variants.alt.colors.card]
+bg_hex = "#37305C"
+bg_rgb = [
+    55,
+    48,
+    92,
+]
+border_hex = "#EDE4FF"
+border_rgb = [
+    237,
+    228,
+    255,
+]
+border_width_pt = 1.5
+
+[variants.alt.colors.accent]
+primary_hex = "#A78BFA"
+primary_rgb = [
+    167,
+    139,
+    250,
+]
+secondary_hex = "#FDA4AF"
+secondary_rgb = [
+    253,
+    164,
+    175,
+]
+success_hex = "#6EE7B7"
+success_rgb = [
+    110,
+    231,
+    183,
+]
+
+[variants.alt.colors.text]
+primary_hex = "#FDF8FF"
+primary_rgb = [
+    253,
+    248,
+    255,
+]
+secondary_hex = "#948AB2"
+secondary_rgb = [
+    148,
+    138,
+    178,
+]
+accent_hex = "#A78BFA"
+accent_rgb = [
+    167,
+    139,
+    250,
+]

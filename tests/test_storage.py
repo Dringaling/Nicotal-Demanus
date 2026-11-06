@@ -414,3 +414,13 @@ def test_title_hash_uses_lowercase(tmp_path: Path) -> None:
     )
     expected = f"{zlib.crc32('báo cáo'.encode('utf-8')) & 0xFFFFFFFF:08x}"
     assert record.id == expected
+
+
+def test_delete_output_removes_orphan_preview(tmp_path: Path) -> None:
+    preview = tmp_path / "output" / "orphan" / "preview"
+    preview.mkdir(parents=True)
+    (preview / "slide-01.png").write_bytes(b"png")
+
+    storage.delete_output("orphan", root=tmp_path)
+
+    assert not (tmp_path / "output" / "orphan").exists()

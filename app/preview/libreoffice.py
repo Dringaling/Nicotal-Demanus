@@ -27,7 +27,12 @@ def find_soffice() -> str | None:
     return None
 
 
-def render(soffice: str, pptx_path: Path, out_dir: Path) -> list[Path]:
+def render(
+    soffice: str,
+    pptx_path: Path,
+    out_dir: Path,
+    max_slides: int | None = None,
+) -> list[Path]:
     pptx_path = Path(pptx_path)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -53,6 +58,8 @@ def render(soffice: str, pptx_path: Path, out_dir: Path) -> list[Path]:
         paths: list[Path] = []
         try:
             for index, page in enumerate(document, start=1):
+                if max_slides is not None and index > max_slides:
+                    break
                 pixmap = page.get_pixmap(
                     matrix=pymupdf.Matrix(DPI / 72.0, DPI / 72.0)
                 )

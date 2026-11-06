@@ -1,0 +1,435 @@
+[theme]
+id = "gen2-glass-soft"
+name = "Glass Soft Layout"
+description = "Thẻ kính trong mờ, gradient nhẹ, khoảng trắng rộng, cảm giác frosted glass hiện đại, tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "glass-soft-layout"
+tags = [
+    "light",
+    "glass",
+    "frosted",
+    "soft",
+    "gradient",
+]
+renderer = "theme"
+font = "Lexend"
+title_layout = "top_band"
+header_layout = "grid"
+content_layout = "glass_grid"
+
+[palette]
+bg = [
+    236,
+    242,
+    250,
+]
+card = [
+    255,
+    255,
+    255,
+]
+accent = [
+    99,
+    132,
+    255,
+]
+text = [
+    28,
+    38,
+    58,
+]
+muted = [
+    138,
+    150,
+    172,
+]
+
+[canvas]
+width_inch = 13.333
+height_inch = 7.5
+aspect_ratio = "16:9"
+
+[colors.background]
+hex = "#ECF2FA"
+rgb = [
+    236,
+    242,
+    250,
+]
+gradient_start_hex = "#E8F0FB"
+gradient_start_rgb = [
+    232,
+    240,
+    251,
+]
+gradient_end_hex = "#F3EEFB"
+gradient_end_rgb = [
+    243,
+    238,
+    251,
+]
+gradient_angle_deg = 135
+
+[colors.card]
+bg_hex = "#FFFFFF"
+bg_rgb = [
+    255,
+    255,
+    255,
+]
+border_hex = "#FFFFFF"
+border_rgb = [
+    255,
+    255,
+    255,
+]
+border_width_pt = 1.25
+bg_alpha = 0.62
+border_alpha = 0.85
+shadow_hex = "#9FB2D4"
+shadow_rgb = [
+    159,
+    178,
+    212,
+]
+shadow_alpha = 0.22
+shadow_blur_pt = 18
+shadow_offset_pt = 6
+corner_radius = 0.14
+
+[colors.accent]
+primary_hex = "#6384FF"
+primary_rgb = [
+    99,
+    132,
+    255,
+]
+secondary_hex = "#B18CFF"
+secondary_rgb = [
+    177,
+    140,
+    255,
+]
+success_hex = "#4FD1C5"
+success_rgb = [
+    79,
+    209,
+    197,
+]
+
+[colors.text]
+primary_hex = "#1C263A"
+primary_rgb = [
+    28,
+    38,
+    58,
+]
+secondary_hex = "#8A96AC"
+secondary_rgb = [
+    138,
+    150,
+    172,
+]
+accent_hex = "#6384FF"
+accent_rgb = [
+    99,
+    132,
+    255,
+]
+
+[typography]
+font_family = "Lexend"
+font_family_fallback = "Arial"
+
+[typography.title_hero]
+size_pt = 46
+bold = true
+color = "colors.text.primary_rgb"
+letter_spacing_pt = 0.5
+
+[typography.title_section]
+size_pt = 27
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.card_title]
+size_pt = 17
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.card_body]
+size_pt = 12.5
+bold = false
+line_spacing = 1.4
+color = "colors.text.secondary_rgb"
+
+[typography.tag]
+size_pt = 9.5
+bold = true
+color = "colors.accent.primary_rgb"
+letter_spacing_pt = 1.2
+
+[typography.big_metric]
+size_pt = 52
+bold = true
+color = "colors.accent.primary_rgb"
+
+[layouts.hero_title]
+id = "glass_hero_cover"
+description = "Trang bìa thẻ kính lớn, bo góc mềm, tag nổi phía trên"
+
+[layouts.hero_title.card]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 1.55
+top_inch = 1.35
+width_inch = 10.233
+height_inch = 4.8
+fill = "colors.card.bg_rgb"
+border = "colors.card.border_rgb"
+corner_radius = 0.16
+fill_alpha = 0.62
+border_alpha = 0.85
+shadow = true
+
+[layouts.hero_title.elements.tag]
+type = "text"
+left_inch = 2.15
+top_inch = 1.95
+width_inch = 9.033
+height_inch = 0.4
+style = "typography.tag"
+default = "GLASS SOFT / PRESENTATION"
+
+[layouts.hero_title.elements.title]
+type = "text"
+left_inch = 2.15
+top_inch = 2.55
+width_inch = 9.033
+height_inch = 1.7
+style = "typography.title_hero"
+default = "Tiêu đề bản thuyết trình"
+
+[layouts.hero_title.elements.subtitle]
+type = "text"
+left_inch = 2.15
+top_inch = 4.55
+width_inch = 9.033
+height_inch = 0.9
+style = "typography.card_body"
+default = "Mô tả ngắn gọn về mục tiêu, giải pháp hoặc lộ trình triển khai"
+
+[layouts.three_cards]
+id = "glass_three_columns"
+description = "Slide 3 nội dung dạng thẻ kính, bo góc lớn, khoảng trắng rộng"
+
+[layouts.three_cards.header]
+left_inch = 1.2
+top_inch = 0.85
+width_inch = 10.933
+height_inch = 0.8
+style = "typography.title_section"
+default = "Ba Trụ Cột Chiến Lược"
+
+[layouts.three_cards.grid_meta]
+count = 3
+top_inch = 2.1
+height_inch = 4.4
+width_inch = 3.4
+gap_inch = 0.5
+left_margin_inch = 1.2
+
+[layouts.three_cards.card_1]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 1.2
+top_inch = 2.1
+width_inch = 3.4
+height_inch = 4.4
+accent_bar_color = "colors.accent.primary_rgb"
+badge_text = "01 / KHÁM PHÁ"
+title_default = "Nghiên cứu bối cảnh"
+body_default = "Thu thập dữ liệu đầu vào, phân tích hành vi người dùng và xác định các điểm chạm quan trọng."
+corner_radius = 0.14
+fill_alpha = 0.62
+
+[layouts.three_cards.card_2]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 5.1
+top_inch = 2.1
+width_inch = 3.4
+height_inch = 4.4
+accent_bar_color = "colors.accent.secondary_rgb"
+badge_text = "02 / THIẾT KẾ"
+title_default = "Kiến tạo giải pháp"
+body_default = "Xây dựng hệ thống thiết kế linh hoạt, tối ưu trải nghiệm và đảm bảo tính nhất quán thương hiệu."
+corner_radius = 0.14
+fill_alpha = 0.62
+
+[layouts.three_cards.card_3]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 9.0
+top_inch = 2.1
+width_inch = 3.4
+height_inch = 4.4
+accent_bar_color = "colors.accent.success_rgb"
+badge_text = "03 / TRIỂN KHAI"
+title_default = "Vận hành & mở rộng"
+body_default = "Đưa sản phẩm vào vận hành thực tế, theo dõi chỉ số và mở rộng quy mô theo lộ trình."
+corner_radius = 0.14
+fill_alpha = 0.62
+
+[layouts.metric_highlights]
+id = "glass_metrics_callout"
+description = "Slide làm nổi bật các con số then chốt trên thẻ kính"
+
+[layouts.metric_highlights.header]
+left_inch = 1.2
+top_inch = 0.85
+width_inch = 10.933
+height_inch = 0.8
+style = "typography.title_section"
+default = "Chỉ Số Then Chốt"
+
+[layouts.metric_highlights.card_left]
+left_inch = 1.2
+top_inch = 2.1
+width_inch = 5.2
+height_inch = 4.4
+metric_number = "98.6%"
+metric_label = "Mức độ hài lòng"
+metric_desc = "Người dùng đánh giá cao trải nghiệm giao diện kính mờ nhờ cảm giác nhẹ nhàng và hiện đại."
+corner_radius = 0.14
+fill_alpha = 0.62
+
+[layouts.metric_highlights.card_right]
+left_inch = 6.93
+top_inch = 2.1
+width_inch = 5.2
+height_inch = 4.4
+metric_number = "2.4x"
+metric_label = "Tốc độ xử lý"
+metric_desc = "Pipeline tối ưu giúp giảm thời gian sinh slide và tăng hiệu suất làm việc của đội ngũ thiết kế."
+corner_radius = 0.14
+fill_alpha = 0.62
+
+[variants.alt]
+name = "Alt"
+description = "Đảo sáng/tối, giữ nguyên layout và accent."
+style = "glass-soft-layout-alt"
+tags = [
+    "generated",
+    "variant",
+]
+
+[variants.alt.palette]
+bg = [
+    28,
+    38,
+    58,
+]
+card = [
+    28,
+    38,
+    58,
+]
+accent = [
+    99,
+    132,
+    255,
+]
+text = [
+    236,
+    242,
+    250,
+]
+muted = [
+    138,
+    150,
+    172,
+]
+
+[variants.alt.colors.background]
+hex = "#1C263A"
+rgb = [
+    28,
+    38,
+    58,
+]
+gradient_start_hex = "#E8F0FB"
+gradient_start_rgb = [
+    232,
+    240,
+    251,
+]
+gradient_end_hex = "#F3EEFB"
+gradient_end_rgb = [
+    243,
+    238,
+    251,
+]
+gradient_angle_deg = 135
+
+[variants.alt.colors.card]
+bg_hex = "#1C263A"
+bg_rgb = [
+    28,
+    38,
+    58,
+]
+border_hex = "#FFFFFF"
+border_rgb = [
+    255,
+    255,
+    255,
+]
+border_width_pt = 1.25
+bg_alpha = 0.62
+border_alpha = 0.85
+shadow_hex = "#9FB2D4"
+shadow_rgb = [
+    159,
+    178,
+    212,
+]
+shadow_alpha = 0.22
+shadow_blur_pt = 18
+shadow_offset_pt = 6
+corner_radius = 0.14
+
+[variants.alt.colors.accent]
+primary_hex = "#6384FF"
+primary_rgb = [
+    99,
+    132,
+    255,
+]
+secondary_hex = "#B18CFF"
+secondary_rgb = [
+    177,
+    140,
+    255,
+]
+success_hex = "#4FD1C5"
+success_rgb = [
+    79,
+    209,
+    197,
+]
+
+[variants.alt.colors.text]
+primary_hex = "#ECF2FA"
+primary_rgb = [
+    236,
+    242,
+    250,
+]
+secondary_hex = "#8A96AC"
+secondary_rgb = [
+    138,
+    150,
+    172,
+]
+accent_hex = "#6384FF"
+accent_rgb = [
+    99,
+    132,
+    255,
+]

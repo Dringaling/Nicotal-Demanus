@@ -27,6 +27,7 @@ def render_preview(
     pptx_path: Path,
     spec=None,
     out_dir: Path | None = None,
+    max_slides: int | None = None,
 ) -> list[Path]:
     if out_dir is None:
         raise ValueError("Thiếu thư mục preview")
@@ -40,13 +41,17 @@ def render_preview(
     soffice = libreoffice.find_soffice()
     if soffice:
         try:
-            return libreoffice.render(soffice, pptx_path, out_dir)
+            return libreoffice.render(
+                soffice, pptx_path, out_dir, max_slides=max_slides
+            )
         except Exception:
             logger.exception("LibreOffice preview thất bại, thử Aspose")
 
     if aspose.is_available():
         try:
-            return aspose.render(pptx_path, out_dir)
+            return aspose.render(
+                pptx_path, out_dir, max_slides=max_slides
+            )
         except Exception:
             logger.exception("Aspose preview thất bại")
 

@@ -1,0 +1,1920 @@
+[theme]
+id = "gen-color-set"
+name = "Generated Color Set"
+description = "Lưới Thụy Sĩ cổ điển: nhiều khoảng trắng, đường kẻ mảnh, chữ lớn tương phản cao, bố cục bất đối xứng theo cột, tối ưu tiếng Việt có dấu/không dấu."
+style = "color-set"
+tags = [
+    "generated",
+    "color-set",
+]
+renderer = "theme"
+font = "Inter"
+title_layout = "center_card"
+header_layout = "left"
+content_layout = "three_cards"
+
+[palette]
+bg = [
+    250,
+    250,
+    248,
+]
+card = [
+    255,
+    255,
+    255,
+]
+accent = [
+    230,
+    57,
+    70,
+]
+text = [
+    17,
+    17,
+    17,
+]
+muted = [
+    110,
+    110,
+    110,
+]
+
+[canvas]
+width_inch = 13.333
+height_inch = 7.5
+aspect_ratio = "16:9"
+
+[colors.background]
+hex = "#FAFAF8"
+rgb = [
+    250,
+    250,
+    248,
+]
+
+[colors.card]
+bg_hex = "#FFFFFF"
+bg_rgb = [
+    255,
+    255,
+    255,
+]
+border_hex = "#111111"
+border_rgb = [
+    17,
+    17,
+    17,
+]
+border_width_pt = 0.75
+
+[colors.accent]
+primary_hex = "#E63946"
+primary_rgb = [
+    230,
+    57,
+    70,
+]
+secondary_hex = "#111111"
+secondary_rgb = [
+    17,
+    17,
+    17,
+]
+success_hex = "#2A9D8F"
+success_rgb = [
+    42,
+    157,
+    143,
+]
+
+[colors.text]
+primary_hex = "#111111"
+primary_rgb = [
+    17,
+    17,
+    17,
+]
+secondary_hex = "#6E6E6E"
+secondary_rgb = [
+    110,
+    110,
+    110,
+]
+accent_hex = "#E63946"
+accent_rgb = [
+    230,
+    57,
+    70,
+]
+
+[typography]
+font_family = "Inter"
+font_family_fallback = "Arial"
+
+[typography.title_hero]
+size_pt = 60
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.title_section]
+size_pt = 34
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.card_title]
+size_pt = 20
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.card_body]
+size_pt = 13
+bold = false
+line_spacing = 1.35
+color = "colors.text.secondary_rgb"
+
+[typography.tag]
+size_pt = 10
+bold = true
+color = "colors.accent.primary_rgb"
+
+[typography.big_metric]
+size_pt = 96
+bold = true
+color = "colors.text.primary_rgb"
+
+[layouts.hero_title]
+id = "hero_editorial"
+description = "Bìa tạp chí Thụy Sĩ: tiêu đề lớn lệch trái, đường kẻ mảnh, tag trên cùng"
+
+[layouts.hero_title.card]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 2.0
+top_inch = 1.75
+width_inch = 9.333
+height_inch = 4.0
+fill = "colors.card.bg_rgb"
+border = "colors.card.border_rgb"
+corner_radius = 0.05
+
+[layouts.hero_title.elements.tag]
+type = "text"
+left_inch = 0.9
+top_inch = 0.9
+width_inch = 6.0
+height_inch = 0.35
+style = "typography.tag"
+default = "SWISS EDITORIAL / 01"
+
+[layouts.hero_title.elements.title]
+type = "text"
+left_inch = 0.9
+top_inch = 1.75
+width_inch = 8.6
+height_inch = 2.6
+style = "typography.title_hero"
+default = "Tiêu đề bản thuyết trình"
+
+[layouts.hero_title.elements.subtitle]
+type = "text"
+left_inch = 0.9
+top_inch = 4.85
+width_inch = 6.2
+height_inch = 1.4
+style = "typography.card_body"
+default = "Mô tả ngắn gọn về mục tiêu, giải pháp hoặc lộ trình triển khai."
+
+[layouts.hero_title.elements.rule_top]
+type = "line"
+left_inch = 0.9
+top_inch = 1.35
+width_inch = 11.533
+height_inch = 0.0
+stroke_color = "colors.text.primary_rgb"
+stroke_width_pt = 1.5
+
+[layouts.hero_title.elements.rule_mid]
+type = "line"
+left_inch = 0.9
+top_inch = 4.55
+width_inch = 4.2
+height_inch = 0.0
+stroke_color = "colors.accent.primary_rgb"
+stroke_width_pt = 3.0
+
+[layouts.hero_title.elements.meta]
+type = "text"
+left_inch = 9.9
+top_inch = 4.85
+width_inch = 2.533
+height_inch = 1.4
+style = "typography.card_body"
+default = "Báo cáo nội bộ\nTháng 01 / 2025"
+
+[layouts.three_cards]
+id = "three_columns_swiss"
+description = "Ba cột nội dung phân cách bằng đường kẻ dọc mảnh, tiêu đề cột đánh số"
+
+[layouts.three_cards.header]
+left_inch = 0.9
+top_inch = 0.75
+width_inch = 11.533
+height_inch = 0.9
+style = "typography.title_section"
+default = "Ba Trọng Tâm Phát Triển"
+
+[layouts.three_cards.grid_meta]
+count = 3
+top_inch = 2.1
+height_inch = 4.4
+width_inch = 3.45
+gap_inch = 0.6
+left_margin_inch = 0.9
+
+[layouts.three_cards.card_1]
+shape_type = "RECTANGLE"
+left_inch = 0.9
+top_inch = 2.1
+width_inch = 3.45
+height_inch = 4.4
+accent_bar_color = "colors.accent.primary_rgb"
+badge_text = "01"
+title_default = "Phân tích yêu cầu"
+body_default = "Tổng hợp tài liệu đầu vào, lược đồ cơ sở dữ liệu và yêu cầu tích hợp mạng LAN."
+fill = "colors.card.bg_rgb"
+border = "colors.card.border_rgb"
+
+[layouts.three_cards.card_2]
+shape_type = "RECTANGLE"
+left_inch = 4.95
+top_inch = 2.1
+width_inch = 3.45
+height_inch = 4.4
+accent_bar_color = "colors.accent.primary_rgb"
+badge_text = "02"
+title_default = "Xây dựng lõi"
+body_default = "Tạo engine tự sinh mã với python-pptx, tối ưu bảng màu và font tiếng Việt."
+fill = "colors.card.bg_rgb"
+border = "colors.card.border_rgb"
+
+[layouts.three_cards.card_3]
+shape_type = "RECTANGLE"
+left_inch = 9.0
+top_inch = 2.1
+width_inch = 3.45
+height_inch = 4.4
+accent_bar_color = "colors.accent.primary_rgb"
+badge_text = "03"
+title_default = "Triển khai LAN"
+body_default = "Chạy máy chủ backend nội bộ, quản trị cơ chế lưu vết TOML an toàn."
+fill = "colors.card.bg_rgb"
+border = "colors.card.border_rgb"
+
+[layouts.three_cards.header_rule]
+type = "line"
+left_inch = 0.9
+top_inch = 1.7
+width_inch = 11.533
+height_inch = 0.0
+stroke_color = "colors.text.primary_rgb"
+stroke_width_pt = 1.5
+
+[layouts.metric_highlights]
+id = "metrics_editorial"
+description = "Số liệu khổng lồ bên trái, mô tả bên phải, đường kẻ mảnh phân tách"
+
+[layouts.metric_highlights.header]
+left_inch = 0.9
+top_inch = 0.75
+width_inch = 11.533
+height_inch = 0.9
+style = "typography.title_section"
+default = "Kết Quả Đo Lường Hiệu Năng"
+
+[layouts.metric_highlights.card_left]
+left_inch = 0.9
+top_inch = 2.1
+width_inch = 6.2
+height_inch = 4.4
+metric_number = "99.8%"
+metric_label = "Độ chính xác bố cục"
+metric_desc = "Tự động căn chỉnh tọa độ vector chính xác, không tràn chữ tiếng Việt."
+
+[layouts.metric_highlights.card_right]
+left_inch = 7.6
+top_inch = 2.1
+width_inch = 4.83
+height_inch = 4.4
+metric_number = "< 1.5s"
+metric_label = "Thời gian sinh slide"
+metric_desc = "Pipeline xử lý trực tiếp trên RAM và xuất file PPTX tức thì trên web server LAN."
+
+[layouts.metric_highlights.header_rule]
+type = "line"
+left_inch = 0.9
+top_inch = 1.7
+width_inch = 11.533
+height_inch = 0.0
+stroke_color = "colors.text.primary_rgb"
+stroke_width_pt = 1.5
+
+[layouts.metric_highlights.divider]
+type = "line"
+left_inch = 7.3
+top_inch = 2.1
+width_inch = 0.0
+height_inch = 4.4
+stroke_color = "colors.text.primary_rgb"
+stroke_width_pt = 1.0
+
+[variants.blueprint-tech]
+name = "Blueprint Tech"
+description = "Bản vẽ kỹ thuật với lưới mảnh, nhãn chính xác, đường nét mảnh và cảm giác blueprint cổ điển trên nền xanh kỹ thuật số, tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "blueprint-tech"
+tags = [
+    "blueprint",
+    "technical",
+    "grid",
+    "dark",
+    "cyan",
+]
+
+[variants.blueprint-tech.palette]
+bg = [
+    10,
+    26,
+    42,
+]
+card = [
+    13,
+    34,
+    54,
+]
+accent = [
+    125,
+    211,
+    252,
+]
+text = [
+    226,
+    240,
+    250,
+]
+muted = [
+    122,
+    158,
+    184,
+]
+
+[variants.blueprint-tech.colors.background]
+hex = "#0A1A2A"
+rgb = [
+    10,
+    26,
+    42,
+]
+
+[variants.blueprint-tech.colors.card]
+bg_hex = "#0D2236"
+bg_rgb = [
+    13,
+    34,
+    54,
+]
+border_hex = "#2A4A66"
+border_rgb = [
+    42,
+    74,
+    102,
+]
+border_width_pt = 0.75
+
+[variants.blueprint-tech.colors.accent]
+primary_hex = "#7DD3FC"
+primary_rgb = [
+    125,
+    211,
+    252,
+]
+secondary_hex = "#FBBF24"
+secondary_rgb = [
+    251,
+    191,
+    36,
+]
+success_hex = "#34D399"
+success_rgb = [
+    52,
+    211,
+    153,
+]
+
+[variants.blueprint-tech.colors.text]
+primary_hex = "#E2F0FA"
+primary_rgb = [
+    226,
+    240,
+    250,
+]
+secondary_hex = "#7A9EB8"
+secondary_rgb = [
+    122,
+    158,
+    184,
+]
+accent_hex = "#7DD3FC"
+accent_rgb = [
+    125,
+    211,
+    252,
+]
+
+[variants.blueprint-tech.colors.grid]
+line_hex = "#1B3A54"
+line_rgb = [
+    27,
+    58,
+    84,
+]
+line_width_pt = 0.5
+major_hex = "#2A4A66"
+major_rgb = [
+    42,
+    74,
+    102,
+]
+major_width_pt = 0.75
+spacing_inch = 0.5
+
+[variants.brutalist]
+name = "Brutalist"
+description = "Khối đậm, viền dày, chữ quá khổ, hình học thô, tương phản mạnh — tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "brutalist"
+tags = [
+    "brutalist",
+    "bold",
+    "high-contrast",
+    "raw",
+]
+
+[variants.brutalist.palette]
+bg = [
+    236,
+    232,
+    222,
+]
+card = [
+    255,
+    255,
+    255,
+]
+accent = [
+    255,
+    59,
+    0,
+]
+text = [
+    10,
+    10,
+    10,
+]
+muted = [
+    90,
+    90,
+    90,
+]
+
+[variants.brutalist.colors.background]
+hex = "#ECE8DE"
+rgb = [
+    236,
+    232,
+    222,
+]
+
+[variants.brutalist.colors.card]
+bg_hex = "#FFFFFF"
+bg_rgb = [
+    255,
+    255,
+    255,
+]
+border_hex = "#0A0A0A"
+border_rgb = [
+    10,
+    10,
+    10,
+]
+border_width_pt = 5.0
+
+[variants.brutalist.colors.accent]
+primary_hex = "#FF3B00"
+primary_rgb = [
+    255,
+    59,
+    0,
+]
+secondary_hex = "#0047FF"
+secondary_rgb = [
+    0,
+    71,
+    255,
+]
+success_hex = "#00C853"
+success_rgb = [
+    0,
+    200,
+    83,
+]
+
+[variants.brutalist.colors.text]
+primary_hex = "#0A0A0A"
+primary_rgb = [
+    10,
+    10,
+    10,
+]
+secondary_hex = "#5A5A5A"
+secondary_rgb = [
+    90,
+    90,
+    90,
+]
+accent_hex = "#FF3B00"
+accent_rgb = [
+    255,
+    59,
+    0,
+]
+
+[variants.dark-academia]
+name = "Dark Academia"
+description = "Bố cục dày đặc kiểu học thuật cổ điển, nền nâu trầm, chữ serif trang trọng, tỷ lệ 16:9, tối ưu tiếng Việt có dấu/không dấu."
+style = "dark-academia"
+tags = [
+    "dark",
+    "academia",
+    "vintage",
+    "serif",
+    "warm",
+]
+
+[variants.dark-academia.palette]
+bg = [
+    28,
+    22,
+    18,
+]
+card = [
+    44,
+    35,
+    28,
+]
+accent = [
+    198,
+    156,
+    92,
+]
+text = [
+    235,
+    224,
+    204,
+]
+muted = [
+    150,
+    130,
+    108,
+]
+
+[variants.dark-academia.colors.background]
+hex = "#1C1612"
+rgb = [
+    28,
+    22,
+    18,
+]
+
+[variants.dark-academia.colors.card]
+bg_hex = "#2C231C"
+bg_rgb = [
+    44,
+    35,
+    28,
+]
+border_hex = "#4A3B2E"
+border_rgb = [
+    74,
+    59,
+    46,
+]
+border_width_pt = 1.25
+
+[variants.dark-academia.colors.accent]
+primary_hex = "#C69C5C"
+primary_rgb = [
+    198,
+    156,
+    92,
+]
+secondary_hex = "#8C3B2E"
+secondary_rgb = [
+    140,
+    59,
+    46,
+]
+success_hex = "#6E7A4E"
+success_rgb = [
+    110,
+    122,
+    78,
+]
+
+[variants.dark-academia.colors.text]
+primary_hex = "#EBE0CC"
+primary_rgb = [
+    235,
+    224,
+    204,
+]
+secondary_hex = "#96826C"
+secondary_rgb = [
+    150,
+    130,
+    108,
+]
+accent_hex = "#C69C5C"
+accent_rgb = [
+    198,
+    156,
+    92,
+]
+
+[variants.glass-soft]
+name = "Glass Soft"
+description = "Thẻ kính trong mờ, gradient nhẹ, khoảng trắng rộng, cảm giác frosted glass hiện đại, tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "glass-soft"
+tags = [
+    "light",
+    "glass",
+    "frosted",
+    "soft",
+    "gradient",
+]
+
+[variants.glass-soft.palette]
+bg = [
+    236,
+    242,
+    250,
+]
+card = [
+    255,
+    255,
+    255,
+]
+accent = [
+    99,
+    132,
+    255,
+]
+text = [
+    28,
+    38,
+    58,
+]
+muted = [
+    138,
+    150,
+    172,
+]
+
+[variants.glass-soft.colors.background]
+hex = "#ECF2FA"
+rgb = [
+    236,
+    242,
+    250,
+]
+gradient_start_hex = "#E8F0FB"
+gradient_start_rgb = [
+    232,
+    240,
+    251,
+]
+gradient_end_hex = "#F3EEFB"
+gradient_end_rgb = [
+    243,
+    238,
+    251,
+]
+gradient_angle_deg = 135
+
+[variants.glass-soft.colors.card]
+bg_hex = "#FFFFFF"
+bg_rgb = [
+    255,
+    255,
+    255,
+]
+border_hex = "#FFFFFF"
+border_rgb = [
+    255,
+    255,
+    255,
+]
+border_width_pt = 1.25
+bg_alpha = 0.62
+border_alpha = 0.85
+shadow_hex = "#9FB2D4"
+shadow_rgb = [
+    159,
+    178,
+    212,
+]
+shadow_alpha = 0.22
+shadow_blur_pt = 18
+shadow_offset_pt = 6
+corner_radius = 0.14
+
+[variants.glass-soft.colors.accent]
+primary_hex = "#6384FF"
+primary_rgb = [
+    99,
+    132,
+    255,
+]
+secondary_hex = "#B18CFF"
+secondary_rgb = [
+    177,
+    140,
+    255,
+]
+success_hex = "#4FD1C5"
+success_rgb = [
+    79,
+    209,
+    197,
+]
+
+[variants.glass-soft.colors.text]
+primary_hex = "#1C263A"
+primary_rgb = [
+    28,
+    38,
+    58,
+]
+secondary_hex = "#8A96AC"
+secondary_rgb = [
+    138,
+    150,
+    172,
+]
+accent_hex = "#6384FF"
+accent_rgb = [
+    99,
+    132,
+    255,
+]
+
+[variants.high-contrast]
+name = "High Contrast"
+description = "Đen trắng vàng tương phản cực đại, chữ rất lớn, viền dày mạnh, ưu tiên tuyệt đối khả năng đọc, tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "high-contrast"
+tags = [
+    "high-contrast",
+    "bold",
+    "accessible",
+    "monochrome",
+]
+
+[variants.high-contrast.palette]
+bg = [
+    0,
+    0,
+    0,
+]
+card = [
+    18,
+    18,
+    18,
+]
+accent = [
+    255,
+    214,
+    0,
+]
+text = [
+    255,
+    255,
+    255,
+]
+muted = [
+    200,
+    200,
+    200,
+]
+
+[variants.high-contrast.colors.background]
+hex = "#000000"
+rgb = [
+    0,
+    0,
+    0,
+]
+
+[variants.high-contrast.colors.card]
+bg_hex = "#121212"
+bg_rgb = [
+    18,
+    18,
+    18,
+]
+border_hex = "#FFFFFF"
+border_rgb = [
+    255,
+    255,
+    255,
+]
+border_width_pt = 4.0
+
+[variants.high-contrast.colors.accent]
+primary_hex = "#FFD600"
+primary_rgb = [
+    255,
+    214,
+    0,
+]
+secondary_hex = "#FFFFFF"
+secondary_rgb = [
+    255,
+    255,
+    255,
+]
+success_hex = "#FFD600"
+success_rgb = [
+    255,
+    214,
+    0,
+]
+
+[variants.high-contrast.colors.text]
+primary_hex = "#FFFFFF"
+primary_rgb = [
+    255,
+    255,
+    255,
+]
+secondary_hex = "#C8C8C8"
+secondary_rgb = [
+    200,
+    200,
+    200,
+]
+accent_hex = "#FFD600"
+accent_rgb = [
+    255,
+    214,
+    0,
+]
+
+[variants.hud-future]
+name = "HUD Future"
+description = "Giao diện HUD tương lai với nền teal tối, thẻ góc cạnh, đường kẻ HUD mảnh và số liệu nổi bật, tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "hud-future"
+tags = [
+    "dark",
+    "hud",
+    "teal",
+    "futuristic",
+    "tech",
+]
+
+[variants.hud-future.palette]
+bg = [
+    6,
+    22,
+    26,
+]
+card = [
+    10,
+    34,
+    40,
+]
+accent = [
+    45,
+    212,
+    191,
+]
+text = [
+    226,
+    250,
+    248,
+]
+muted = [
+    110,
+    150,
+    156,
+]
+
+[variants.hud-future.colors.background]
+hex = "#06161A"
+rgb = [
+    6,
+    22,
+    26,
+]
+
+[variants.hud-future.colors.card]
+bg_hex = "#0A2228"
+bg_rgb = [
+    10,
+    34,
+    40,
+]
+border_hex = "#1B4A52"
+border_rgb = [
+    27,
+    74,
+    82,
+]
+border_width_pt = 1.25
+
+[variants.hud-future.colors.accent]
+primary_hex = "#2DD4BF"
+primary_rgb = [
+    45,
+    212,
+    191,
+]
+secondary_hex = "#F5A524"
+secondary_rgb = [
+    245,
+    165,
+    36,
+]
+success_hex = "#4ADE80"
+success_rgb = [
+    74,
+    222,
+    128,
+]
+
+[variants.hud-future.colors.text]
+primary_hex = "#E2FAF8"
+primary_rgb = [
+    226,
+    250,
+    248,
+]
+secondary_hex = "#6E969C"
+secondary_rgb = [
+    110,
+    150,
+    156,
+]
+accent_hex = "#2DD4BF"
+accent_rgb = [
+    45,
+    212,
+    191,
+]
+
+[variants.hud-future.colors.hud]
+line_hex = "#1B4A52"
+line_rgb = [
+    27,
+    74,
+    82,
+]
+glow_hex = "#2DD4BF"
+glow_rgb = [
+    45,
+    212,
+    191,
+]
+corner_hex = "#2DD4BF"
+corner_rgb = [
+    45,
+    212,
+    191,
+]
+
+[variants.luxury-gold]
+name = "Luxury Gold"
+description = "Nền mận đậm sang trọng, điểm nhấn vàng kim, thẻ lớn bo góc mềm, khoảng cách rộng rãi, tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "luxury-gold"
+tags = [
+    "dark",
+    "luxury",
+    "gold",
+    "premium",
+]
+
+[variants.luxury-gold.palette]
+bg = [
+    42,
+    16,
+    38,
+]
+card = [
+    58,
+    26,
+    52,
+]
+accent = [
+    212,
+    175,
+    55,
+]
+text = [
+    250,
+    243,
+    224,
+]
+muted = [
+    168,
+    138,
+    128,
+]
+
+[variants.luxury-gold.colors.background]
+hex = "#2A1026"
+rgb = [
+    42,
+    16,
+    38,
+]
+
+[variants.luxury-gold.colors.card]
+bg_hex = "#3A1A34"
+bg_rgb = [
+    58,
+    26,
+    52,
+]
+border_hex = "#5C3A52"
+border_rgb = [
+    92,
+    58,
+    82,
+]
+border_width_pt = 1.25
+
+[variants.luxury-gold.colors.accent]
+primary_hex = "#D4AF37"
+primary_rgb = [
+    212,
+    175,
+    55,
+]
+secondary_hex = "#E8C766"
+secondary_rgb = [
+    232,
+    199,
+    102,
+]
+success_hex = "#B08D57"
+success_rgb = [
+    176,
+    141,
+    87,
+]
+
+[variants.luxury-gold.colors.text]
+primary_hex = "#FAF3E0"
+primary_rgb = [
+    250,
+    243,
+    224,
+]
+secondary_hex = "#A88A80"
+secondary_rgb = [
+    168,
+    138,
+    128,
+]
+accent_hex = "#D4AF37"
+accent_rgb = [
+    212,
+    175,
+    55,
+]
+
+[variants.medical-clean]
+name = "Medical Clean"
+description = "Giao diện y khoa sạch sẽ, nền trắng xanh, thẻ phẳng bo nhẹ, đường kẻ chính xác, tỷ lệ 16:9, tối ưu tiếng Việt có dấu/không dấu."
+style = "medical-clean"
+tags = [
+    "light",
+    "medical",
+    "clean",
+    "clinical",
+]
+
+[variants.medical-clean.palette]
+bg = [
+    244,
+    249,
+    251,
+]
+card = [
+    255,
+    255,
+    255,
+]
+accent = [
+    0,
+    128,
+    156,
+]
+text = [
+    22,
+    48,
+    58,
+]
+muted = [
+    110,
+    138,
+    148,
+]
+
+[variants.medical-clean.colors.background]
+hex = "#F4F9FB"
+rgb = [
+    244,
+    249,
+    251,
+]
+
+[variants.medical-clean.colors.card]
+bg_hex = "#FFFFFF"
+bg_rgb = [
+    255,
+    255,
+    255,
+]
+border_hex = "#D6E6EC"
+border_rgb = [
+    214,
+    230,
+    236,
+]
+border_width_pt = 1.0
+
+[variants.medical-clean.colors.accent]
+primary_hex = "#00809C"
+primary_rgb = [
+    0,
+    128,
+    156,
+]
+secondary_hex = "#3FA9C4"
+secondary_rgb = [
+    63,
+    169,
+    196,
+]
+success_hex = "#2E9E6B"
+success_rgb = [
+    46,
+    158,
+    107,
+]
+alert_hex = "#D9534F"
+alert_rgb = [
+    217,
+    83,
+    79,
+]
+
+[variants.medical-clean.colors.text]
+primary_hex = "#16303A"
+primary_rgb = [
+    22,
+    48,
+    58,
+]
+secondary_hex = "#6E8A94"
+secondary_rgb = [
+    110,
+    138,
+    148,
+]
+accent_hex = "#00809C"
+accent_rgb = [
+    0,
+    128,
+    156,
+]
+
+[variants.nature-organic]
+name = "Nature Organic"
+description = "Bố cục thẻ mềm mại tông xanh olive, nhịp điệu tự nhiên, khoảng thở rộng, tĩnh tại và thư thái, tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "nature-organic"
+tags = [
+    "light",
+    "organic",
+    "nature",
+    "olive",
+    "calm",
+]
+
+[variants.nature-organic.palette]
+bg = [
+    244,
+    243,
+    234,
+]
+card = [
+    250,
+    249,
+    242,
+]
+accent = [
+    122,
+    138,
+    74,
+]
+text = [
+    52,
+    58,
+    40,
+]
+muted = [
+    138,
+    142,
+    118,
+]
+
+[variants.nature-organic.colors.background]
+hex = "#F4F3EA"
+rgb = [
+    244,
+    243,
+    234,
+]
+
+[variants.nature-organic.colors.card]
+bg_hex = "#FAF9F2"
+bg_rgb = [
+    250,
+    249,
+    242,
+]
+border_hex = "#DDE0CE"
+border_rgb = [
+    221,
+    224,
+    206,
+]
+border_width_pt = 1.25
+
+[variants.nature-organic.colors.accent]
+primary_hex = "#7A8A4A"
+primary_rgb = [
+    122,
+    138,
+    74,
+]
+secondary_hex = "#B08D57"
+secondary_rgb = [
+    176,
+    141,
+    87,
+]
+success_hex = "#8FA97A"
+success_rgb = [
+    143,
+    169,
+    122,
+]
+
+[variants.nature-organic.colors.text]
+primary_hex = "#343A28"
+primary_rgb = [
+    52,
+    58,
+    40,
+]
+secondary_hex = "#8A8E76"
+secondary_rgb = [
+    138,
+    142,
+    118,
+]
+accent_hex = "#7A8A4A"
+accent_rgb = [
+    122,
+    138,
+    74,
+]
+
+[variants.neon-cyberpunk]
+name = "Neon Cyberpunk"
+description = "Giao diện tương lai tối sâu, viền neon rực, thẻ góc cạnh (angular), điểm nhấn cyan/magenta, tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "neon-cyberpunk"
+tags = [
+    "dark",
+    "neon",
+    "cyberpunk",
+    "futuristic",
+]
+
+[variants.neon-cyberpunk.palette]
+bg = [
+    8,
+    6,
+    18,
+]
+card = [
+    20,
+    16,
+    38,
+]
+accent = [
+    0,
+    255,
+    224,
+]
+text = [
+    236,
+    240,
+    255,
+]
+muted = [
+    130,
+    120,
+    170,
+]
+
+[variants.neon-cyberpunk.colors.background]
+hex = "#080612"
+rgb = [
+    8,
+    6,
+    18,
+]
+
+[variants.neon-cyberpunk.colors.card]
+bg_hex = "#141026"
+bg_rgb = [
+    20,
+    16,
+    38,
+]
+border_hex = "#2E2352"
+border_rgb = [
+    46,
+    35,
+    82,
+]
+border_width_pt = 1.5
+
+[variants.neon-cyberpunk.colors.accent]
+primary_hex = "#00FFE0"
+primary_rgb = [
+    0,
+    255,
+    224,
+]
+secondary_hex = "#FF2E97"
+secondary_rgb = [
+    255,
+    46,
+    151,
+]
+success_hex = "#B14BFF"
+success_rgb = [
+    177,
+    75,
+    255,
+]
+
+[variants.neon-cyberpunk.colors.text]
+primary_hex = "#ECF0FF"
+primary_rgb = [
+    236,
+    240,
+    255,
+]
+secondary_hex = "#8278AA"
+secondary_rgb = [
+    130,
+    120,
+    170,
+]
+accent_hex = "#00FFE0"
+accent_rgb = [
+    0,
+    255,
+    224,
+]
+
+[variants.pastel-playful]
+name = "Pastel Playful"
+description = "Giao diện pastel sáng, thẻ tròn bo góc lớn, số liệu phóng to, thân thiện và vui nhộn, tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "pastel-playful"
+tags = [
+    "light",
+    "pastel",
+    "playful",
+    "rounded",
+]
+
+[variants.pastel-playful.palette]
+bg = [
+    253,
+    248,
+    255,
+]
+card = [
+    255,
+    255,
+    255,
+]
+accent = [
+    167,
+    139,
+    250,
+]
+text = [
+    55,
+    48,
+    92,
+]
+muted = [
+    148,
+    138,
+    178,
+]
+
+[variants.pastel-playful.colors.background]
+hex = "#FDF8FF"
+rgb = [
+    253,
+    248,
+    255,
+]
+
+[variants.pastel-playful.colors.card]
+bg_hex = "#FFFFFF"
+bg_rgb = [
+    255,
+    255,
+    255,
+]
+border_hex = "#EDE4FF"
+border_rgb = [
+    237,
+    228,
+    255,
+]
+border_width_pt = 1.5
+
+[variants.pastel-playful.colors.accent]
+primary_hex = "#A78BFA"
+primary_rgb = [
+    167,
+    139,
+    250,
+]
+secondary_hex = "#FDA4AF"
+secondary_rgb = [
+    253,
+    164,
+    175,
+]
+success_hex = "#6EE7B7"
+success_rgb = [
+    110,
+    231,
+    183,
+]
+
+[variants.pastel-playful.colors.text]
+primary_hex = "#37305C"
+primary_rgb = [
+    55,
+    48,
+    92,
+]
+secondary_hex = "#948AB2"
+secondary_rgb = [
+    148,
+    138,
+    178,
+]
+accent_hex = "#A78BFA"
+accent_rgb = [
+    167,
+    139,
+    250,
+]
+
+[variants.retro-70s]
+name = "Retro 70s"
+description = "Phong cách thập niên 70 với tông cam nâu ấm, hình khối bo tròn mạnh, badge đậm và typography đậm chất hoài cổ, tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "retro-70s"
+tags = [
+    "retro",
+    "70s",
+    "warm",
+    "vintage",
+    "bold",
+]
+
+[variants.retro-70s.palette]
+bg = [
+    43,
+    27,
+    18,
+]
+card = [
+    92,
+    58,
+    34,
+]
+accent = [
+    230,
+    126,
+    34,
+]
+text = [
+    250,
+    235,
+    210,
+]
+muted = [
+    196,
+    164,
+    132,
+]
+
+[variants.retro-70s.colors.background]
+hex = "#2B1B12"
+rgb = [
+    43,
+    27,
+    18,
+]
+
+[variants.retro-70s.colors.card]
+bg_hex = "#5C3A22"
+bg_rgb = [
+    92,
+    58,
+    34,
+]
+border_hex = "#7A4E2D"
+border_rgb = [
+    122,
+    78,
+    45,
+]
+border_width_pt = 2.0
+
+[variants.retro-70s.colors.accent]
+primary_hex = "#E67E22"
+primary_rgb = [
+    230,
+    126,
+    34,
+]
+secondary_hex = "#D35400"
+secondary_rgb = [
+    211,
+    84,
+    0,
+]
+success_hex = "#A3B18A"
+success_rgb = [
+    163,
+    177,
+    138,
+]
+
+[variants.retro-70s.colors.text]
+primary_hex = "#FAEBD2"
+primary_rgb = [
+    250,
+    235,
+    210,
+]
+secondary_hex = "#C4A484"
+secondary_rgb = [
+    196,
+    164,
+    132,
+]
+accent_hex = "#E67E22"
+accent_rgb = [
+    230,
+    126,
+    34,
+]
+
+[variants.swiss-editorial]
+name = "Swiss Editorial"
+description = "Lưới Thụy Sĩ cổ điển: nhiều khoảng trắng, đường kẻ mảnh, chữ lớn tương phản cao, bố cục bất đối xứng theo cột, tối ưu tiếng Việt có dấu/không dấu."
+style = "swiss-editorial"
+tags = [
+    "light",
+    "editorial",
+    "swiss",
+    "grid",
+    "minimal",
+]
+
+[variants.swiss-editorial.palette]
+bg = [
+    250,
+    250,
+    248,
+]
+card = [
+    255,
+    255,
+    255,
+]
+accent = [
+    230,
+    57,
+    70,
+]
+text = [
+    17,
+    17,
+    17,
+]
+muted = [
+    110,
+    110,
+    110,
+]
+
+[variants.swiss-editorial.colors.background]
+hex = "#FAFAF8"
+rgb = [
+    250,
+    250,
+    248,
+]
+
+[variants.swiss-editorial.colors.card]
+bg_hex = "#FFFFFF"
+bg_rgb = [
+    255,
+    255,
+    255,
+]
+border_hex = "#111111"
+border_rgb = [
+    17,
+    17,
+    17,
+]
+border_width_pt = 0.75
+
+[variants.swiss-editorial.colors.accent]
+primary_hex = "#E63946"
+primary_rgb = [
+    230,
+    57,
+    70,
+]
+secondary_hex = "#111111"
+secondary_rgb = [
+    17,
+    17,
+    17,
+]
+success_hex = "#2A9D8F"
+success_rgb = [
+    42,
+    157,
+    143,
+]
+
+[variants.swiss-editorial.colors.text]
+primary_hex = "#111111"
+primary_rgb = [
+    17,
+    17,
+    17,
+]
+secondary_hex = "#6E6E6E"
+secondary_rgb = [
+    110,
+    110,
+    110,
+]
+accent_hex = "#E63946"
+accent_rgb = [
+    230,
+    57,
+    70,
+]
+
+[variants.warm-boho]
+name = "Warm Boho"
+description = "Thẻ bo tròn hữu cơ, tông đất ấm, khoảng thở rộng, mềm mại, tỷ lệ 16:9, tối ưu tiếng Việt có dấu/không dấu."
+style = "warm-boho"
+tags = [
+    "warm",
+    "boho",
+    "organic",
+    "earthy",
+    "soft",
+]
+
+[variants.warm-boho.palette]
+bg = [
+    247,
+    240,
+    230,
+]
+card = [
+    255,
+    250,
+    242,
+]
+accent = [
+    193,
+    122,
+    92,
+]
+text = [
+    74,
+    56,
+    46,
+]
+muted = [
+    166,
+    143,
+    124,
+]
+
+[variants.warm-boho.colors.background]
+hex = "#F7F0E6"
+rgb = [
+    247,
+    240,
+    230,
+]
+
+[variants.warm-boho.colors.card]
+bg_hex = "#FFFAF2"
+bg_rgb = [
+    255,
+    250,
+    242,
+]
+border_hex = "#EAD9C4"
+border_rgb = [
+    234,
+    217,
+    196,
+]
+border_width_pt = 1.25
+
+[variants.warm-boho.colors.accent]
+primary_hex = "#C17A5C"
+primary_rgb = [
+    193,
+    122,
+    92,
+]
+secondary_hex = "#D9A66B"
+secondary_rgb = [
+    217,
+    166,
+    107,
+]
+success_hex = "#8FA97A"
+success_rgb = [
+    143,
+    169,
+    122,
+]
+
+[variants.warm-boho.colors.text]
+primary_hex = "#4A382E"
+primary_rgb = [
+    74,
+    56,
+    46,
+]
+secondary_hex = "#A68F7C"
+secondary_rgb = [
+    166,
+    143,
+    124,
+]
+accent_hex = "#C17A5C"
+accent_rgb = [
+    193,
+    122,
+    92,
+]
+
+[variants.zen-japanese]
+name = "Japanese Zen"
+description = "Tối giản thiền Nhật, bất đối xứng, nhiều không gian âm, điểm nhấn trục dọc, tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "zen-minimal"
+tags = [
+    "light",
+    "zen",
+    "minimal",
+    "japanese",
+    "asymmetric",
+]
+
+[variants.zen-japanese.palette]
+bg = [
+    245,
+    242,
+    235,
+]
+card = [
+    250,
+    248,
+    243,
+]
+accent = [
+    139,
+    58,
+    45,
+]
+text = [
+    38,
+    36,
+    33,
+]
+muted = [
+    140,
+    134,
+    122,
+]
+
+[variants.zen-japanese.colors.background]
+hex = "#F5F2EB"
+rgb = [
+    245,
+    242,
+    235,
+]
+
+[variants.zen-japanese.colors.card]
+bg_hex = "#FAF8F3"
+bg_rgb = [
+    250,
+    248,
+    243,
+]
+border_hex = "#DCD5C7"
+border_rgb = [
+    220,
+    213,
+    199,
+]
+border_width_pt = 0.75
+
+[variants.zen-japanese.colors.accent]
+primary_hex = "#8B3A2D"
+primary_rgb = [
+    139,
+    58,
+    45,
+]
+secondary_hex = "#4A5D4E"
+secondary_rgb = [
+    74,
+    93,
+    78,
+]
+success_hex = "#6B7F5E"
+success_rgb = [
+    107,
+    127,
+    94,
+]
+
+[variants.zen-japanese.colors.text]
+primary_hex = "#262421"
+primary_rgb = [
+    38,
+    36,
+    33,
+]
+secondary_hex = "#8C867A"
+secondary_rgb = [
+    140,
+    134,
+    122,
+]
+accent_hex = "#8B3A2D"
+accent_rgb = [
+    139,
+    58,
+    45,
+]

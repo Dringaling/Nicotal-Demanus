@@ -1,0 +1,376 @@
+[theme]
+id = "gen-zen-japanese"
+name = "Japanese Zen"
+description = "Tối giản thiền Nhật, bất đối xứng, nhiều không gian âm, điểm nhấn trục dọc, tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "zen-minimal"
+tags = [
+    "light",
+    "zen",
+    "minimal",
+    "japanese",
+    "asymmetric",
+]
+renderer = "theme"
+font = "Noto Serif"
+
+[palette]
+bg = [
+    245,
+    242,
+    235,
+]
+card = [
+    250,
+    248,
+    243,
+]
+accent = [
+    139,
+    58,
+    45,
+]
+text = [
+    38,
+    36,
+    33,
+]
+muted = [
+    140,
+    134,
+    122,
+]
+
+[canvas]
+width_inch = 13.333
+height_inch = 7.5
+aspect_ratio = "16:9"
+
+[colors.background]
+hex = "#F5F2EB"
+rgb = [
+    245,
+    242,
+    235,
+]
+
+[colors.card]
+bg_hex = "#FAF8F3"
+bg_rgb = [
+    250,
+    248,
+    243,
+]
+border_hex = "#DCD5C7"
+border_rgb = [
+    220,
+    213,
+    199,
+]
+border_width_pt = 0.75
+
+[colors.accent]
+primary_hex = "#8B3A2D"
+primary_rgb = [
+    139,
+    58,
+    45,
+]
+secondary_hex = "#4A5D4E"
+secondary_rgb = [
+    74,
+    93,
+    78,
+]
+success_hex = "#6B7F5E"
+success_rgb = [
+    107,
+    127,
+    94,
+]
+
+[colors.text]
+primary_hex = "#262421"
+primary_rgb = [
+    38,
+    36,
+    33,
+]
+secondary_hex = "#8C867A"
+secondary_rgb = [
+    140,
+    134,
+    122,
+]
+accent_hex = "#8B3A2D"
+accent_rgb = [
+    139,
+    58,
+    45,
+]
+
+[typography]
+font_family = "Noto Serif"
+font_family_fallback = "Georgia"
+
+[typography.title_hero]
+size_pt = 52
+bold = false
+color = "colors.text.primary_rgb"
+
+[typography.title_section]
+size_pt = 24
+bold = false
+color = "colors.text.primary_rgb"
+
+[typography.card_title]
+size_pt = 17
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.card_body]
+size_pt = 12
+bold = false
+line_spacing = 1.55
+color = "colors.text.secondary_rgb"
+
+[typography.tag]
+size_pt = 9
+bold = true
+color = "colors.accent.primary_rgb"
+
+[typography.big_metric]
+size_pt = 64
+bold = false
+color = "colors.accent.primary_rgb"
+
+[layouts.hero_title]
+id = "hero_zen_asymmetric"
+description = "Trang bìa bất đối xứng, trục dọc bên trái, nhiều không gian âm bên phải"
+
+[layouts.hero_title.card]
+shape_type = "RECTANGLE"
+left_inch = 0.9
+top_inch = 1.2
+width_inch = 0.1
+height_inch = 5.1
+fill = "colors.accent.primary_rgb"
+border = "colors.accent.primary_rgb"
+corner_radius = 0.0
+
+[layouts.hero_title.elements.tag]
+type = "text"
+left_inch = 1.4
+top_inch = 1.6
+width_inch = 6.5
+height_inch = 0.35
+style = "typography.tag"
+default = "禅  /  ZEN WORKSPACE"
+
+[layouts.hero_title.elements.title]
+type = "text"
+left_inch = 1.4
+top_inch = 2.2
+width_inch = 7.2
+height_inch = 2.4
+style = "typography.title_hero"
+default = "Tiêu đề bản thuyết trình"
+
+[layouts.hero_title.elements.subtitle]
+type = "text"
+left_inch = 1.4
+top_inch = 4.9
+width_inch = 6.5
+height_inch = 1.1
+style = "typography.card_body"
+default = "Mô tả ngắn gọn về mục tiêu, giải pháp hoặc lộ trình triển khai"
+
+[layouts.hero_title.elements.vertical_mark]
+type = "text"
+left_inch = 11.6
+top_inch = 1.2
+width_inch = 0.6
+height_inch = 5.1
+style = "typography.tag"
+default = "静"
+
+[layouts.three_cards]
+id = "three_columns_zen"
+description = "Slide 3 nội dung, bố cục bất đối xứng, khoảng trắng rộng"
+
+[layouts.three_cards.header]
+left_inch = 1.4
+top_inch = 0.9
+width_inch = 10.5
+height_inch = 0.7
+style = "typography.title_section"
+default = "Ba Trọng Tâm Phát Triển"
+
+[layouts.three_cards.grid_meta]
+count = 3
+top_inch = 2.2
+height_inch = 4.3
+width_inch = 3.2
+gap_inch = 0.6
+left_margin_inch = 1.4
+
+[layouts.three_cards.card_1]
+shape_type = "RECTANGLE"
+left_inch = 1.4
+top_inch = 2.2
+width_inch = 3.2
+height_inch = 4.3
+accent_bar_color = "colors.accent.primary_rgb"
+badge_text = "一  /  GIAI ĐOẠN 1"
+title_default = "Phân tích yêu cầu"
+body_default = "Tổng hợp toàn bộ tài liệu đầu vào, lược đồ cơ sở dữ liệu và yêu cầu tích hợp mạng LAN."
+
+[layouts.three_cards.card_2]
+shape_type = "RECTANGLE"
+left_inch = 5.2
+top_inch = 2.2
+width_inch = 3.2
+height_inch = 4.3
+accent_bar_color = "colors.accent.secondary_rgb"
+badge_text = "二  /  GIAI ĐOẠN 2"
+title_default = "Xây dựng lõi"
+body_default = "Tạo engine tự sinh mã với python-pptx, tối ưu bảng màu và font tiếng Việt."
+
+[layouts.three_cards.card_3]
+shape_type = "RECTANGLE"
+left_inch = 9.0
+top_inch = 2.2
+width_inch = 3.2
+height_inch = 4.3
+accent_bar_color = "colors.accent.success_rgb"
+badge_text = "三  /  GIAI ĐOẠN 3"
+title_default = "Triển khai LAN"
+body_default = "Chạy máy chủ backend nội bộ, quản trị cơ chế lưu vết TOML an toàn trước khi công khai."
+
+[layouts.metric_highlights]
+id = "metrics_zen_callout"
+description = "Slide làm nổi bật các con số then chốt, bố cục bất đối xứng"
+
+[layouts.metric_highlights.header]
+left_inch = 1.4
+top_inch = 0.9
+width_inch = 10.5
+height_inch = 0.7
+style = "typography.title_section"
+default = "Kết Quả Đo Lường Hiệu Năng"
+
+[layouts.metric_highlights.card_left]
+left_inch = 1.4
+top_inch = 2.2
+width_inch = 5.0
+height_inch = 4.3
+metric_number = "99.8%"
+metric_label = "Độ chính xác bố cục"
+metric_desc = "Tự động căn chỉnh tọa độ vector chính xác không bị tràn chữ tiếng Việt nhờ font Noto Serif."
+
+[layouts.metric_highlights.card_right]
+left_inch = 7.0
+top_inch = 2.2
+width_inch = 5.2
+height_inch = 4.3
+metric_number = "< 1.5s"
+metric_label = "Thời gian sinh slide"
+metric_desc = "Pipeline xử lý trực tiếp trên RAM và xuất file PPTX tức thì trên web server LAN."
+
+[variants.alt]
+name = "Alt"
+description = "Đảo sáng/tối, giữ nguyên layout và accent."
+style = "zen-minimal-alt"
+tags = [
+    "generated",
+    "variant",
+]
+
+[variants.alt.palette]
+bg = [
+    38,
+    36,
+    33,
+]
+card = [
+    38,
+    36,
+    33,
+]
+accent = [
+    139,
+    58,
+    45,
+]
+text = [
+    245,
+    242,
+    235,
+]
+muted = [
+    140,
+    134,
+    122,
+]
+
+[variants.alt.colors.background]
+hex = "#262421"
+rgb = [
+    38,
+    36,
+    33,
+]
+
+[variants.alt.colors.card]
+bg_hex = "#262421"
+bg_rgb = [
+    38,
+    36,
+    33,
+]
+border_hex = "#DCD5C7"
+border_rgb = [
+    220,
+    213,
+    199,
+]
+border_width_pt = 0.75
+
+[variants.alt.colors.accent]
+primary_hex = "#8B3A2D"
+primary_rgb = [
+    139,
+    58,
+    45,
+]
+secondary_hex = "#4A5D4E"
+secondary_rgb = [
+    74,
+    93,
+    78,
+]
+success_hex = "#6B7F5E"
+success_rgb = [
+    107,
+    127,
+    94,
+]
+
+[variants.alt.colors.text]
+primary_hex = "#F5F2EB"
+primary_rgb = [
+    245,
+    242,
+    235,
+]
+secondary_hex = "#8C867A"
+secondary_rgb = [
+    140,
+    134,
+    122,
+]
+accent_hex = "#8B3A2D"
+accent_rgb = [
+    139,
+    58,
+    45,
+]

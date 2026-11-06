@@ -10,6 +10,7 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
+from . import theme_designs
 from .schema import DeckSpec, SlideSpec, TableBlock
 from .templates_catalog import TemplateMeta, load_theme_data
 
@@ -462,54 +463,16 @@ def render_deck_theme(
 
     for index, slide_spec in enumerate(spec.slides, start=1):
         slide = prs.slides.add_slide(blank)
-        if slide_spec.layout == "title":
-            _hero(
-                slide,
-                theme,
-                spec,
-                index,
-                total,
-                "BÁO CÁO LÂM SÀNG",
-                slide_spec.title,
-                slide_spec.subtitle or spec.subtitle or spec.author or "",
-            )
-        elif slide_spec.layout == "section":
-            _hero(
-                slide,
-                theme,
-                spec,
-                index,
-                total,
-                "PHẦN",
-                slide_spec.title,
-                slide_spec.subtitle or "",
-            )
-        elif slide_spec.layout == "quote":
-            _hero(
-                slide,
-                theme,
-                spec,
-                index,
-                total,
-                "TRÍCH DẪN",
-                slide_spec.title,
-                slide_spec.subtitle or "",
-            )
-        elif slide_spec.layout == "closing":
-            _hero(
-                slide,
-                theme,
-                spec,
-                index,
-                total,
-                "CẢM ƠN",
-                slide_spec.title,
-                slide_spec.subtitle or spec.author or "",
+        if slide_spec.layout in {"title", "section", "quote", "closing"}:
+            theme_designs.render_title(
+                slide, theme, spec, slide_spec, index, total
             )
         elif slide_spec.layout == "table":
             _table_slide(slide, theme, spec, slide_spec, index, total)
         else:
-            _three_cards(slide, theme, spec, slide_spec, index, total)
+            theme_designs.render_content(
+                slide, theme, spec, slide_spec, index, total
+            )
 
         if slide_spec.note:
             slide.notes_slide.notes_text_frame.text = slide_spec.note

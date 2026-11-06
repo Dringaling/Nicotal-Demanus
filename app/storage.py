@@ -649,10 +649,15 @@ def delete_output(slug: str, root: Path | None = None) -> None:
     safe_slug = safe_path(directory, f"{slug}.pptx").stem
 
     pptx_path = directory / f"{safe_slug}.pptx"
-    if not pptx_path.is_file():
-        raise FileNotFoundError(f"Không tìm thấy file: {safe_slug}.pptx")
-    pptx_path.unlink()
+    removed = False
+    if pptx_path.is_file():
+        pptx_path.unlink()
+        removed = True
 
     sidecar = directory / safe_slug
     if sidecar.is_dir():
         shutil.rmtree(sidecar)
+        removed = True
+
+    if not removed:
+        raise FileNotFoundError(f"Không tìm thấy file: {safe_slug}.pptx")

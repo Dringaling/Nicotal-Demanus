@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros.html" import tags_sidebar, search_bar, input_list, create_form, reuse_form %}
+{% from "macros.html" import tags_sidebar, search_bar, input_list, create_form, reuse_form, orphan_decks %}
 {% block content %}
 {% if message %}<p class="flash">{{ message }}</p>{% endif %}
 <datalist id="tag-suggestions">
@@ -16,6 +16,7 @@
     {{ search_bar(active_tag, query) }}
     <div class="input-scroll">
       {{ input_list(inputs) }}
+      {{ orphan_decks(orphans) }}
     </div>
   </section>
 

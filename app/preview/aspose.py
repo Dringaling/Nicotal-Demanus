@@ -31,7 +31,12 @@ def is_available() -> bool:
     return True
 
 
-def render(pptx_path: Path, out_dir: Path, slides_module=None) -> list[Path]:
+def render(
+    pptx_path: Path,
+    out_dir: Path,
+    slides_module=None,
+    max_slides: int | None = None,
+) -> list[Path]:
     slides = slides_module or _import_slides()
     pptx_path = Path(pptx_path)
     out_dir = Path(out_dir)
@@ -44,8 +49,13 @@ def render(pptx_path: Path, out_dir: Path, slides_module=None) -> list[Path]:
             raise RuntimeError("Không đọc được kích thước slide")
         scale = TARGET_WIDTH / width
 
+        limit = (
+            MAX_ASPOSE_SLIDES
+            if max_slides is None
+            else min(max_slides, MAX_ASPOSE_SLIDES)
+        )
         for index, slide in enumerate(presentation.slides, start=1):
-            if index > MAX_ASPOSE_SLIDES:
+            if index > limit:
                 break
             image = slide.get_image(scale, scale)
             path = out_dir / f"slide-{index:02d}.png"

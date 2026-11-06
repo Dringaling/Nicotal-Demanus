@@ -35,7 +35,7 @@ def make_settings(
         max_retries=max_retries,
     )
     (tmp_path / "key.env").write_text(
-        "DEEPINFRA_FLEX_C79C=test-key\n", encoding="utf-8"
+        f"{provider.api_key_env}=test-key\n", encoding="utf-8"
     )
     return replace(base, provider=provider)
 
@@ -412,3 +412,136 @@ async def test_description_in_user_prompt(tmp_path: Path) -> None:
     user = seen[0]["messages"][-1]["content"]
     assert "DECK DESCRIPTION: Mô tả ngắn về mục tiêu và số slide" in user
     assert "Chi tiết nội dung từng slide" in user
+
+
+def make_local_settings(tmp_path: Path, provider_name: str):
+    base = load_settings(CONFIG)
+    key = f"{provider_name}/gemma-4-e4b-it"
+    provider = replace(
+        base.providers[key],
+        cache=replace(
+            base.providers[key].cache,
+            local_cache=False,
+            local_cache_dir=str(tmp_path / "cache"),
+        ),
+        max_retries=0,
+    )
+    return replace(base, provider_name=provider_name, provider=provider)
+
+
+async def test_openai_payload_has_no_deepinfra_fields(
+    tmp_path: Path,
+) -> None:
+    seen: list[tuple[str, dict]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append((request.url.path, json.loads(request.content)))
+        return httpx.Response(200, json=chat_response(valid_content()))
+
+    client = make_client(
+        make_local_settings(tmp_path, "lmstudio-openai"), handler, tmp_path
+    )
+    await client.generate_spec("Báo cáo", "Mô tả chi tiết về bệnh nhân")
+
+    path, body = seen[0]
+    assert path == "/v1/chat/completions"
+    assert "service_tier" not in body
+    assert "prompt_cache_key" not in body
+    assert "prompt_cache_options" not in body
+    assert body["response_format"]["type"] == "json_schema"
+    assert body["model"] == "gemma-4-e4b-it@iq4_nl"
+
+
+async def test_native_payload_and_response(tmp_path: Path) -> None:
+    seen: list[tuple[str, dict]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append((request.url.path, json.loads(request.content)))
+        return httpx.Response(
+            200,
+            json={
+                "output": [
+                    {"type": "message", "content": valid_content()}
+                ],
+                "stats": {
+                    "input_tokens": 10,
+                    "total_output_tokens": 20,
+                },
+            },
+        )
+
+    client = make_client(
+        make_local_settings(tmp_path, "lmstudio-native"), handler, tmp_path
+    )
+    spec, usage = await client.generate_spec(
+        "Báo cáo", "Mô tả chi tiết về bệnh nhân"
+    )
+
+    path, body = seen[0]
+    assert path == "/api/v1/chat"
+    assert "messages" not in body
+    assert "response_format" not in body
+    assert body["input"]
+    assert body["system_prompt"]
+    assert body["max_output_tokens"] == 20000
+    assert body["store"] is False
+    assert usage.prompt_tokens == 10
+    assert usage.completion_tokens == 20
+    assert len(spec.slides) > 0
+
+
+async def test_local_provider_has_no_authorization(
+    tmp_path: Path,
+) -> None:
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "output": [
+                    {"type": "message", "content": valid_content()}
+                ]
+            },
+        )
+
+    client = make_client(
+        make_local_settings(tmp_path, "lmstudio-native"), handler, tmp_path
+    )
+    await client.generate_spec("Báo cáo", "Mô tả chi tiết về bệnh nhân")
+
+    assert "authorization" not in captured[0].headers
+
+
+async def test_openai_repair_falls_back_to_no_response_format(
+    tmp_path: Path,
+) -> None:
+    calls: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        calls.append(body)
+        if len(calls) == 1:
+            return httpx.Response(200, json=chat_response("not json"))
+        if "response_format" in body:
+            return httpx.Response(
+                400,
+                json={
+                    "error": (
+                        "'response_format.type' must be 'json_schema' or 'text'"
+                    )
+                },
+            )
+        return httpx.Response(200, json=chat_response(valid_content()))
+
+    client = make_client(
+        make_local_settings(tmp_path, "lmstudio-openai"), handler, tmp_path
+    )
+    spec, _ = await client.generate_spec(
+        "Báo cáo", "Mô tả chi tiết về bệnh nhân"
+    )
+
+    assert len(spec.slides) > 0
+    assert "response_format" in calls[0]
+    assert "response_format" not in calls[-1]

@@ -270,3 +270,41 @@ def test_optional_extra_declared() -> None:
     assert "preview-aspose" in extras
     dependencies = [item.lower() for item in data["project"]["dependencies"]]
     assert not any(item.startswith("pillow") for item in dependencies)
+
+
+def test_aspose_honors_max_slides(tmp_path: Path) -> None:
+    slides, _ = _fake_slides(width=960, count=20)
+
+    paths = aspose.render(
+        tmp_path / "deck.pptx",
+        tmp_path / "out",
+        slides_module=slides,
+        max_slides=5,
+    )
+
+    assert len(paths) == 5
+
+
+def test_libreoffice_honors_max_slides(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fake_run(command, **kwargs):
+        outdir = Path(command[command.index("--outdir") + 1])
+        stem = Path(command[-1]).stem
+        (outdir / f"{stem}.pdf").write_bytes(b"%PDF")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(libreoffice.subprocess, "run", fake_run)
+    fake_pymupdf = SimpleNamespace(
+        Matrix=lambda x, y: (x, y),
+        open=lambda path: _FakeDocument(20),
+    )
+    monkeypatch.setitem(sys.modules, "pymupdf", fake_pymupdf)
+
+    pptx = tmp_path / "deck.pptx"
+    pptx.write_bytes(b"pptx")
+    paths = libreoffice.render(
+        "/usr/bin/soffice", pptx, tmp_path / "out", max_slides=5
+    )
+
+    assert len(paths) == 5

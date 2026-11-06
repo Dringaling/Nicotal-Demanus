@@ -1315,3 +1315,56 @@ def test_css_spacing_scale() -> None:
     assert "--gap-sm: 8px;" in css
     assert "--gap-md: 16px;" in css
     assert "--gap-lg: 24px;" in css
+
+
+def test_web_fonts_are_served(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+
+    for path in (
+        "/fonts/Be_Vietnam_Pro/BeVietnamPro-Regular.ttf",
+        "/fonts/Be_Vietnam_Pro/BeVietnamPro-Bold.ttf",
+        "/fonts/NotoSansCJKsc-Regular/NotoSansCJKsc-Regular.otf",
+        "/fonts/NotoSansCJKjp-Regular/NotoSansCJKjp-Regular.otf",
+    ):
+        response = client.get(path)
+        assert response.status_code == 200, path
+        assert len(response.content) > 1000, path
+
+
+def test_css_uses_web_fonts() -> None:
+    root = Path(__file__).resolve().parents[1]
+    css = (root / "web" / "static" / "style.css").read_text(encoding="utf-8")
+
+    assert "@font-face" in css
+    assert 'font-family: "Be Vietnam Pro"' in css
+    assert 'font-family: "Noto Sans CJK SC"' in css
+    assert 'font-family: "Noto Sans CJK JP"' in css
+    assert '"Be Vietnam Pro",' in css
+    assert '"Noto Sans CJK SC",' in css
+
+
+def test_index_shows_orphan_decks(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    out = tmp_path / "output" / "orphan-deck.pptx"
+    out.parent.mkdir(parents=True)
+    out.write_bytes(b"pptx")
+
+    html = client.get("/").text
+
+    assert "Deck chưa gắn input" in html
+    assert "orphan-deck" in html
+
+
+def test_index_hides_linked_decks_from_orphans(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input(
+        "A", "Mô tả", "Chi tiết", root=tmp_path
+    )
+    out = tmp_path / "output" / "linked-deck.pptx"
+    out.parent.mkdir(parents=True)
+    out.write_bytes(b"pptx")
+    storage.append_output(record.id, "linked-deck", root=tmp_path)
+
+    html = client.get("/").text
+
+    assert "Deck chưa gắn input" not in html

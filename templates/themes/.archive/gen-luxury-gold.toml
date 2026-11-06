@@ -1,0 +1,366 @@
+[theme]
+id = "gen-luxury-gold"
+name = "Luxury Gold"
+description = "Nền mận đậm sang trọng, điểm nhấn vàng kim, thẻ lớn bo góc mềm, khoảng cách rộng rãi, tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "luxury-gold"
+tags = [
+    "dark",
+    "luxury",
+    "gold",
+    "premium",
+]
+renderer = "theme"
+font = "Playfair Display"
+
+[palette]
+bg = [
+    42,
+    16,
+    38,
+]
+card = [
+    58,
+    26,
+    52,
+]
+accent = [
+    212,
+    175,
+    55,
+]
+text = [
+    250,
+    243,
+    224,
+]
+muted = [
+    168,
+    138,
+    128,
+]
+
+[canvas]
+width_inch = 13.333
+height_inch = 7.5
+aspect_ratio = "16:9"
+
+[colors.background]
+hex = "#2A1026"
+rgb = [
+    42,
+    16,
+    38,
+]
+
+[colors.card]
+bg_hex = "#3A1A34"
+bg_rgb = [
+    58,
+    26,
+    52,
+]
+border_hex = "#5C3A52"
+border_rgb = [
+    92,
+    58,
+    82,
+]
+border_width_pt = 1.25
+
+[colors.accent]
+primary_hex = "#D4AF37"
+primary_rgb = [
+    212,
+    175,
+    55,
+]
+secondary_hex = "#E8C766"
+secondary_rgb = [
+    232,
+    199,
+    102,
+]
+success_hex = "#B08D57"
+success_rgb = [
+    176,
+    141,
+    87,
+]
+
+[colors.text]
+primary_hex = "#FAF3E0"
+primary_rgb = [
+    250,
+    243,
+    224,
+]
+secondary_hex = "#A88A80"
+secondary_rgb = [
+    168,
+    138,
+    128,
+]
+accent_hex = "#D4AF37"
+accent_rgb = [
+    212,
+    175,
+    55,
+]
+
+[typography]
+font_family = "Playfair Display"
+font_family_fallback = "Georgia"
+
+[typography.title_hero]
+size_pt = 54
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.title_section]
+size_pt = 30
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.card_title]
+size_pt = 20
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.card_body]
+size_pt = 13
+bold = false
+line_spacing = 1.35
+color = "colors.text.secondary_rgb"
+
+[typography.tag]
+size_pt = 11
+bold = true
+color = "colors.accent.primary_rgb"
+
+[typography.big_metric]
+size_pt = 60
+bold = true
+color = "colors.accent.primary_rgb"
+
+[layouts.hero_title]
+id = "hero_cover"
+description = "Trang bìa sang trọng với thẻ lớn lệch trái, đường viền vàng mảnh"
+
+[layouts.hero_title.card]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 1.2
+top_inch = 1.1
+width_inch = 10.933
+height_inch = 5.3
+fill = "colors.card.bg_rgb"
+border = "colors.accent.primary_rgb"
+corner_radius = 0.12
+
+[layouts.hero_title.elements.tag]
+type = "text"
+left_inch = 1.9
+top_inch = 1.85
+width_inch = 9.533
+height_inch = 0.45
+style = "typography.tag"
+default = "PREMIUM EDITION / 2025"
+
+[layouts.hero_title.elements.title]
+type = "text"
+left_inch = 1.9
+top_inch = 2.55
+width_inch = 9.533
+height_inch = 2.0
+style = "typography.title_hero"
+default = "Tiêu đề bản thuyết trình"
+
+[layouts.hero_title.elements.subtitle]
+type = "text"
+left_inch = 1.9
+top_inch = 4.85
+width_inch = 9.533
+height_inch = 1.0
+style = "typography.card_body"
+default = "Mô tả ngắn gọn về mục tiêu, giải pháp hoặc lộ trình triển khai"
+
+[layouts.three_cards]
+id = "three_columns_cards"
+description = "Slide trình bày 3 nội dung với thẻ lớn, khoảng cách sang trọng"
+
+[layouts.three_cards.header]
+left_inch = 1.2
+top_inch = 0.7
+width_inch = 10.933
+height_inch = 0.9
+style = "typography.title_section"
+default = "3 Trọng Tâm Phát Triển"
+
+[layouts.three_cards.grid_meta]
+count = 3
+top_inch = 2.1
+height_inch = 4.55
+width_inch = 3.4
+gap_inch = 0.5
+left_margin_inch = 1.2
+
+[layouts.three_cards.card_1]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 1.2
+top_inch = 2.1
+width_inch = 3.4
+height_inch = 4.55
+accent_bar_color = "colors.accent.primary_rgb"
+badge_text = "01 / GIAI ĐOẠN 1"
+title_default = "Phân tích yêu cầu"
+body_default = "Tổng hợp toàn bộ tài liệu đầu vào, lược đồ cơ sở dữ liệu và yêu cầu tích hợp mạng LAN."
+
+[layouts.three_cards.card_2]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 5.1
+top_inch = 2.1
+width_inch = 3.4
+height_inch = 4.55
+accent_bar_color = "colors.accent.secondary_rgb"
+badge_text = "02 / GIAI ĐOẠN 2"
+title_default = "Xây dựng lõi"
+body_default = "Tạo engine tự sinh mã với python-pptx, tối ưu bảng màu và font tiếng Việt Lexend."
+
+[layouts.three_cards.card_3]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 9.0
+top_inch = 2.1
+width_inch = 3.4
+height_inch = 4.55
+accent_bar_color = "colors.accent.success_rgb"
+badge_text = "03 / GIAI ĐOẠN 3"
+title_default = "Triển khai LAN"
+body_default = "Chạy máy chủ backend nội bộ, quản trị cơ chế lưu vết TOML an toàn trước khi công khai."
+
+[layouts.metric_highlights]
+id = "metrics_callout"
+description = "Slide làm nổi bật các con số then chốt với thẻ lớn và số liệu vàng"
+
+[layouts.metric_highlights.header]
+left_inch = 1.2
+top_inch = 0.7
+width_inch = 10.933
+height_inch = 0.9
+style = "typography.title_section"
+default = "Kết Quả Đo Lường Hiệu Năng"
+
+[layouts.metric_highlights.card_left]
+left_inch = 1.2
+top_inch = 2.1
+width_inch = 5.3
+height_inch = 4.55
+metric_number = "99.8%"
+metric_label = "Độ chính xác bố cục"
+metric_desc = "Tự động căn chỉnh tọa độ vector chính xác không bị tràn chữ tiếng Việt nhờ font Lexend."
+
+[layouts.metric_highlights.card_right]
+left_inch = 6.83
+top_inch = 2.1
+width_inch = 5.3
+height_inch = 4.55
+metric_number = "< 1.5s"
+metric_label = "Thời gian sinh slide"
+metric_desc = "Pipeline xử lý trực tiếp trên RAM và xuất file PPTX tức thì trên web server LAN."
+
+[variants.alt]
+name = "Alt"
+description = "Đảo sáng/tối, giữ nguyên layout và accent."
+style = "luxury-gold-alt"
+tags = [
+    "generated",
+    "variant",
+]
+
+[variants.alt.palette]
+bg = [
+    250,
+    243,
+    224,
+]
+card = [
+    250,
+    243,
+    224,
+]
+accent = [
+    212,
+    175,
+    55,
+]
+text = [
+    42,
+    16,
+    38,
+]
+muted = [
+    168,
+    138,
+    128,
+]
+
+[variants.alt.colors.background]
+hex = "#FAF3E0"
+rgb = [
+    250,
+    243,
+    224,
+]
+
+[variants.alt.colors.card]
+bg_hex = "#FAF3E0"
+bg_rgb = [
+    250,
+    243,
+    224,
+]
+border_hex = "#5C3A52"
+border_rgb = [
+    92,
+    58,
+    82,
+]
+border_width_pt = 1.25
+
+[variants.alt.colors.accent]
+primary_hex = "#D4AF37"
+primary_rgb = [
+    212,
+    175,
+    55,
+]
+secondary_hex = "#E8C766"
+secondary_rgb = [
+    232,
+    199,
+    102,
+]
+success_hex = "#B08D57"
+success_rgb = [
+    176,
+    141,
+    87,
+]
+
+[variants.alt.colors.text]
+primary_hex = "#2A1026"
+primary_rgb = [
+    42,
+    16,
+    38,
+]
+secondary_hex = "#A88A80"
+secondary_rgb = [
+    168,
+    138,
+    128,
+]
+accent_hex = "#D4AF37"
+accent_rgb = [
+    212,
+    175,
+    55,
+]

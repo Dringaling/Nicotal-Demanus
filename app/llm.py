@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import json
 import logging
 import re
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +13,9 @@ import httpx
 
 from .config import REPO_ROOT, Settings, load_secret
 from .prompts import build_system_prompt
+from .providers import UsageInfo, get_adapter
 from .schema import DeckSpec, SlideSpec
+from .spec_repair import sanitize_deck
 from .template_profile import load_profile_from_path
 from .templates_catalog import format_template_context, get_template, template_file
 
@@ -31,16 +33,6 @@ class _HTTPError(RuntimeError):
         super().__init__(f"HTTP {status_code}: {detail}")
         self.status_code = status_code
         self.detail = detail
-
-
-@dataclass
-class UsageInfo:
-    prompt_tokens: int = 0
-    completion_tokens: int = 0
-    cached_tokens: int = 0
-    cache_write_tokens: int = 0
-    estimated_cost: float = 0.0
-    from_cache: bool = False
 
 
 def _strip_fence(text: str) -> str:
@@ -188,6 +180,7 @@ class LLMClient:
     ) -> None:
         self.settings = settings
         self.provider = settings.provider
+        self.adapter = get_adapter(self.provider.type)
         self._transport = transport
         self.root = Path(root) if root is not None else REPO_ROOT
         self._api_key_value: str | None = None
@@ -232,32 +225,34 @@ class LLMClient:
             }
         return {"type": "json_object"}
 
+    @staticmethod
+    def _system_prompt(messages: list[dict[str, Any]]) -> str:
+        for message in messages:
+            if message.get("role") == "system":
+                return str(message.get("content", ""))
+        return ""
+
+    @staticmethod
+    def _native_input(messages: list[dict[str, Any]]) -> str:
+        parts: list[str] = []
+        for message in messages:
+            role = str(message.get("role", "user"))
+            if role == "system":
+                continue
+            parts.append(f"{role.upper()}:\n{message.get('content', '')}")
+        return "\n\n".join(parts)
+
     def _payload(
         self,
         messages: list[dict[str, Any]],
         response_format: dict[str, Any],
     ) -> dict[str, Any]:
-        generation = self.provider.generation
-        payload: dict[str, Any] = {
-            "model": self.provider.model,
-            "messages": messages,
-            "service_tier": self.provider.service_tier,
-            "temperature": generation.temperature,
-            "top_p": generation.top_p,
-            "max_tokens": generation.max_tokens,
-            "stream": False,
-            "prompt_cache_key": self.provider.cache.prompt_cache_key,
-            "prompt_cache_options": {
-                "mode": "explicit",
-                "ttl": self.provider.cache.cache_ttl,
-            },
-            "response_format": response_format,
-        }
-        if self.provider.fallback_models:
-            payload["models"] = list(self.provider.fallback_models)
-        if self.provider.fail_fast:
-            payload["fail_fast"] = True
-        return payload
+        return self.adapter.payload(
+            self.provider, messages, response_format
+        )
+
+    def _endpoint(self) -> str:
+        return self.adapter.endpoint(self.provider)
 
     def _messages(
         self,
@@ -291,16 +286,13 @@ class LLMClient:
         ]
 
     async def _post(self, payload: dict[str, Any]) -> dict[str, Any]:
-        headers = {
-            "Authorization": f"Bearer {self._api_key()}",
-            "Content-Type": "application/json",
-        }
+        headers = self.adapter.headers(self.provider, self._api_key())
         timeout = httpx.Timeout(self.provider.timeout_seconds)
         async with httpx.AsyncClient(
             timeout=timeout, transport=self._transport
         ) as client:
             response = await client.post(
-                f"{self.provider.base_url}/chat/completions",
+                self._endpoint(),
                 json=payload,
                 headers=headers,
             )
@@ -317,7 +309,8 @@ class LLMClient:
                 last_error = exc
                 if exc.status_code not in (429, 500, 502, 503, 504):
                     raise LLMError(
-                        f"DeepInfra trả về HTTP {exc.status_code}: {exc.detail}"
+                        f"{self.provider.name} trả về HTTP "
+                        f"{exc.status_code}: {exc.detail}"
                     ) from exc
             except httpx.TimeoutException as exc:
                 last_error = exc
@@ -328,27 +321,25 @@ class LLMClient:
                 await asyncio.sleep(min(2 ** (attempt + 1), 30))
 
         raise LLMError(
-            f"Gọi DeepInfra thất bại sau {self.provider.max_retries + 1} lần: "
-            f"{last_error}"
+            f"Gọi {self.provider.name} thất bại sau "
+            f"{self.provider.max_retries + 1} lần: {last_error}"
         ) from last_error
 
     def _content(self, data: dict[str, Any]) -> str:
         try:
-            return data["choices"][0]["message"]["content"]
+            return self.adapter.content(data)
         except (KeyError, IndexError, TypeError) as exc:
             raise LLMError(
-                "Phản hồi DeepInfra thiếu choices[0].message.content"
+                f"Phản hồi {self.provider.name} thiếu nội dung"
             ) from exc
 
     def _usage(self, data: dict[str, Any]) -> UsageInfo:
-        usage = data.get("usage") or {}
-        return UsageInfo(
-            prompt_tokens=int(usage.get("prompt_tokens", 0) or 0),
-            completion_tokens=int(usage.get("completion_tokens", 0) or 0),
-            cached_tokens=int(usage.get("cached_tokens", 0) or 0),
-            cache_write_tokens=int(usage.get("cache_write_tokens", 0) or 0),
-            estimated_cost=float(usage.get("estimated_cost", 0.0) or 0.0),
-        )
+        return self.adapter.usage(data)
+
+    @staticmethod
+    def _validate_content(content: str) -> DeckSpec:
+        data = json.loads(_strip_fence(content))
+        return DeckSpec.model_validate(sanitize_deck(data))
 
     async def _parse(
         self,
@@ -356,25 +347,56 @@ class LLMClient:
         messages: list[dict[str, Any]],
     ) -> DeckSpec:
         try:
-            return DeckSpec.model_validate_json(_strip_fence(content))
+            return self._validate_content(content)
         except Exception as first_error:
+            error_text = str(first_error)
+            cut_off = any(
+                marker in error_text
+                for marker in (
+                    "EOF while parsing",
+                    "Unterminated string",
+                    "Expecting ',' delimiter",
+                    "Expecting property name",
+                )
+            )
+            instruction = (
+                "The JSON above was cut off. Return a SHORTER valid JSON "
+                "deck-spec with at most 4 slides. No markdown, no commentary."
+                if cut_off
+                else (
+                    f"The JSON above is invalid: {first_error}. "
+                    "Return only a valid JSON deck-spec matching the schema, "
+                    "without markdown."
+                )
+            )
             repair_messages = messages + [
                 {"role": "assistant", "content": content},
-                {
-                    "role": "user",
-                    "content": (
-                        f"The JSON above is invalid: {first_error}. "
-                        "Return only a valid JSON deck-spec matching the schema, "
-                        "without markdown."
-                    ),
-                },
+                {"role": "user", "content": instruction},
             ]
-            data = await self._post_with_retry(
-                self._payload(repair_messages, self._response_format("json_object"))
-            )
+            try:
+                data = await self._post_with_retry(
+                    self._payload(
+                        repair_messages, self._response_format("json_object")
+                    )
+                )
+            except LLMError as exc:
+                if (
+                    not self.adapter.supports_response_format()
+                    or "response_format" in str(exc).lower()
+                ):
+                    data = await self._post_with_retry(
+                        self._payload(repair_messages, {})
+                    )
+                else:
+                    raise
+            if self.adapter.truncated(data):
+                raise LLMError(
+                    "Phản hồi bị cắt vì hết token; tăng max_tokens "
+                    "hoặc giảm chunk_chars"
+                )
             repaired = self._content(data)
             try:
-                return DeckSpec.model_validate_json(_strip_fence(repaired))
+                return self._validate_content(repaired)
             except Exception as second_error:
                 raise LLMError(
                     f"Không parse được JSON deck-spec: {second_error}"
@@ -385,21 +407,54 @@ class LLMClient:
         messages: list[dict[str, Any]],
     ) -> tuple[DeckSpec, UsageInfo]:
         mode = self.provider.generation.response_format
-        try:
-            data = await self._post_with_retry(
-                self._payload(messages, self._response_format(mode))
-            )
-        except LLMError as exc:
-            if mode == "json_schema" and "response_format" in str(exc).lower():
+
+        if not self.adapter.supports_response_format():
+            data = await self._post_with_retry(self._payload(messages, {}))
+        else:
+            try:
                 data = await self._post_with_retry(
-                    self._payload(messages, self._response_format("json_object"))
+                    self._payload(messages, self._response_format(mode))
                 )
-            else:
-                raise
+            except LLMError as exc:
+                if "response_format" not in str(exc).lower():
+                    raise
+                try:
+                    data = await self._post_with_retry(
+                        self._payload(
+                            messages, self._response_format("json_object")
+                        )
+                    )
+                except LLMError as second:
+                    if "response_format" not in str(second).lower():
+                        raise
+                    data = await self._post_with_retry(
+                        self._payload(messages, {})
+                    )
+
+        if self.adapter.truncated(data):
+            raise LLMError(
+                "Phản hồi bị cắt vì hết token; tăng max_tokens "
+                "hoặc giảm chunk_chars"
+            )
 
         content = self._content(data)
         spec = await self._parse(content, messages)
         return spec, self._usage(data)
+
+    async def chat(
+        self,
+        messages: list[dict[str, Any]],
+        response_format: dict[str, Any] | None = None,
+    ) -> tuple[str, UsageInfo]:
+        data = await self._post_with_retry(
+            self._payload(messages, response_format or {})
+        )
+        if self.adapter.truncated(data):
+            raise LLMError(
+                "Phản hồi bị cắt vì hết token; tăng max_tokens "
+                "hoặc giảm chunk_chars"
+            )
+        return self._content(data), self._usage(data)
 
     async def generate_spec(
         self,
@@ -458,10 +513,11 @@ class LLMClient:
         self._write_cache(key, merged)
 
         logger.info(
-            "DeepInfra ok model=%s tier=%s chunks=%s slides=%s "
+            "%s ok type=%s model=%s chunks=%s slides=%s "
             "prompt_tokens=%s cached_tokens=%s cost=%s",
+            self.provider.name,
+            self.provider.type,
             self.provider.model,
-            self.provider.service_tier,
             total,
             len(merged.slides),
             usage.prompt_tokens,

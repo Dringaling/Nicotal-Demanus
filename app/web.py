@@ -74,6 +74,13 @@ def create_app(
     app = FastAPI(title="Demanus", version="0.1.0")
     templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
     app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="static")
+    fonts_dir = REPO_ROOT / "src" / "fonts"
+    if fonts_dir.is_dir():
+        app.mount(
+            "/fonts",
+            StaticFiles(directory=str(fonts_dir)),
+            name="fonts",
+        )
 
     def render_index(
         request: Request,
@@ -102,11 +109,23 @@ def create_app(
                     "has_output": bool(outputs),
                 }
             )
+
+        linked = {
+            slug
+            for record in storage.list_inputs(root=base)
+            for slug in record.output_slugs
+        }
+        orphans = [
+            output
+            for output in storage.list_outputs(root=base)
+            if output.slug not in linked
+        ]
         return templates.TemplateResponse(
             request=request,
             name="index.html",
             context={
                 "inputs": inputs,
+                "orphans": orphans,
                 "tags": storage.list_tags(root=base),
                 "counts": storage.tag_counts(root=base),
                 "active_tag": active_tag,

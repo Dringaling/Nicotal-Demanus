@@ -1,0 +1,377 @@
+[theme]
+id = "gen-brutalist"
+name = "Brutalist"
+description = "Khối đậm, viền dày, chữ quá khổ, hình học thô, tương phản mạnh — tỷ lệ 16:9, tối ưu tiếng Việt."
+style = "brutalist"
+tags = [
+    "brutalist",
+    "bold",
+    "high-contrast",
+    "raw",
+]
+renderer = "theme"
+font = "Archivo Black"
+
+[palette]
+bg = [
+    236,
+    232,
+    222,
+]
+card = [
+    255,
+    255,
+    255,
+]
+accent = [
+    255,
+    59,
+    0,
+]
+text = [
+    10,
+    10,
+    10,
+]
+muted = [
+    90,
+    90,
+    90,
+]
+
+[canvas]
+width_inch = 13.333
+height_inch = 7.5
+aspect_ratio = "16:9"
+
+[colors.background]
+hex = "#ECE8DE"
+rgb = [
+    236,
+    232,
+    222,
+]
+
+[colors.card]
+bg_hex = "#FFFFFF"
+bg_rgb = [
+    255,
+    255,
+    255,
+]
+border_hex = "#0A0A0A"
+border_rgb = [
+    10,
+    10,
+    10,
+]
+border_width_pt = 5.0
+
+[colors.accent]
+primary_hex = "#FF3B00"
+primary_rgb = [
+    255,
+    59,
+    0,
+]
+secondary_hex = "#0047FF"
+secondary_rgb = [
+    0,
+    71,
+    255,
+]
+success_hex = "#00C853"
+success_rgb = [
+    0,
+    200,
+    83,
+]
+
+[colors.text]
+primary_hex = "#0A0A0A"
+primary_rgb = [
+    10,
+    10,
+    10,
+]
+secondary_hex = "#5A5A5A"
+secondary_rgb = [
+    90,
+    90,
+    90,
+]
+accent_hex = "#FF3B00"
+accent_rgb = [
+    255,
+    59,
+    0,
+]
+
+[typography]
+font_family = "Archivo Black"
+font_family_fallback = "Arial"
+
+[typography.title_hero]
+size_pt = 72
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.title_section]
+size_pt = 40
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.card_title]
+size_pt = 22
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.card_body]
+size_pt = 13
+bold = false
+line_spacing = 1.3
+color = "colors.text.secondary_rgb"
+
+[typography.tag]
+size_pt = 11
+bold = true
+color = "colors.accent.primary_rgb"
+
+[typography.big_metric]
+size_pt = 96
+bold = true
+color = "colors.accent.primary_rgb"
+
+[layouts.hero_title]
+id = "hero_cover"
+description = "Trang bìa khối thô, viền dày, chữ quá khổ lệch trái"
+
+[layouts.hero_title.card]
+shape_type = "RECTANGLE"
+left_inch = 0.6
+top_inch = 0.6
+width_inch = 12.133
+height_inch = 6.3
+fill = "colors.card.bg_rgb"
+border = "colors.card.border_rgb"
+corner_radius = 0.0
+
+[layouts.hero_title.elements.tag]
+type = "text"
+left_inch = 1.1
+top_inch = 1.1
+width_inch = 6.0
+height_inch = 0.45
+style = "typography.tag"
+default = "/// BÁO CÁO DỰ ÁN"
+
+[layouts.hero_title.elements.title]
+type = "text"
+left_inch = 1.1
+top_inch = 1.7
+width_inch = 11.1
+height_inch = 2.6
+style = "typography.title_hero"
+default = "TIÊU ĐỀ BẢN THUYẾT TRÌNH"
+
+[layouts.hero_title.elements.subtitle]
+type = "text"
+left_inch = 1.1
+top_inch = 4.6
+width_inch = 8.5
+height_inch = 1.2
+style = "typography.card_body"
+default = "Mô tả ngắn gọn về mục tiêu, giải pháp hoặc lộ trình triển khai."
+
+[layouts.hero_title.elements.accent_block]
+type = "shape"
+shape_type = "RECTANGLE"
+left_inch = 10.2
+top_inch = 4.6
+width_inch = 2.0
+height_inch = 1.8
+fill = "colors.accent.primary_rgb"
+border = "colors.card.border_rgb"
+border_width_pt = 5.0
+
+[layouts.three_cards]
+id = "three_columns_cards"
+description = "Ba khối thô viền dày, badge đảo màu, tiêu đề quá khổ"
+
+[layouts.three_cards.header]
+left_inch = 0.6
+top_inch = 0.55
+width_inch = 12.133
+height_inch = 1.0
+style = "typography.title_section"
+default = "3 TRỌNG TÂM PHÁT TRIỂN"
+
+[layouts.three_cards.grid_meta]
+count = 3
+top_inch = 1.9
+height_inch = 4.9
+width_inch = 3.8
+gap_inch = 0.366
+left_margin_inch = 0.6
+
+[layouts.three_cards.card_1]
+shape_type = "RECTANGLE"
+left_inch = 0.6
+top_inch = 1.9
+width_inch = 3.8
+height_inch = 4.9
+accent_bar_color = "colors.accent.primary_rgb"
+badge_text = "01 / GIAI ĐOẠN 1"
+title_default = "PHÂN TÍCH"
+body_default = "Tổng hợp tài liệu đầu vào, lược đồ cơ sở dữ liệu và yêu cầu tích hợp mạng LAN."
+
+[layouts.three_cards.card_2]
+shape_type = "RECTANGLE"
+left_inch = 4.766
+top_inch = 1.9
+width_inch = 3.8
+height_inch = 4.9
+accent_bar_color = "colors.accent.secondary_rgb"
+badge_text = "02 / GIAI ĐOẠN 2"
+title_default = "XÂY LÕI"
+body_default = "Tạo engine tự sinh mã với python-pptx, tối ưu bảng màu và font tiếng Việt."
+
+[layouts.three_cards.card_3]
+shape_type = "RECTANGLE"
+left_inch = 8.932
+top_inch = 1.9
+width_inch = 3.8
+height_inch = 4.9
+accent_bar_color = "colors.accent.success_rgb"
+badge_text = "03 / GIAI ĐOẠN 3"
+title_default = "TRIỂN KHAI"
+body_default = "Chạy máy chủ backend nội bộ, quản trị cơ chế lưu vết TOML an toàn trước khi công khai."
+
+[layouts.metric_highlights]
+id = "metrics_callout"
+description = "Hai khối số liệu khổng lồ, viền dày, số liệu quá khổ"
+
+[layouts.metric_highlights.header]
+left_inch = 0.6
+top_inch = 0.55
+width_inch = 12.133
+height_inch = 1.0
+style = "typography.title_section"
+default = "KẾT QUẢ ĐO LƯỜNG"
+
+[layouts.metric_highlights.card_left]
+left_inch = 0.6
+top_inch = 1.9
+width_inch = 5.9
+height_inch = 4.9
+metric_number = "99.8%"
+metric_label = "ĐỘ CHÍNH XÁC BỐ CỤC"
+metric_desc = "Tự động căn chỉnh tọa độ vector chính xác không bị tràn chữ tiếng Việt."
+
+[layouts.metric_highlights.card_right]
+left_inch = 6.833
+top_inch = 1.9
+width_inch = 5.9
+height_inch = 4.9
+metric_number = "< 1.5s"
+metric_label = "THỜI GIAN SINH SLIDE"
+metric_desc = "Pipeline xử lý trực tiếp trên RAM và xuất file PPTX tức thì trên web server LAN."
+
+[variants.alt]
+name = "Alt"
+description = "Đảo sáng/tối, giữ nguyên layout và accent."
+style = "brutalist-alt"
+tags = [
+    "generated",
+    "variant",
+]
+
+[variants.alt.palette]
+bg = [
+    10,
+    10,
+    10,
+]
+card = [
+    10,
+    10,
+    10,
+]
+accent = [
+    255,
+    59,
+    0,
+]
+text = [
+    236,
+    232,
+    222,
+]
+muted = [
+    90,
+    90,
+    90,
+]
+
+[variants.alt.colors.background]
+hex = "#0A0A0A"
+rgb = [
+    10,
+    10,
+    10,
+]
+
+[variants.alt.colors.card]
+bg_hex = "#0A0A0A"
+bg_rgb = [
+    10,
+    10,
+    10,
+]
+border_hex = "#0A0A0A"
+border_rgb = [
+    10,
+    10,
+    10,
+]
+border_width_pt = 5.0
+
+[variants.alt.colors.accent]
+primary_hex = "#FF3B00"
+primary_rgb = [
+    255,
+    59,
+    0,
+]
+secondary_hex = "#0047FF"
+secondary_rgb = [
+    0,
+    71,
+    255,
+]
+success_hex = "#00C853"
+success_rgb = [
+    0,
+    200,
+    83,
+]
+
+[variants.alt.colors.text]
+primary_hex = "#ECE8DE"
+primary_rgb = [
+    236,
+    232,
+    222,
+]
+secondary_hex = "#5A5A5A"
+secondary_rgb = [
+    90,
+    90,
+    90,
+]
+accent_hex = "#FF3B00"
+accent_rgb = [
+    255,
+    59,
+    0,
+]

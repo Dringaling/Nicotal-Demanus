@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 from pathlib import Path
 
 from app.config import detect_lan_ip, load_settings
@@ -13,6 +14,10 @@ from app.sample import sample_deck
 def cmd_serve(args: argparse.Namespace) -> None:
     import uvicorn
 
+    if args.provider:
+        os.environ["DEMANUS_PROVIDER"] = args.provider
+    if args.model:
+        os.environ["DEMANUS_MODEL"] = args.model
     settings = load_settings()
     host = args.host or settings.server.host
     port = args.port or settings.server.port
@@ -37,6 +42,10 @@ def cmd_generate(args: argparse.Namespace) -> None:
     from app.preview import render_preview
     from app.storage import allocate_output, create_input, update_status
 
+    if args.provider:
+        os.environ["DEMANUS_PROVIDER"] = args.provider
+    if args.model:
+        os.environ["DEMANUS_MODEL"] = args.model
     settings = load_settings()
     record = create_input(args.name, args.desc)
     update_status(record.id, "generating")
@@ -65,6 +74,25 @@ def cmd_generate(args: argparse.Namespace) -> None:
     )
 
 
+def cmd_providers(args: argparse.Namespace) -> None:
+    from app.config import secret_status
+
+    settings = load_settings()
+    active = f"{settings.provider_name}/{settings.model_name}"
+    for name, provider in settings.providers.items():
+        marker = "*" if name == active else " "
+        print(f"{marker} {name}")
+        print(f"    type={provider.type}")
+        print(f"    model={provider.model}")
+        print(f"    base_url={provider.base_url}")
+        print(
+            "    key="
+            f"{secret_status(provider)} "
+            f"env={provider.api_key_env or '-'} "
+            f"file={provider.api_key_file or '-'}"
+        )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="demanus")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -72,6 +100,8 @@ def build_parser() -> argparse.ArgumentParser:
     serve = subparsers.add_parser("serve", help="Chạy server LAN")
     serve.add_argument("--host", default=None)
     serve.add_argument("--port", type=int, default=None)
+    serve.add_argument("--provider", default=None)
+    serve.add_argument("--model", default=None)
     serve.add_argument("--reload", action="store_true")
     serve.set_defaults(func=cmd_serve)
 
@@ -82,7 +112,12 @@ def build_parser() -> argparse.ArgumentParser:
     generate = subparsers.add_parser("generate", help="Sinh deck từ mô tả")
     generate.add_argument("name")
     generate.add_argument("desc")
+    generate.add_argument("--provider", default=None)
+    generate.add_argument("--model", default=None)
     generate.set_defaults(func=cmd_generate)
+
+    providers = subparsers.add_parser("providers", help="Liệt kê provider")
+    providers.set_defaults(func=cmd_providers)
 
     return parser
 

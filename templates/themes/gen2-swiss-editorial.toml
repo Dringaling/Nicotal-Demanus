@@ -1,0 +1,430 @@
+[theme]
+id = "gen2-swiss-editorial"
+name = "Swiss Editorial Layout"
+description = "Lưới Thụy Sĩ cổ điển: nhiều khoảng trắng, đường kẻ mảnh, chữ lớn tương phản cao, bố cục bất đối xứng theo cột, tối ưu tiếng Việt có dấu/không dấu."
+style = "swiss-editorial-layout"
+tags = [
+    "light",
+    "editorial",
+    "swiss",
+    "grid",
+    "minimal",
+]
+renderer = "theme"
+font = "Inter"
+title_layout = "left_rule"
+header_layout = "left"
+content_layout = "two_column_text"
+
+[palette]
+bg = [
+    250,
+    250,
+    248,
+]
+card = [
+    255,
+    255,
+    255,
+]
+accent = [
+    230,
+    57,
+    70,
+]
+text = [
+    17,
+    17,
+    17,
+]
+muted = [
+    110,
+    110,
+    110,
+]
+
+[canvas]
+width_inch = 13.333
+height_inch = 7.5
+aspect_ratio = "16:9"
+
+[colors.background]
+hex = "#FAFAF8"
+rgb = [
+    250,
+    250,
+    248,
+]
+
+[colors.card]
+bg_hex = "#FFFFFF"
+bg_rgb = [
+    255,
+    255,
+    255,
+]
+border_hex = "#111111"
+border_rgb = [
+    17,
+    17,
+    17,
+]
+border_width_pt = 0.75
+
+[colors.accent]
+primary_hex = "#E63946"
+primary_rgb = [
+    230,
+    57,
+    70,
+]
+secondary_hex = "#111111"
+secondary_rgb = [
+    17,
+    17,
+    17,
+]
+success_hex = "#2A9D8F"
+success_rgb = [
+    42,
+    157,
+    143,
+]
+
+[colors.text]
+primary_hex = "#111111"
+primary_rgb = [
+    17,
+    17,
+    17,
+]
+secondary_hex = "#6E6E6E"
+secondary_rgb = [
+    110,
+    110,
+    110,
+]
+accent_hex = "#E63946"
+accent_rgb = [
+    230,
+    57,
+    70,
+]
+
+[typography]
+font_family = "Inter"
+font_family_fallback = "Arial"
+
+[typography.title_hero]
+size_pt = 60
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.title_section]
+size_pt = 34
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.card_title]
+size_pt = 20
+bold = true
+color = "colors.text.primary_rgb"
+
+[typography.card_body]
+size_pt = 13
+bold = false
+line_spacing = 1.35
+color = "colors.text.secondary_rgb"
+
+[typography.tag]
+size_pt = 10
+bold = true
+color = "colors.accent.primary_rgb"
+
+[typography.big_metric]
+size_pt = 96
+bold = true
+color = "colors.text.primary_rgb"
+
+[layouts.hero_title]
+id = "hero_editorial"
+description = "Bìa tạp chí Thụy Sĩ: tiêu đề lớn lệch trái, đường kẻ mảnh, tag trên cùng"
+
+[layouts.hero_title.card]
+shape_type = "ROUNDED_RECTANGLE"
+left_inch = 2.0
+top_inch = 1.75
+width_inch = 9.333
+height_inch = 4.0
+fill = "colors.card.bg_rgb"
+border = "colors.card.border_rgb"
+corner_radius = 0.05
+
+[layouts.hero_title.elements.tag]
+type = "text"
+left_inch = 0.9
+top_inch = 0.9
+width_inch = 6.0
+height_inch = 0.35
+style = "typography.tag"
+default = "SWISS EDITORIAL / 01"
+
+[layouts.hero_title.elements.title]
+type = "text"
+left_inch = 0.9
+top_inch = 1.75
+width_inch = 8.6
+height_inch = 2.6
+style = "typography.title_hero"
+default = "Tiêu đề bản thuyết trình"
+
+[layouts.hero_title.elements.subtitle]
+type = "text"
+left_inch = 0.9
+top_inch = 4.85
+width_inch = 6.2
+height_inch = 1.4
+style = "typography.card_body"
+default = "Mô tả ngắn gọn về mục tiêu, giải pháp hoặc lộ trình triển khai."
+
+[layouts.hero_title.elements.rule_top]
+type = "line"
+left_inch = 0.9
+top_inch = 1.35
+width_inch = 11.533
+height_inch = 0.0
+stroke_color = "colors.text.primary_rgb"
+stroke_width_pt = 1.5
+
+[layouts.hero_title.elements.rule_mid]
+type = "line"
+left_inch = 0.9
+top_inch = 4.55
+width_inch = 4.2
+height_inch = 0.0
+stroke_color = "colors.accent.primary_rgb"
+stroke_width_pt = 3.0
+
+[layouts.hero_title.elements.meta]
+type = "text"
+left_inch = 9.9
+top_inch = 4.85
+width_inch = 2.533
+height_inch = 1.4
+style = "typography.card_body"
+default = "Báo cáo nội bộ\nTháng 01 / 2025"
+
+[layouts.three_cards]
+id = "three_columns_swiss"
+description = "Ba cột nội dung phân cách bằng đường kẻ dọc mảnh, tiêu đề cột đánh số"
+
+[layouts.three_cards.header]
+left_inch = 0.9
+top_inch = 0.75
+width_inch = 11.533
+height_inch = 0.9
+style = "typography.title_section"
+default = "Ba Trọng Tâm Phát Triển"
+
+[layouts.three_cards.grid_meta]
+count = 3
+top_inch = 2.1
+height_inch = 4.4
+width_inch = 3.45
+gap_inch = 0.6
+left_margin_inch = 0.9
+
+[layouts.three_cards.card_1]
+shape_type = "RECTANGLE"
+left_inch = 0.9
+top_inch = 2.1
+width_inch = 3.45
+height_inch = 4.4
+accent_bar_color = "colors.accent.primary_rgb"
+badge_text = "01"
+title_default = "Phân tích yêu cầu"
+body_default = "Tổng hợp tài liệu đầu vào, lược đồ cơ sở dữ liệu và yêu cầu tích hợp mạng LAN."
+fill = "colors.card.bg_rgb"
+border = "colors.card.border_rgb"
+
+[layouts.three_cards.card_2]
+shape_type = "RECTANGLE"
+left_inch = 4.95
+top_inch = 2.1
+width_inch = 3.45
+height_inch = 4.4
+accent_bar_color = "colors.accent.primary_rgb"
+badge_text = "02"
+title_default = "Xây dựng lõi"
+body_default = "Tạo engine tự sinh mã với python-pptx, tối ưu bảng màu và font tiếng Việt."
+fill = "colors.card.bg_rgb"
+border = "colors.card.border_rgb"
+
+[layouts.three_cards.card_3]
+shape_type = "RECTANGLE"
+left_inch = 9.0
+top_inch = 2.1
+width_inch = 3.45
+height_inch = 4.4
+accent_bar_color = "colors.accent.primary_rgb"
+badge_text = "03"
+title_default = "Triển khai LAN"
+body_default = "Chạy máy chủ backend nội bộ, quản trị cơ chế lưu vết TOML an toàn."
+fill = "colors.card.bg_rgb"
+border = "colors.card.border_rgb"
+
+[layouts.three_cards.header_rule]
+type = "line"
+left_inch = 0.9
+top_inch = 1.7
+width_inch = 11.533
+height_inch = 0.0
+stroke_color = "colors.text.primary_rgb"
+stroke_width_pt = 1.5
+
+[layouts.metric_highlights]
+id = "metrics_editorial"
+description = "Số liệu khổng lồ bên trái, mô tả bên phải, đường kẻ mảnh phân tách"
+
+[layouts.metric_highlights.header]
+left_inch = 0.9
+top_inch = 0.75
+width_inch = 11.533
+height_inch = 0.9
+style = "typography.title_section"
+default = "Kết Quả Đo Lường Hiệu Năng"
+
+[layouts.metric_highlights.card_left]
+left_inch = 0.9
+top_inch = 2.1
+width_inch = 6.2
+height_inch = 4.4
+metric_number = "99.8%"
+metric_label = "Độ chính xác bố cục"
+metric_desc = "Tự động căn chỉnh tọa độ vector chính xác, không tràn chữ tiếng Việt."
+
+[layouts.metric_highlights.card_right]
+left_inch = 7.6
+top_inch = 2.1
+width_inch = 4.83
+height_inch = 4.4
+metric_number = "< 1.5s"
+metric_label = "Thời gian sinh slide"
+metric_desc = "Pipeline xử lý trực tiếp trên RAM và xuất file PPTX tức thì trên web server LAN."
+
+[layouts.metric_highlights.header_rule]
+type = "line"
+left_inch = 0.9
+top_inch = 1.7
+width_inch = 11.533
+height_inch = 0.0
+stroke_color = "colors.text.primary_rgb"
+stroke_width_pt = 1.5
+
+[layouts.metric_highlights.divider]
+type = "line"
+left_inch = 7.3
+top_inch = 2.1
+width_inch = 0.0
+height_inch = 4.4
+stroke_color = "colors.text.primary_rgb"
+stroke_width_pt = 1.0
+
+[variants.alt]
+name = "Alt"
+description = "Đảo sáng/tối, giữ nguyên layout và accent."
+style = "swiss-editorial-layout-alt"
+tags = [
+    "generated",
+    "variant",
+]
+
+[variants.alt.palette]
+bg = [
+    17,
+    17,
+    17,
+]
+card = [
+    17,
+    17,
+    17,
+]
+accent = [
+    230,
+    57,
+    70,
+]
+text = [
+    250,
+    250,
+    248,
+]
+muted = [
+    110,
+    110,
+    110,
+]
+
+[variants.alt.colors.background]
+hex = "#111111"
+rgb = [
+    17,
+    17,
+    17,
+]
+
+[variants.alt.colors.card]
+bg_hex = "#111111"
+bg_rgb = [
+    17,
+    17,
+    17,
+]
+border_hex = "#111111"
+border_rgb = [
+    17,
+    17,
+    17,
+]
+border_width_pt = 0.75
+
+[variants.alt.colors.accent]
+primary_hex = "#E63946"
+primary_rgb = [
+    230,
+    57,
+    70,
+]
+secondary_hex = "#111111"
+secondary_rgb = [
+    17,
+    17,
+    17,
+]
+success_hex = "#2A9D8F"
+success_rgb = [
+    42,
+    157,
+    143,
+]
+
+[variants.alt.colors.text]
+primary_hex = "#FAFAF8"
+primary_rgb = [
+    250,
+    250,
+    248,
+]
+secondary_hex = "#6E6E6E"
+secondary_rgb = [
+    110,
+    110,
+    110,
+]
+accent_hex = "#E63946"
+accent_rgb = [
+    230,
+    57,
+    70,
+]

@@ -109,6 +109,17 @@ icon/badge).
 | `--card-radius` | Bo góc card |
 | `--card-shadow` | Bóng card |
 
+## Typography
+
+- Font chính cho web: **Be Vietnam Pro** (đủ weight), phục vụ từ
+  `src/fonts/Be_Vietnam_Pro/` qua mount `/fonts`.
+- Fallback CJK: **Noto Sans CJK SC** rồi **Noto Sans CJK JP**, phục vụ từ
+  `src/fonts/NotoSansCJK{sc,jp}-Regular/`.
+- Stack trong `body`: `"Be Vietnam Pro", "Noto Sans CJK SC",
+  "Noto Sans CJK JP", system-ui, ...`.
+- Không thêm font web khác, không copy font vào `web/static`.
+- PPTX vẫn dùng **Lexend**; quy ước này chỉ cho giao diện web.
+
 ## Quy tắc an toàn khi sửa UI
 
 - Giữ nguyên class/`data-*` mà `web/static/app.js` đang bắt

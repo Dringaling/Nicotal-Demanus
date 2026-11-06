@@ -1,25 +1,114 @@
-[default]
-provider = "deepinfra"
+# Cấu hình provider cho Demanus.
+# - default_provider + default_model chọn model đang dùng.
+# - [providers.<type>] khai báo type, base_url, timeout... dùng chung cho mọi
+#   model của provider đó; [providers.<type>.params] là params mặc định.
+# - Mỗi model là một bảng con [providers.<type>.<model-id>] và PHẢI có
+#   api_key_env + secret_file riêng (chuỗi rỗng nếu local không cần key).
+# - Không đặt API key trong file này.
 
-[deepinfra]
+default_provider = "deepinfra"
+default_model = "deepseek-flash-flex"
+
+[providers.deepinfra]
+type = "deepinfra"
 base_url = "https://api.deepinfra.com/v1/openai"
-model = "deepseek-ai/DeepSeek-V4.1-Flash-1017"
-service_tier = "flex"
-api_key_env = "DEEPINFRA_FLEX_C79C"
-api_key_file = "secret/deepinfra_flex_c79c.env"
-fallback_models = []
-fail_fast = false
 timeout_seconds = 180
 max_retries = 3
 
-[deepinfra.generation]
+[providers.deepinfra.params]
+fail_fast = false
+
+[providers.deepinfra.deepseek-flash-flex]
+model = "deepseek-ai/DeepSeek-V4.1-Flash-1017"
+api_key_env = "DEMANUS_DEEPINFRA_FLEX_8F3A"
+secret_file = "secret/demanus_deepinfra_flex_8f3a.env"
+
+[providers.deepinfra.deepseek-flash-flex.params]
+service_tier = "flex"
+
+[providers.deepinfra.deepseek-flash-flex.generation]
 temperature = 0.4
 top_p = 0.95
 max_tokens = 8000
 response_format = "json_schema"
 chunk_chars = 8000
 
-[deepinfra.cache]
+[providers.deepinfra.deepseek-flash-flex.cache]
+prompt_version = "demanus-deck-v4"
+prompt_cache_key = "demanus-deck-v4"
+cache_ttl = "1h"
+local_cache = true
+local_cache_dir = "input/.cache"
+
+[providers.deepinfra.deepseek-flash-standard]
+model = "deepseek-ai/DeepSeek-V4.1-Flash-1017"
+api_key_env = "DEMANUS_DEEPINFRA_STANDARD_9C1B"
+secret_file = "secret/demanus_deepinfra_standard_9c1b.env"
+
+[providers.deepinfra.deepseek-flash-standard.params]
+service_tier = "default"
+
+[providers.deepinfra.deepseek-flash-standard.generation]
+temperature = 0.4
+top_p = 0.95
+max_tokens = 8000
+response_format = "json_schema"
+chunk_chars = 8000
+
+[providers.deepinfra.deepseek-flash-standard.cache]
+prompt_version = "demanus-deck-v4"
+prompt_cache_key = "demanus-deck-v4"
+cache_ttl = "1h"
+local_cache = true
+local_cache_dir = "input/.cache"
+
+[providers.lmstudio-openai]
+type = "openai"
+base_url = "http://192.168.56.1:1234/v1"
+timeout_seconds = 900
+max_retries = 1
+
+[providers.lmstudio-openai.gemma-4-e4b-it]
+model = "gemma-4-e4b-it@iq4_nl"
+api_key_env = ""
+secret_file = ""
+
+[providers.lmstudio-openai.gemma-4-e4b-it.generation]
+temperature = 0.2
+top_p = 0.95
+max_tokens = 20000
+response_format = "json_schema"
+chunk_chars = 1500
+
+[providers.lmstudio-openai.gemma-4-e4b-it.cache]
+prompt_version = "demanus-deck-v4"
+prompt_cache_key = "demanus-deck-v4"
+cache_ttl = "1h"
+local_cache = true
+local_cache_dir = "input/.cache"
+
+[providers.lmstudio-native]
+type = "lmstudio"
+base_url = "http://192.168.56.1:1234"
+timeout_seconds = 900
+max_retries = 1
+
+[providers.lmstudio-native.params]
+store = false
+
+[providers.lmstudio-native.gemma-4-e4b-it]
+model = "gemma-4-e4b-it@iq4_nl"
+api_key_env = ""
+secret_file = ""
+
+[providers.lmstudio-native.gemma-4-e4b-it.generation]
+temperature = 0.2
+top_p = 0.95
+max_tokens = 20000
+response_format = "json_object"
+chunk_chars = 1500
+
+[providers.lmstudio-native.gemma-4-e4b-it.cache]
 prompt_version = "demanus-deck-v4"
 prompt_cache_key = "demanus-deck-v4"
 cache_ttl = "1h"

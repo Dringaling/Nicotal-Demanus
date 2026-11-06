@@ -19,14 +19,26 @@ make install-preview  # tuỳ chọn: thêm Aspose.Slides cho preview
 
 ## Cấu hình
 
-- `config/providers.toml`: model, `service_tier`, tham số sinh, server.
-- `secret/deepinfra_flex_c79c.env`:
+- `config/providers.toml`:
+  - `default_provider` + `default_model` chọn model đang dùng.
+  - `[providers.<type>]` khai báo `type` (`deepinfra` | `openai` | `lmstudio`),
+    `base_url`, timeout, retries dùng chung.
+  - `[providers.<type>.params]` là params mặc định cho type.
+  - Mỗi model là `[providers.<type>.<model-id>]`, **bắt buộc** có
+    `api_key_env` + `secret_file` riêng (chuỗi rỗng nếu local không cần key),
+    kèm `[generation]`, `[cache]`, `[params]` tuỳ chọn.
+  - API key không nằm trong TOML.
+- Secret: mỗi model một biến môi trường + file riêng, ví dụ:
 
   ```env
-  DEEPINFRA_FLEX_C79C=<api-key>
+  DEMANUS_DEEPINFRA_FLEX_8F3A=<api-key>
+  DEMANUS_DEEPINFRA_STANDARD_9C1B=<api-key>
   ```
 
-  Biến môi trường thật (nếu set) được ưu tiên hơn file.
+  Biến môi trường thật (nếu set) được ưu tiên hơn file. Local model
+  (`lmstudio-*`) để trống cả `api_key_env` và `secret_file`.
+- `DEMANUS_PROVIDER=<type>` + `DEMANUS_MODEL=<model-id>` override lúc load.
+- `uv run demanus.py providers` liệt kê model + trạng thái key.
 
 ## Chạy
 
@@ -43,6 +55,23 @@ Input gồm 3 phần: **Tiêu đề** (duy nhất, 1–200 ký tự), **Mô tả
 có gợi ý tag sẵn có; sidebar lọc và xoá tag.
 
 Trên Windows, dùng Git Bash/WSL để chạy `make`, hoặc chạy trực tiếp `uv ...`.
+
+## Provider
+
+```bash
+uv run demanus.py providers
+uv run demanus.py generate "Tên" "Mô tả" \
+  --provider lmstudio-native --model gemma-4-e4b-it
+uv run demanus.py serve --provider lmstudio-openai \
+  --model gemma-4-e4b-it
+```
+
+- `deepinfra`: DeepInfra OpenAI-compatible; gửi thêm `service_tier`, cache
+  fields và `fail_fast`.
+- `openai`: mọi server OpenAI-compatible (`{base_url}/chat/completions`), body
+  tối thiểu, có thể dùng `response_format`.
+- `lmstudio`: LM Studio native (`{base_url}/api/v1/chat`), body
+  `input/system_prompt/max_output_tokens/store`, không cần API key.
 
 ## Truy cập LAN
 
