@@ -296,6 +296,10 @@ def list_inputs(
             record
             for record in records
             if query in normalize_search(record.title)
+            or any(
+                query in normalize_search(slug)
+                for slug in record.output_slugs
+            )
         ]
     records.sort(key=lambda record: record.created_at, reverse=True)
     return records

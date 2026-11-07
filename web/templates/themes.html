@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Theme Edit · Nicotal - Demanus{% endblock %}
+{% block content %}
+<div class="theme-edit-layout">
+  <aside class="theme-panel">
+    <section class="theme-group">
+      <h2>Theme hệ thống</h2>
+      <div class="theme-scroll">
+        {% for theme in system_themes %}
+        <article class="theme-card {% if selected and selected.id == theme.id %}active{% endif %}">
+          <div class="theme-card-head">
+            <strong>{{ theme.name }}</strong>
+            <div class="theme-card-actions">
+              <a class="button secondary" href="/themes?theme={{ theme.id }}">Edit</a>
+            </div>
+          </div>
+          <p class="meta">{{ theme.id }}</p>
+        </article>
+        {% else %}
+        <p class="muted">Chưa có theme hệ thống.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="theme-group">
+      <h2>Theme người dùng</h2>
+      <div class="theme-scroll">
+        {% for theme in user_themes %}
+        <article class="theme-card {% if selected and selected.id == theme.id %}active{% endif %}">
+          <div class="theme-card-head">
+            <strong>{{ theme.name }}</strong>
+            <div class="theme-card-actions">
+              <a class="button secondary" href="/themes?theme={{ theme.id }}">Edit</a>
+              <form method="post" action="/themes/{{ theme.id }}/delete"
+                    onsubmit="return confirm('Xoá alias theme này?')">
+                <input type="hidden" name="confirm" value="yes">
+                <button class="danger" type="submit">Xoá</button>
+              </form>
+            </div>
+          </div>
+          <p class="meta">{{ theme.id }}</p>
+        </article>
+        {% else %}
+        <p class="muted">Chưa có theme người dùng.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </aside>
+
+  <section class="theme-editor card">
+    {% if selected %}
+    <div class="deck-head">
+      <h1>{{ selected.name }}</h1>
+      <span class="meta">{{ selected.id }}</span>
+    </div>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form method="post" action="/themes/save" class="theme-form">
+      <input type="hidden" name="theme" value="{{ selected.id }}">
+      {% if not selected.is_alias %}
+      <label>
+        Alias (chữ, số, -, _; không khoảng trắng)
+        <input name="alias" value="{{ alias }}" placeholder="my_theme">
+      </label>
+      {% endif %}
+      <label>
+        Nội dung TOML
+        <textarea name="content" rows="28" spellcheck="false">{{ content }}</textarea>
+      </label>
+      <div class="theme-actions">
+        <button type="submit" name="action" value="save">Lưu</button>
+        {% if not selected.is_alias %}
+        <button class="button secondary" type="submit"
+                name="action" value="alias">Tạo alias</button>
+        {% endif %}
+      </div>
+    </form>
+
+    <div class="theme-actions">
+      <form method="post" action="/themes/{{ selected.id }}/reset"
+            onsubmit="return confirm('Reset theme này?')">
+        <input type="hidden" name="confirm" value="yes">
+        <button class="button secondary" type="submit">Reset</button>
+      </form>
+      {% if selected.is_alias %}
+      <form method="post" action="/themes/{{ selected.id }}/delete"
+            onsubmit="return confirm('Xoá alias theme này?')">
+        <input type="hidden" name="confirm" value="yes">
+        <button class="danger" type="submit">Xoá theme</button>
+      </form>
+      {% endif %}
+    </div>
+    <p class="muted">File theme renderer hợp lệ cần: [theme], [palette], [colors.*],
+      [typography], [layouts.three_cards.header].</p>
+    {% else %}
+    <p class="muted">Chọn một theme ở bên trái.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -424,3 +424,25 @@ def test_delete_output_removes_orphan_preview(tmp_path: Path) -> None:
     storage.delete_output("orphan", root=tmp_path)
 
     assert not (tmp_path / "output" / "orphan").exists()
+
+
+def test_list_inputs_search_by_output_slug(tmp_path: Path) -> None:
+    record = storage.create_input(
+        "Báo cáo", "Mô tả", "Chi tiết", root=tmp_path
+    )
+    storage.append_output(
+        record.id, "theme-test-gen2-swiss-editorial", root=tmp_path
+    )
+
+    results = storage.list_inputs(search="swiss", root=tmp_path)
+
+    assert [item.id for item in results] == [record.id]
+
+
+def test_list_inputs_search_no_match(tmp_path: Path) -> None:
+    record = storage.create_input(
+        "Báo cáo", "Mô tả", "Chi tiết", root=tmp_path
+    )
+    storage.append_output(record.id, "theme-test", root=tmp_path)
+
+    assert storage.list_inputs(search="khong-ton-tai", root=tmp_path) == []

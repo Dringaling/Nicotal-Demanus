@@ -1079,9 +1079,12 @@ def test_header_brand_and_nav(tmp_path: Path) -> None:
     assert "<title>Nicotal - Demanus</title>" in html
     assert 'class="topbar-row"' in html
     assert '<nav class="nav-links">' in html
-    assert html.count('class="nav-button"') == 2
+    assert html.count('class="nav-button"') == 3
     assert 'href="/">Tạo</a>' in html
+    assert 'href="/themes">Theme Edit</a>' in html
     assert 'href="/review">Review</a>' in html
+    assert html.index('>Tạo<') < html.index('>Theme Edit<')
+    assert html.index('>Theme Edit<') < html.index('>Review<')
     assert html.index('class="brand"') < html.index('class="nav-links"')
 
 
@@ -1245,7 +1248,7 @@ def test_macros_have_explicit_parameters() -> None:
         "{% macro tag_input(value)",
         "{% macro tag_editor(record)",
         "{% macro reuse_tag_editor(input_id, tags)",
-        "{% macro output_item(record, output)",
+        "{% macro output_item(record, output, highlight=false)",
         "{% macro input_card(item)",
         "{% macro input_list(inputs)",
         "{% macro tags_sidebar(tags, counts, active_tag, query)",
@@ -1368,3 +1371,111 @@ def test_index_hides_linked_decks_from_orphans(tmp_path: Path) -> None:
     html = client.get("/").text
 
     assert "Deck chưa gắn input" not in html
+
+
+def test_theme_edit_page(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    response = client.get("/themes")
+    assert response.status_code == 200
+    assert "Theme hệ thống" in response.text
+    assert "Theme người dùng" in response.text
+    assert "Nội dung TOML" in response.text
+    assert "gen2-swiss-editorial" in response.text
+    assert "Reset" in response.text
+
+
+def test_theme_edit_alias_roundtrip(tmp_path: Path) -> None:
+    from app import theme_store
+
+    client = make_client(tmp_path)
+    theme_id = "gen2-swiss-editorial"
+    content = theme_store.read_theme_text(theme_id)
+    alias = "test_web_alias"
+
+    try:
+        response = client.post(
+            "/themes/save",
+            data={
+                "theme": theme_id,
+                "alias": alias,
+                "content": content,
+                "action": "alias",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert theme_store.ACTIVE_DIR.joinpath(
+            f"{theme_id}.{alias}.toml"
+        ).is_file()
+        page = client.get("/themes").text
+        assert f"{theme_id}.{alias}" in page
+        assert "Theme người dùng" in page
+    finally:
+        target = theme_store.ACTIVE_DIR / f"{theme_id}.{alias}.toml"
+        if target.exists():
+            target.unlink()
+
+
+def test_theme_edit_rejects_invalid_alias(tmp_path: Path) -> None:
+    from app import theme_store
+
+    client = make_client(tmp_path)
+    content = theme_store.read_theme_text("gen2-swiss-editorial")
+    response = client.post(
+        "/themes/save",
+        data={
+            "theme": "gen2-swiss-editorial",
+            "alias": "bad alias",
+            "content": content,
+            "action": "alias",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert "Alias" in response.text
+
+
+def test_theme_edit_invalid_content_shows_error(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    invalid = '[theme]\nid = "gen2-swiss-editorial"\nname = "Bad"\n'
+    response = client.post(
+        "/themes/save",
+        data={
+            "theme": "gen2-swiss-editorial",
+            "content": invalid,
+            "action": "save",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 400
+    assert "Không lưu được theme" in response.text
+    assert "palette" in response.text
+
+
+def test_search_by_output_slug_expands_card(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input(
+        "Báo cáo", "Mô tả", "Chi tiết", root=tmp_path
+    )
+    slug = "theme-test-gen2-swiss-editorial"
+    output = tmp_path / "output" / f"{slug}.pptx"
+    output.parent.mkdir(parents=True)
+    output.write_bytes(b"pptx")
+    storage.append_output(record.id, slug, root=tmp_path)
+
+    html = client.get("/", params={"q": "swiss"}).text
+
+    assert "Báo cáo" in html
+    assert "Khớp output" in html
+    assert "Thu gọn" in html
+    assert "match-badge" in html
+    assert 'class="input-details" hidden' not in html
+
+
+def test_search_no_match_hides_inputs(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input("Báo cáo", "Mô tả", "Chi tiết", root=tmp_path)
+
+    html = client.get("/", params={"q": "khong-ton-tai"}).text
+
+    assert "Báo cáo" not in html

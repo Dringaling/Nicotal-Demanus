@@ -11,9 +11,9 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import storage
+from . import storage, theme_store
 from .boho_render import render_deck_boho
-from .config import REPO_ROOT, Settings, lan_url, load_settings
+from .config import ConfigError, REPO_ROOT, Settings, lan_url, load_settings
 from .copy_slide_render import render_deck_copy_slides
 from .llm import LLMClient, LLMError
 from .preview import render_preview
@@ -23,6 +23,7 @@ from .templates_catalog import (
     apply_template_palette,
     get_template,
     grouped_templates,
+    refresh_templates,
     template_file,
 )
 from .theme_render import render_deck_theme
@@ -95,9 +96,16 @@ def create_app(
         records = storage.list_inputs(
             tag=active_tag, search=query, root=base
         )
+        query_norm = storage.normalize_search(query or "")
         inputs = []
         for record in records:
             outputs = storage.outputs_for(record, root=base)
+            matched = [
+                output
+                for output in outputs
+                if query_norm
+                and query_norm in storage.normalize_search(output.slug)
+            ]
             inputs.append(
                 {
                     "record": record,
@@ -107,6 +115,9 @@ def create_app(
                     "outputs": list(reversed(outputs)),
                     "newest": outputs[-1] if outputs else None,
                     "has_output": bool(outputs),
+                    "matched_outputs": matched,
+                    "matched_slugs": {output.slug for output in matched},
+                    "expanded": bool(matched),
                 }
             )
 
@@ -120,6 +131,12 @@ def create_app(
             for output in storage.list_outputs(root=base)
             if output.slug not in linked
         ]
+        if query_norm:
+            orphans = [
+                output
+                for output in orphans
+                if query_norm in storage.normalize_search(output.slug)
+            ]
         return templates.TemplateResponse(
             request=request,
             name="index.html",
@@ -235,6 +252,134 @@ def create_app(
                 "server_url": server_url,
             },
         )
+
+    def render_themes(
+        request: Request,
+        theme: str | None = None,
+        error: str | None = None,
+        status_code: int = 200,
+        content_override: str | None = None,
+        alias_override: str | None = None,
+    ):
+        refresh_templates()
+        entries = theme_store.list_theme_entries()
+        system_themes = [item for item in entries if not item.is_alias]
+        user_themes = [item for item in entries if item.is_alias]
+        selected = next((item for item in entries if item.id == theme), None)
+        if selected is None and system_themes:
+            selected = system_themes[0]
+        content = (
+            content_override
+            if content_override is not None
+            else (
+                theme_store.read_theme_text(selected.id)
+                if selected
+                else ""
+            )
+        )
+        return templates.TemplateResponse(
+            request=request,
+            name="themes.html",
+            context={
+                "system_themes": system_themes,
+                "user_themes": user_themes,
+                "selected": selected,
+                "content": content,
+                "alias": (
+                    alias_override
+                    if alias_override is not None
+                    else (selected.alias if selected else "")
+                ),
+                "error": error,
+                "server_url": server_url,
+            },
+            status_code=status_code,
+        )
+
+    @app.get("/themes", response_class=HTMLResponse)
+    async def themes_page(
+        request: Request,
+        theme: str | None = Query(None),
+        error: str | None = Query(None),
+    ):
+        return render_themes(request, theme=theme, error=error)
+
+    @app.post("/themes/save")
+    async def themes_save(
+        request: Request,
+        theme: str = Form(""),
+        alias: str = Form(""),
+        content: str = Form(""),
+        action: str = Form("save"),
+    ):
+        try:
+            if action == "alias":
+                new_id = theme_store.create_alias(theme, alias, content)
+            else:
+                new_id = theme_store.save_theme(theme, content)
+            refresh_templates()
+        except ConfigError as exc:
+            return render_themes(
+                request,
+                theme=theme,
+                error=(
+                    f"Không lưu được theme: {exc}. "
+                    "File hợp lệ cần [theme], [palette], [colors.*], "
+                    "[typography], [layouts.three_cards.header]."
+                ),
+                status_code=400,
+                content_override=content,
+                alias_override=alias,
+            )
+        return RedirectResponse(
+            f"/themes?theme={quote(new_id)}", status_code=303
+        )
+
+    @app.post("/themes/{theme_id}/reset")
+    async def themes_reset(
+        request: Request,
+        theme_id: str,
+        confirm: str = Form(""),
+    ):
+        if confirm != "yes":
+            raise HTTPException(
+                status_code=400, detail="Thiếu xác nhận reset"
+            )
+        try:
+            new_id = theme_store.reset_theme(theme_id)
+        except ConfigError as exc:
+            return render_themes(
+                request,
+                theme=theme_id,
+                error=f"Không reset được theme: {exc}",
+                status_code=400,
+            )
+        refresh_templates()
+        return RedirectResponse(
+            f"/themes?theme={quote(new_id)}", status_code=303
+        )
+
+    @app.post("/themes/{theme_id}/delete")
+    async def themes_delete(
+        request: Request,
+        theme_id: str,
+        confirm: str = Form(""),
+    ):
+        if confirm != "yes":
+            raise HTTPException(
+                status_code=400, detail="Thiếu xác nhận xoá"
+            )
+        try:
+            theme_store.delete_theme(theme_id)
+        except ConfigError as exc:
+            return render_themes(
+                request,
+                theme=theme_id,
+                error=f"Không xoá được theme: {exc}",
+                status_code=400,
+            )
+        refresh_templates()
+        return RedirectResponse("/themes", status_code=303)
 
     @app.get("/health")
     async def health():

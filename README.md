@@ -52,7 +52,8 @@ make test             # pytest
 Input gồm 3 phần: **Tiêu đề** (duy nhất, 1–200 ký tự), **Mô tả** (ngắn) và
 **Chi tiết** (nội dung từng slide, không giới hạn). Chi tiết dài được chia chunk
 (`chunk_chars`, mặc định 8000 ký tự) trước khi gửi model. Tags nhập nhiều tag,
-có gợi ý tag sẵn có; sidebar lọc và xoá tag.
+có gợi ý tag sẵn có; sidebar lọc và xoá tag. Ô tìm kiếm khớp cả tên input
+và tên file PPTX (slug output); card khớp output tự mở và highlight output.
 
 Trên Windows, dùng Git Bash/WSL để chạy `make`, hoặc chạy trực tiếp `uv ...`.
 
@@ -84,7 +85,12 @@ uv run demanus.py serve --provider lmstudio-openai \
 
 ## Template
 
-- `templates/themes/*.toml` — metadata, palette, layout; quét lúc khởi động.
+- `templates/themes/*.toml` — **backup** metadata, palette, layout.
+- `templates/themes/active/*.toml` — theme runtime; catalog chỉ quét thư mục
+  này. File backup được copy sang active khi còn thiếu.
+- `/themes` — trang **Theme Edit**: theme hệ thống (trên trái), theme người
+  dùng/alias (dưới trái), editor TOML bên phải. Có thể tạo alias
+  `<theme>.<alias>.toml`, edit, reset từ backup, xoá alias.
 - `flat` — thiết kế flat mặc định.
 - `pptx` — dùng `.pptx` làm gốc, fill placeholder (vd. `dividing-fractions`).
 - `boho` — dùng asset trích từ template (nền giấy + cọ) trong

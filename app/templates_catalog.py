@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import logging
 import tomllib
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -11,8 +12,10 @@ from pathlib import Path
 from .config import REPO_ROOT, ConfigError
 from .schema import DeckSpec, Palette
 from .template_profile import TemplateProfile, format_profile_layouts
+from .theme_store import ACTIVE_DIR, THEMES_DIR, ensure_active_themes
 
-THEMES_DIR = REPO_ROOT / "templates" / "themes"
+logger = logging.getLogger(__name__)
+
 _CACHE: dict[str, TemplateMeta] | None = None
 _ALIASES: dict[str, str] = {}
 _VARIANT_METADATA_KEYS = {"name", "description", "style", "tags"}
@@ -41,6 +44,7 @@ class TemplateMeta:
     variant_id: str = ""
     variant_name: str = ""
     kind: str = "theme"
+    alias_of: str = ""
 
     def fingerprint(self) -> str:
         payload = json.dumps(asdict(self), sort_keys=True, ensure_ascii=False)
@@ -111,6 +115,7 @@ def _read_theme(path: Path, data: dict) -> TemplateMeta:
             str(key): str(value) for key, value in layout_raw.items()
         },
         kind=str(theme.get("kind", _infer_kind(renderer))),
+        alias_of=str(theme.get("alias_of", "")),
     )
 
 
@@ -157,37 +162,53 @@ def _read_variant(
         variant_id=variant_id,
         variant_name=variant_name,
         kind=base.kind,
+        alias_of=base.alias_of,
     )
 
 
 def refresh_templates() -> list[TemplateMeta]:
     global _CACHE, _ALIASES
-    if not THEMES_DIR.is_dir():
+    ensure_active_themes()
+    if not ACTIVE_DIR.is_dir():
         _CACHE = {}
         _ALIASES = {}
         return []
 
     templates: dict[str, TemplateMeta] = {}
     aliases: dict[str, str] = {}
-    for path in sorted(THEMES_DIR.glob("*.toml")):
-        with path.open("rb") as handle:
-            data = tomllib.load(handle)
-        base = _read_theme(path, data)
-        templates[base.id] = base
+    for path in sorted(ACTIVE_DIR.glob("*.toml")):
+        try:
+            with path.open("rb") as handle:
+                data = tomllib.load(handle)
+            base = _read_theme(path, data)
 
-        variants = data.get("variants") or {}
-        if not isinstance(variants, dict):
-            raise ConfigError(f"[variants] phải là bảng TOML trong {path}")
-        for variant_id, variant in variants.items():
-            if not isinstance(variant, dict):
+            variants = data.get("variants") or {}
+            if not isinstance(variants, dict):
                 raise ConfigError(
-                    f"[variants.{variant_id}] phải là bảng TOML trong {path}"
+                    f"[variants] phải là bảng TOML trong {path}"
                 )
-            meta = _read_variant(
-                path, data, base, str(variant_id), variant
+            variant_metas: list[TemplateMeta] = []
+            for variant_id, variant in variants.items():
+                if not isinstance(variant, dict):
+                    raise ConfigError(
+                        f"[variants.{variant_id}] phải là bảng TOML "
+                        f"trong {path}"
+                    )
+                variant_metas.append(
+                    _read_variant(
+                        path, data, base, str(variant_id), variant
+                    )
+                )
+        except Exception as exc:
+            logger.warning(
+                "Bỏ qua theme không hợp lệ %s: %s", path, exc
             )
+            continue
+
+        templates[base.id] = base
+        for meta in variant_metas:
             templates[meta.id] = meta
-            aliases[str(variant_id)] = meta.id
+            aliases[meta.variant_id] = meta.id
 
     _CACHE = templates
     _ALIASES = aliases

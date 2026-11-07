@@ -111,8 +111,8 @@
 {% endmacro %}
 
 
-{% macro output_item(record, output) %}
-<li class="output-item">
+{% macro output_item(record, output, highlight=false) %}
+<li class="output-item{% if highlight %} match{% endif %}">
   {% if output.has_preview %}
   <img class="thumb-sm" src="/preview/{{ output.slug }}/1"
        alt="Slide 1 của {{ output.slug }}">
@@ -121,6 +121,7 @@
   {% endif %}
   <div class="output-main">
     <strong>{{ output.slug }}</strong>
+    {% if highlight %}<span class="match-badge">Khớp</span>{% endif %}
     <p class="meta">{{ output.size_bytes }} bytes · {{ output.modified_at }}</p>
   </div>
   <a class="button" href="/deck/{{ output.slug }}">Xem</a>
@@ -136,7 +137,8 @@
 
 {% macro input_card(item) %}
 {% set record = item.record %}
-<li class="input-card">
+{% set expanded = item.expanded %}
+<li class="input-card{% if expanded %} expanded{% endif %}">
   <div class="input-summary">
     <div class="input-summary-main">
       <span class="input-title">
@@ -145,15 +147,19 @@
         <span class="meta">{{ item.outputs | length }} output</span>
       </span>
       <span class="meta">{{ record.created_at }} · {{ record.template }}</span>
+      {% if item.matched_outputs %}
+      <span class="meta match-note">Khớp output:
+        {{ item.matched_outputs | map(attribute='slug') | join(', ') }}</span>
+      {% endif %}
     </div>
     <button class="expand-toggle" type="button" data-expand
-            aria-expanded="false">
-      <span data-expand-label>Xem output</span>
+            aria-expanded="{{ 'true' if expanded else 'false' }}">
+      <span data-expand-label>{{ 'Thu gọn' if expanded else 'Xem output' }}</span>
       <span class="chevron" aria-hidden="true">▾</span>
     </button>
   </div>
 
-  <div class="input-details" hidden>
+  <div class="input-details"{% if not expanded %} hidden{% endif %}>
     <div class="chips">
       {% for tag in record.tags %}
       <a class="tag-chip" href="/?tag={{ tag | urlencode }}">{{ tag }}</a>
@@ -162,7 +168,7 @@
     {% if item.outputs %}
     <ul class="output-list">
       {% for output in item.outputs %}
-      {{ output_item(record, output) }}
+      {{ output_item(record, output, output.slug in item.matched_slugs) }}
       {% endfor %}
     </ul>
     {% else %}
@@ -236,7 +242,7 @@
 <form class="search-bar" method="get" action="/">
   {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
   <input type="search" name="q" value="{{ query }}"
-         placeholder="Tìm theo tên..." aria-label="Tìm input theo tên">
+         placeholder="Tìm theo tên input hoặc file PPTX..." aria-label="Tìm input theo tên hoặc file PPTX">
   <button type="submit">Tìm</button>
   {% if query %}
   <a class="button secondary" title="Xoá tìm kiếm"

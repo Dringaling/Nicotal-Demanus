@@ -16,3 +16,4 @@ tmp/
 /templates/*
 !/templates/themes/
 !/templates/themes/*.toml
+/templates/themes/active/
