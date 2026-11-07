@@ -7,6 +7,8 @@
   - `header.html` — brand + nút Tạo/Review, dùng ở `base.html`.
   - `delete_overlay.html` — modal xoá input, dùng ở `index.html`.
   - `help_overlay.html` — overlay trợ giúp, dùng ở `base.html`.
+  - `changelog_overlay.html` — nút floating + overlay cập nhật, dùng ở
+    `base.html`.
 - **Macro** (`{% from "macros.html" import ... %}`): khối lặp lại hoặc có
   dữ liệu động. Luôn truyền tham số rõ ràng, không dựa vào context ngầm.
 
@@ -17,6 +19,7 @@
 | `header.html` | `base.html` | `server_url` (không bắt buộc) |
 | `delete_overlay.html` | `index.html` | không |
 | `help_overlay.html` | `base.html` | không (JS tự fetch `/api/help`) |
+| `changelog_overlay.html` | `base.html` | không (JS tự fetch `/api/changelog`) |
 
 ## Macro trong `macros.html`
 
@@ -82,6 +85,17 @@ nhau (`dom_id`, `filter_param`, `delete_base`).
   dùng factory `initFetchedOverlay` (fetch `/api/help?layout=<id>`, cache
   client, focus trap, `Escape`/backdrop để đóng).
 - Không sửa UI của một layout mà không cập nhật file `.md` tương ứng.
+
+## Changelog & version
+
+- Version suy ra từ số module: `idx = NN - 1`, `major = 1 + idx // 10`,
+  `minor = idx % 10` (module01 = 1.0, module10 = 1.9, module11 = 2.0).
+- Mỗi module một file `src/changelog/<major>.<minor>.md`; tên file là version,
+  dòng `# ` đầu là tiêu đề, còn lại là markdown.
+- `current_version()` = version cao nhất; `/health` trả kèm `version`.
+- Nút floating "CHI TIẾT CẬP NHẬT" (góc dưới trái) mở overlay rộng 80%; dùng
+  chung factory `initFetchedOverlay` với help, chỉ khác `render` và
+  `bodyClass`.
 
 ## Icon
 

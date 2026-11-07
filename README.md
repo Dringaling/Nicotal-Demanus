@@ -161,6 +161,14 @@ uv run demanus.py serve --provider lmstudio-openai \
 - Aspose.Slides là thư viện độc quyền; xem `NOTICE` cho ngoại lệ AGPLv3 và
   `THIRD_PARTY_LICENSES.md` cho danh sách giấy phép bên thứ ba.
 
+## Version & changelog
+
+- Mỗi module là một bản cập nhật nhỏ; 10 module là một mốc lớn:
+  `1.0 → 1.9 → 2.0`. Bản đầu tiên (commit `015e21c`) là `1.0`.
+- Mỗi module có một file tóm tắt trong `src/changelog/<major>.<minor>.md`.
+- Nút **CHI TIẾT CẬP NHẬT** ở góc dưới trái mở toàn bộ thay đổi, mới nhất
+  trước; `GET /health` trả thêm `version`.
+
 ## Giấy phép
 
 - Mã nguồn dự án: **AGPLv3** (`LICENSE`), dùng cho mọi module mặc định.

@@ -485,6 +485,45 @@
 })();
 
 (function () {
+  const init = window.Demanus && window.Demanus.initFetchedOverlay;
+  if (!init) {
+    return;
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  init({
+    trigger: "[data-changelog]",
+    overlay: "[data-changelog-overlay]",
+    dialog: "[data-changelog-dialog]",
+    body: "[data-changelog-body]",
+    close: "[data-changelog-close]",
+    endpoint: "/api/changelog",
+    bodyClass: "changelog-open",
+    render: (data) => {
+      const versions = data.versions || [];
+      if (!versions.length) {
+        return '<p class="muted">Chưa có thông tin cập nhật.</p>';
+      }
+      return versions
+        .map(
+          (entry) =>
+            `<section class="changelog-entry" id="v${escapeHtml(entry.version)}">` +
+            `<h3>v${escapeHtml(entry.version)} — ${escapeHtml(entry.title)}</h3>` +
+            `${entry.html}</section>`
+        )
+        .join("");
+    },
+  });
+})();
+
+(function () {
   const overlay = document.querySelector("[data-overlay]");
   if (!overlay) {
     return;

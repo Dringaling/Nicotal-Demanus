@@ -14,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from . import storage, theme_store
 from . import tags as tag_utils
 from .boho_render import render_deck_boho
+from .changelog import current_version, load_changelog
 from .config import ConfigError, REPO_ROOT, Settings, lan_url, load_settings
 from .help_docs import HelpError, render_help
 from .copy_slide_render import render_deck_copy_slides
@@ -521,9 +522,28 @@ def create_app(
             "docs": list(doc.docs),
         }
 
+    @app.get("/api/changelog")
+    async def api_changelog():
+        entries = load_changelog()
+        return {
+            "current": current_version(),
+            "versions": [
+                {
+                    "version": entry.version,
+                    "title": entry.title,
+                    "html": entry.html,
+                }
+                for entry in entries
+            ],
+        }
+
     @app.get("/health")
     async def health():
-        return {"status": "ok", "url": server_url}
+        return {
+            "status": "ok",
+            "url": server_url,
+            "version": current_version(),
+        }
 
     @app.get("/api/templates")
     async def api_templates():

@@ -459,7 +459,8 @@ body.overlay-open {
   background: var(--color-wine-700);
 }
 
-.help-overlay {
+.help-overlay,
+.changelog-overlay {
   position: fixed;
   inset: 0;
   background: rgba(28, 8, 16, 0.55);
@@ -470,11 +471,13 @@ body.overlay-open {
   z-index: 60;
 }
 
-.help-overlay[hidden] {
+.help-overlay[hidden],
+.changelog-overlay[hidden] {
   display: none;
 }
 
-.help-dialog {
+.help-dialog,
+.changelog-dialog {
   background: var(--card);
   border: 1px solid var(--color-wine-700);
   border-radius: var(--card-radius);
@@ -485,7 +488,13 @@ body.overlay-open {
   padding: var(--gap-lg);
 }
 
-.help-head {
+.changelog-dialog {
+  width: min(80%, 1200px);
+  max-height: 85vh;
+}
+
+.help-head,
+.changelog-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -496,7 +505,8 @@ body.overlay-open {
   padding: var(--gap-sm) 0;
 }
 
-.help-head h2 {
+.help-head h2,
+.changelog-head h2 {
   margin: 0;
   font-size: 20px;
 }
@@ -534,8 +544,54 @@ body.overlay-open {
   margin-top: 0;
 }
 
-body.help-open {
+body.help-open,
+body.changelog-open {
   overflow: hidden;
+}
+
+.changelog-button {
+  position: fixed;
+  left: var(--gap-lg);
+  bottom: var(--gap-lg);
+  z-index: 30;
+  padding: var(--nav-padding-sm);
+  border: 0;
+  border-bottom: 3px solid var(--button-border);
+  border-radius: var(--nav-radius);
+  background: var(--color-wine-700);
+  color: var(--color-cream-100);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--button-shadow);
+}
+
+.changelog-button:hover {
+  background: var(--color-wine-800);
+}
+
+.changelog-entry {
+  border-top: 1px solid var(--color-teal-300);
+  padding-top: var(--gap-md);
+  margin-top: var(--gap-md);
+}
+
+.changelog-entry:first-child {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.changelog-entry h3 {
+  margin: 0 0 var(--gap-sm);
+  font-size: 16px;
+}
+
+.changelog-entry ul {
+  padding-left: var(--gap-lg);
+  margin: 0;
 }
 
 .deck-head-actions,

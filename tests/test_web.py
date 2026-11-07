@@ -93,7 +93,10 @@ def test_index_and_health(tmp_path: Path) -> None:
 
     health = client.get("/health")
     assert health.status_code == 200
-    assert health.json() == {"status": "ok", "url": expected_url}
+    payload = health.json()
+    assert payload["status"] == "ok"
+    assert payload["url"] == expected_url
+    assert payload["version"]
 
 
 def test_generate_creates_deck(tmp_path: Path) -> None:
@@ -1792,3 +1795,50 @@ def test_delete_overlay_still_present(tmp_path: Path) -> None:
 
     assert "data-overlay" in html
     assert html.count('<select name="template">') == 1
+
+
+def test_changelog_api(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    payload = client.get("/api/changelog").json()
+
+    assert payload["current"]
+    assert payload["versions"]
+    assert payload["versions"][0]["version"] == payload["current"]
+    assert {"version", "title", "html"} <= set(payload["versions"][0])
+
+
+def test_changelog_button_on_pages(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+
+    for path in ("/", "/review", "/themes"):
+        html = client.get(path).text
+        assert "data-changelog" in html
+        assert "CHI TIẾT CẬP NHẬT" in html
+        assert "data-changelog-overlay" in html
+
+
+def test_changelog_overlay_starts_hidden(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/").text
+    block = html.split("data-changelog-overlay", 1)[1][:80]
+
+    assert "hidden" in block
+
+
+def test_all_overlays_coexist(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/").text
+
+    assert "data-overlay" in html
+    assert "data-help-overlay" in html
+    assert "data-changelog-overlay" in html
+
+
+def test_changelog_backfill_covers_all_modules() -> None:
+    root = Path(__file__).resolve().parents[1] / "src" / "changelog"
+    versions = {path.stem for path in root.glob("*.md")}
+
+    assert "1.0" in versions
+    assert "2.9" in versions
+    assert "3.3" in versions
+    assert len(versions) == 24
