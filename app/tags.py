@@ -95,6 +95,7 @@ class TagLayout:
     total: int = 0
     matched: int = 0
     clear_url: str = ""
+    help_layout: str = ""
 
 
 def build_tag_layout(
@@ -109,6 +110,7 @@ def build_tag_layout(
     hidden_fields: Mapping[str, str] | None = None,
     delete_base: str = "",
     clear_url: str = "",
+    help_layout: str = "",
 ) -> TagLayout:
     """Dựng dữ liệu cho một Tags Layout (dùng chung cho tag input và tag theme)."""
     selected_keys = {tag_key(tag) for tag in selected if str(tag).strip()}
@@ -151,4 +153,5 @@ def build_tag_layout(
         total=len(counts),
         matched=len(items),
         clear_url=clear_url,
+        help_layout=help_layout,
     )

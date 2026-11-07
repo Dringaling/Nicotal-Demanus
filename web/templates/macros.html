@@ -4,6 +4,14 @@
   khối tĩnh dùng một lần (header, overlay) giữ include.
 #}
 
+{% macro help_button(layout) %}
+<button class="icon-button help-button" type="button" data-help="{{ layout }}"
+        title="Trợ giúp" aria-label="Trợ giúp">
+  <img src="/icons/help.svg" alt="">
+</button>
+{% endmacro %}
+
+
 {% macro template_select(groups, selected) -%}
 <select name="template">
   {% if groups.pptx %}
@@ -219,9 +227,12 @@
 <section class="card tags-layout" data-tags-layout="{{ layout.dom_id }}">
   <div class="deck-head">
     <h2>{{ layout.title }}</h2>
-    {% if layout.clear_url and layout.selected %}
-    <a class="meta" href="{{ layout.clear_url }}">Bỏ lọc</a>
-    {% endif %}
+    <span class="tags-actions">
+      {% if layout.clear_url and layout.selected %}
+      <a class="meta" href="{{ layout.clear_url }}">Bỏ lọc</a>
+      {% endif %}
+      {% if layout.help_layout %}{{ help_button(layout.help_layout) }}{% endif %}
+    </span>
   </div>
   <form class="tags-filter" id="tags-filter-{{ layout.dom_id }}"
         method="get" action="/">
@@ -287,7 +298,10 @@
 
 
 {% macro create_form(form, error, groups) %}
-<h1>Tạo bài trình bày</h1>
+<div class="deck-head">
+  <h1>Tạo bài trình bày</h1>
+  {{ help_button('create') }}
+</div>
 {% if error %}<p class="error">{{ error }}</p>{% endif %}
 <form method="post" action="/generate" class="form">
   {{ title_field(form.get('title', '')) }}
@@ -320,7 +334,10 @@
 {% macro reuse_form(reuse, error, groups) %}
 <div class="deck-head">
   <h1>Dùng lại input</h1>
-  <a class="button secondary" href="/">Tạo mới</a>
+  <span class="deck-head-actions">
+    <a class="button secondary" href="/">Tạo mới</a>
+    {{ help_button('create') }}
+  </span>
 </div>
 <p class="reuse-banner">Đang dùng input:
   <strong>{{ reuse.title }}</strong>

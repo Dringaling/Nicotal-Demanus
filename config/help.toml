@@ -1,0 +1,58 @@
+# Cấu hình nội dung help cho từng layout.
+# Mỗi layout là một bảng [layouts.<id>] với `title` và danh sách `docs` (.md).
+# File .md nằm trong src/help/; chức năng giống nhau thì dùng chung một file.
+
+[layouts.tags]
+title = "Tags"
+docs = [
+    "tags-search.md",
+    "tags-add.md",
+    "tags-order.md",
+    "tags-select.md",
+    "tags-deselect.md",
+]
+
+[layouts.theme-tags]
+title = "Theme Tags"
+docs = [
+    "theme-tags-order.md",
+    "tags-search.md",
+    "tags-select.md",
+    "tags-deselect.md",
+]
+
+[layouts.input]
+title = "Input"
+docs = [
+    "input-search.md",
+    "input-expand.md",
+    "input-tag-edit.md",
+    "input-reuse.md",
+    "input-delete.md",
+]
+
+[layouts.create]
+title = "Tạo bài trình bày"
+docs = [
+    "create-submit.md",
+    "create-template.md",
+    "tags-add.md",
+    "tags-search.md",
+]
+
+[layouts.review]
+title = "Review deck"
+docs = ["review-open.md"]
+
+[layouts.deck]
+title = "Deck"
+docs = ["deck-download.md"]
+
+[layouts.theme-edit]
+title = "Theme Edit"
+docs = [
+    "theme-edit-save.md",
+    "theme-edit-alias.md",
+    "theme-edit-reset.md",
+    "theme-edit-delete.md",
+]

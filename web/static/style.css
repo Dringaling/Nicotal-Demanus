@@ -455,6 +455,96 @@ body.overlay-open {
   overflow: hidden;
 }
 
+.help-button {
+  background: var(--color-wine-700);
+}
+
+.help-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 8, 16, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gap-lg);
+  z-index: 60;
+}
+
+.help-overlay[hidden] {
+  display: none;
+}
+
+.help-dialog {
+  background: var(--card);
+  border: 1px solid var(--color-wine-700);
+  border-radius: var(--card-radius);
+  box-shadow: 0 20px 50px rgba(28, 8, 16, 0.3);
+  width: min(70%, 1100px);
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: var(--gap-lg);
+}
+
+.help-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-sm);
+  position: sticky;
+  top: calc(-1 * var(--gap-lg));
+  background: var(--card);
+  padding: var(--gap-sm) 0;
+}
+
+.help-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.help-body h1 {
+  font-size: 18px;
+  margin: 0 0 var(--gap-sm);
+}
+
+.help-body h2,
+.help-body h3 {
+  font-size: 16px;
+  margin: var(--gap-sm) 0;
+}
+
+.help-body ul,
+.help-body ol {
+  padding-left: var(--gap-lg);
+  margin: 0 0 var(--gap-sm);
+}
+
+.help-body p {
+  margin: 0 0 var(--gap-sm);
+}
+
+.help-section {
+  border-top: 1px solid var(--color-teal-300);
+  padding-top: var(--gap-md);
+  margin-top: var(--gap-md);
+}
+
+.help-section:first-child {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+body.help-open {
+  overflow: hidden;
+}
+
+.deck-head-actions,
+.tags-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+}
+
 .muted {
   color: var(--muted);
 }

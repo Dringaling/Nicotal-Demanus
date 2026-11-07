@@ -6,6 +6,7 @@
   lần trên trang, không phụ thuộc dữ liệu động.
   - `header.html` — brand + nút Tạo/Review, dùng ở `base.html`.
   - `delete_overlay.html` — modal xoá input, dùng ở `index.html`.
+  - `help_overlay.html` — overlay trợ giúp, dùng ở `base.html`.
 - **Macro** (`{% from "macros.html" import ... %}`): khối lặp lại hoặc có
   dữ liệu động. Luôn truyền tham số rõ ràng, không dựa vào context ngầm.
 
@@ -15,11 +16,13 @@
 |---|---|---|
 | `header.html` | `base.html` | `server_url` (không bắt buộc) |
 | `delete_overlay.html` | `index.html` | không |
+| `help_overlay.html` | `base.html` | không (JS tự fetch `/api/help`) |
 
 ## Macro trong `macros.html`
 
 | Macro | Tham số | Dùng ở |
 |---|---|---|
+| `help_button` | `layout` | `tags_layout`, `create_form`, `reuse_form`, `index.html`, `review.html`, `deck.html`, `themes.html` |
 | `template_select` | `groups, selected` | `create_form`, `reuse_form` |
 | `title_field` | `value` | `create_form` |
 | `textarea_field` | `name, label, value, rows, required, placeholder` | `create_form` |
@@ -66,6 +69,19 @@ nhau (`dom_id`, `filter_param`, `delete_base`).
   `flex: 0 0 auto` nên luôn cùng hàng.
 - Cao 7 dòng: `max-height: calc(7 * var(--gap-lg) + 6 * 4px)` (không thêm
   token).
+
+## Help
+
+- Nội dung: `src/help/<layout>-<chức-năng>.md`, tiếng Việt; chức năng giống
+  nhau dùng chung một file.
+- Cấu hình: `config/help.toml` — `[layouts.<id>]` có `title` và `docs` (giữ
+  thứ tự hiển thị). Layout id chỉ `[a-z0-9-]`.
+- Nút: macro `help_button(layout)` → `<button data-help="<id>">` với icon
+  `/icons/help.svg`.
+- Overlay: `partials/help_overlay.html` include một lần trong `base.html`; JS
+  dùng factory `initFetchedOverlay` (fetch `/api/help?layout=<id>`, cache
+  client, focus trap, `Escape`/backdrop để đóng).
+- Không sửa UI của một layout mà không cập nhật file `.md` tương ứng.
 
 ## Icon
 

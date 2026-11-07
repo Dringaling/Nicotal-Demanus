@@ -327,6 +327,164 @@
 })();
 
 (function () {
+  const OVERLAYS = "[data-overlay], [data-help-overlay], [data-changelog-overlay]";
+  const BODY_CLASSES = ["overlay-open", "help-open", "changelog-open"];
+
+  function initFetchedOverlay(options) {
+    const overlay = document.querySelector(options.overlay);
+    if (!overlay) {
+      return null;
+    }
+    const dialog = overlay.querySelector(options.dialog);
+    const body = overlay.querySelector(options.body);
+    const title = options.title ? overlay.querySelector(options.title) : null;
+    const closeButton = overlay.querySelector(options.close);
+    const cache = new Map();
+    const bodyClass = options.bodyClass || "overlay-open";
+    let lastFocus = null;
+
+    function focusable() {
+      if (!dialog) {
+        return [];
+      }
+      return Array.from(
+        dialog.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((element) => !element.disabled);
+    }
+
+    function open(trigger) {
+      lastFocus = trigger;
+      document.querySelectorAll(OVERLAYS).forEach((element) => {
+        if (element !== overlay) {
+          element.hidden = true;
+        }
+      });
+      BODY_CLASSES.forEach((name) => document.body.classList.remove(name));
+      overlay.hidden = false;
+      document.body.classList.add(bodyClass);
+      if (closeButton) {
+        closeButton.focus();
+      }
+    }
+
+    function close() {
+      overlay.hidden = true;
+      document.body.classList.remove(bodyClass);
+      if (lastFocus && typeof lastFocus.focus === "function") {
+        lastFocus.focus();
+      }
+    }
+
+    function onKeydown(event) {
+      if (overlay.hidden) {
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close();
+        return;
+      }
+      if (event.key !== "Tab") {
+        return;
+      }
+      const items = focusable();
+      if (!items.length) {
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) {
+        close();
+      }
+    });
+    if (closeButton) {
+      closeButton.addEventListener("click", close);
+    }
+    document.addEventListener("keydown", onKeydown);
+
+    async function load(key) {
+      if (cache.has(key)) {
+        return cache.get(key);
+      }
+      const url = key
+        ? `${options.endpoint}?${options.param}=${encodeURIComponent(key)}`
+        : options.endpoint;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("fetch failed");
+      }
+      const data = await response.json();
+      cache.set(key, data);
+      return data;
+    }
+
+    async function show(trigger) {
+      const key =
+        options.param && options.datasetKey
+          ? trigger.dataset[options.datasetKey] || ""
+          : "";
+      if (title) {
+        title.textContent = options.fallbackTitle || "";
+      }
+      if (body) {
+        body.innerHTML = '<p class="muted">Đang tải...</p>';
+      }
+      open(trigger);
+      try {
+        const data = await load(key);
+        if (title) {
+          title.textContent = data.title || options.fallbackTitle || "";
+        }
+        if (body) {
+          body.innerHTML = options.render
+            ? options.render(data)
+            : data.html || '<p class="muted">Chưa có nội dung.</p>';
+        }
+      } catch (exc) {
+        if (body) {
+          body.innerHTML = '<p class="error">Không tải được nội dung.</p>';
+        }
+      }
+    }
+
+    document.querySelectorAll(options.trigger).forEach((trigger) => {
+      trigger.addEventListener("click", () => show(trigger));
+    });
+    return { open, close, show };
+  }
+
+  window.Demanus = Object.assign(window.Demanus || {}, {
+    initFetchedOverlay,
+  });
+
+  initFetchedOverlay({
+    trigger: "[data-help]",
+    overlay: "[data-help-overlay]",
+    dialog: "[data-help-dialog]",
+    body: "[data-help-body]",
+    title: "[data-help-title]",
+    close: "[data-help-close]",
+    endpoint: "/api/help",
+    param: "layout",
+    datasetKey: "help",
+    fallbackTitle: "Trợ giúp",
+    bodyClass: "help-open",
+  });
+})();
+
+(function () {
   const overlay = document.querySelector("[data-overlay]");
   if (!overlay) {
     return;

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros.html" import help_button %}
 {% block title %}Theme Edit · Nicotal - Demanus{% endblock %}
 {% block content %}
 <div class="theme-edit-layout">
@@ -51,7 +52,10 @@
     {% if selected %}
     <div class="deck-head">
       <h1>{{ selected.name }}</h1>
-      <span class="meta">{{ selected.id }}</span>
+      <span class="deck-head-actions">
+        <span class="meta">{{ selected.id }}</span>
+        {{ help_button('theme-edit') }}
+      </span>
     </div>
     {% if error %}<p class="error">{{ error }}</p>{% endif %}
     <form method="post" action="/themes/save" class="theme-form">

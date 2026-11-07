@@ -110,6 +110,17 @@ uv run demanus.py serve --provider lmstudio-openai \
 - `update.bat` cập nhật shallow `main` bằng `fetch --depth=1` + `reset --hard`
   (xoá thay đổi cục bộ).
 
+## Trợ giúp trong ứng dụng
+
+- Mỗi layout lớn có nút `?` riêng (Tags, Theme Tags, Input, Tạo, Review, Deck,
+  Theme Edit).
+- Nội dung là các file markdown nhỏ trong `src/help/`, đặt tên
+  `<layout>-<chức-năng>.md`; file dùng chung khi chức năng giống nhau.
+- `config/help.toml` ánh xạ layout → danh sách file và tiêu đề hiển thị.
+- Nút mở overlay rộng 70% (`max-width: 1100px`, cao tối đa 80vh); đóng bằng
+  `×`, click ra ngoài hoặc `Escape`.
+- Sửa `.md` xong gọi `refresh_help()` (hoặc restart server) để nạp lại.
+
 ## Cấu trúc
 
 - `app/config.py` — nạp cấu hình, secret, đường dẫn.
@@ -130,7 +141,10 @@ uv run demanus.py serve --provider lmstudio-openai \
 - `app/preview/` — chọn backend preview: `libreoffice.py` (soffice → PDF →
   PNG 150 DPI, toàn bộ slide) → `aspose.py` (tối đa 10 slide, rộng 640px) →
   không preview. Không dùng Pillow.
+- `app/md_lite.py` — render markdown tối giản (escape HTML) cho help.
+- `app/help_docs.py` — nạp `config/help.toml` + `src/help/*.md`.
 - `app/web.py` — FastAPI + Jinja2.
+- `src/help/` — nội dung trợ giúp (markdown, tracked).
 - `web/` — template HTML, CSS, JS.
 - `templates/` — file `.pptx` mẫu gốc (giữ nguyên).
 - `install.bat`, `update.bat`, `Nicotal-Demanus.bat` — bộ cài Windows.

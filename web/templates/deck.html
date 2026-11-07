@@ -1,10 +1,12 @@
 {% extends "base.html" %}
+{% from "macros.html" import help_button %}
 {% block title %}{{ slug }} · Nicotal - Demanus{% endblock %}
 {% block content %}
 <section class="card deck">
   <div class="deck-head">
     <h1>{{ slug }}</h1>
     <div class="actions">
+      {{ help_button('deck') }}
       <a class="button" href="/download/{{ slug }}">Tải PPTX</a>
       <form method="post" action="/api/decks/{{ slug }}/delete"
             onsubmit="return confirm('Xoá deck này?')">

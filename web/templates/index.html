@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros.html" import tags_layout, search_bar, input_list, create_form, reuse_form, orphan_decks %}
+{% from "macros.html" import help_button, tags_layout, search_bar, input_list, create_form, reuse_form, orphan_decks %}
 {% block content %}
 {% if message %}<p class="flash">{{ message }}</p>{% endif %}
 <datalist id="tag-suggestions">
@@ -14,7 +14,10 @@
   <section class="card input-column">
     <div class="deck-head">
       <h2>Input{% if input_tags_layout.selected %} · {{ input_tags_layout.selected | join(', ') }}{% endif %}</h2>
-      <a class="button secondary" href="/review">Review deck</a>
+      <span class="deck-head-actions">
+        <a class="button secondary" href="/review">Review deck</a>
+        {{ help_button('input') }}
+      </span>
     </div>
     {{ search_bar(search_hidden, query, search_clear_url) }}
     <div class="input-scroll">

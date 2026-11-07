@@ -15,6 +15,7 @@ from . import storage, theme_store
 from . import tags as tag_utils
 from .boho_render import render_deck_boho
 from .config import ConfigError, REPO_ROOT, Settings, lan_url, load_settings
+from .help_docs import HelpError, render_help
 from .copy_slide_render import render_deck_copy_slides
 from .llm import LLMClient, LLMError
 from .preview import render_preview
@@ -232,6 +233,7 @@ def create_app(
             hidden_fields=tag_hidden,
             delete_base="/tags",
             clear_url=_url_without("/", preserve),
+            help_layout="tags",
         )
         theme_tags_layout = tag_utils.build_tag_layout(
             dom_id="theme-tags",
@@ -243,6 +245,7 @@ def create_app(
             filter_param="ttags",
             hidden_fields=theme_tag_hidden,
             clear_url=_url_without("/", theme_tag_hidden),
+            help_layout="theme-tags",
         )
         return templates.TemplateResponse(
             request=request,
@@ -502,6 +505,21 @@ def create_app(
             )
         refresh_templates()
         return RedirectResponse("/themes", status_code=303)
+
+    @app.get("/api/help")
+    async def api_help(layout: str = Query("")):
+        try:
+            doc = render_help(layout)
+        except (HelpError, ConfigError) as exc:
+            raise HTTPException(
+                status_code=404, detail="Không có help cho layout này"
+            ) from exc
+        return {
+            "layout": doc.layout,
+            "title": doc.title,
+            "html": doc.html,
+            "docs": list(doc.docs),
+        }
 
     @app.get("/health")
     async def health():

@@ -1717,3 +1717,78 @@ def test_generate_still_works_with_filtered_themes(tmp_path: Path) -> None:
     )
 
     assert response.status_code == 303
+
+
+def test_help_api_returns_doc(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    payload = client.get("/api/help", params={"layout": "tags"}).json()
+
+    assert payload["layout"] == "tags"
+    assert payload["title"] == "Tags"
+    assert payload["html"]
+    assert payload["docs"]
+
+
+def test_help_api_unknown_layout(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+
+    assert client.get("/api/help", params={"layout": "abc"}).status_code == 404
+
+
+def test_help_api_without_layout(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+
+    assert client.get("/api/help").status_code == 404
+
+
+def test_help_overlay_on_every_page(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+
+    for path in ("/", "/review", "/themes"):
+        assert "data-help-overlay" in client.get(path).text
+
+
+def test_help_buttons_on_index(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/").text
+
+    for layout in ("tags", "theme-tags", "input", "create"):
+        assert f'data-help="{layout}"' in html
+
+
+def test_help_button_on_other_pages(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+    client.post(
+        f"/inputs/{record.id}/generate",
+        data={"template": "flat"},
+        follow_redirects=False,
+    )
+    slug = storage.get_input(record.id, root=tmp_path).output_slug
+
+    assert 'data-help="review"' in client.get("/review").text
+    assert 'data-help="theme-edit"' in client.get("/themes").text
+    assert f'data-help="deck"' in client.get(f"/deck/{slug}").text
+
+
+def test_help_icon_is_served(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+
+    assert client.get("/icons/help.svg").status_code == 200
+    assert "/icons/help.svg" in client.get("/").text
+
+
+def test_help_overlay_starts_hidden(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/").text
+    block = html.split("data-help-overlay", 1)[1][:120]
+
+    assert "hidden" in block
+
+
+def test_delete_overlay_still_present(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/").text
+
+    assert "data-overlay" in html
+    assert html.count('<select name="template">') == 1
