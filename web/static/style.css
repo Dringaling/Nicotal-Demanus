@@ -639,6 +639,10 @@ body.overlay-open {
 
 .sidebar {
   align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-md);
+  min-width: 0;
 }
 
 .input-column,

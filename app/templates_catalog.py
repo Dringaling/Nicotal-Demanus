@@ -8,7 +8,9 @@ import logging
 import tomllib
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from typing import Sequence
 
+from . import tags as tag_utils
 from .config import REPO_ROOT, ConfigError
 from .schema import DeckSpec, Palette
 from .template_profile import TemplateProfile, format_profile_layouts
@@ -228,6 +230,51 @@ def grouped_templates() -> dict[str, list[TemplateMeta]]:
         key = "pptx" if meta.kind == "pptx" else "themes"
         groups[key].append(meta)
     return groups
+
+
+def template_tag_counts(
+    groups: dict[str, list[TemplateMeta]] | None = None,
+) -> dict[str, int]:
+    """Đếm số template (gồm variant) cho từng tag."""
+    source = groups if groups is not None else grouped_templates()
+    counts: dict[str, int] = {}
+    for metas in source.values():
+        for meta in metas:
+            for tag in meta.tags:
+                name = str(tag).strip()
+                if name:
+                    counts[name] = counts.get(name, 0) + 1
+    return counts
+
+
+def filter_template_groups(
+    groups: dict[str, list[TemplateMeta]],
+    selected: Sequence[str],
+    keep_id: str | None = None,
+) -> dict[str, list[TemplateMeta]]:
+    """Lọc template theo tag (OR); luôn giữ template đang chọn."""
+    wanted = {
+        tag_utils.tag_key(item) for item in selected or [] if str(item).strip()
+    }
+    if not wanted:
+        return groups
+
+    filtered: dict[str, list[TemplateMeta]] = {}
+    for key, metas in groups.items():
+        kept = [
+            meta
+            for meta in metas
+            if wanted & {tag_utils.tag_key(tag) for tag in meta.tags}
+        ]
+        if keep_id:
+            current = next((meta for meta in metas if meta.id == keep_id), None)
+            if current is not None and all(
+                meta.id != keep_id for meta in kept
+            ):
+                kept.append(current)
+        if kept:
+            filtered[key] = kept
+    return filtered
 
 
 def get_template(template_id: str) -> TemplateMeta | None:

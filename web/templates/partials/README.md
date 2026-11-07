@@ -31,7 +31,7 @@
 | `output_item` | `record, output, highlight` | `input_card` |
 | `input_card` | `item, tag_links` | `input_list` |
 | `input_list` | `inputs, tag_links` | `index.html` |
-| `tags_layout` | `layout` | `index.html` (sidebar Tags) |
+| `tags_layout` | `layout` | `index.html` (sidebar Tags, Theme Tags) |
 | `search_bar` | `search_hidden, query, clear_url` | `index.html` |
 | `create_form` | `form, error, groups` | `index.html` |
 | `reuse_form` | `reuse, error, groups` | `index.html` |
@@ -56,6 +56,12 @@ nhau (`dom_id`, `filter_param`, `delete_base`).
 - Search tag: tham số `tq` (server-side, không dấu, không hoa thường).
 - Chọn nhiều tag: `?tags=a,b` = OR. `?tag=x` vẫn được chấp nhận.
 - `data-*` hooks: `data-tags-layout`, `data-select-all`, `data-deselect-all`.
+- Sidebar "Tạo" có **hai** layout dùng chung macro này:
+  - `tags` — tag của input; `?tags=a,b` lọc input, `tq` tìm tag, có nút xoá.
+  - `theme-tags` — tag của theme/variant (lấy từ `TemplateMeta.tags`);
+    `?ttags=a,b` lọc theme trong ô Template, `ttq` tìm tag, **không** có nút xoá.
+- `template_select` render `<option disabled>` "Không có theme khớp tag" khi
+  lọc hết theme; template đang chọn luôn được giữ lại (server chèn lại).
 - Tag dài: `.tag-row .tag-label` dùng ellipsis + `title` đầy đủ; nút xoá
   `flex: 0 0 auto` nên luôn cùng hàng.
 - Cao 7 dòng: `max-height: calc(7 * var(--gap-lg) + 6 * 4px)` (không thêm

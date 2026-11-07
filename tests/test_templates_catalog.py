@@ -207,3 +207,66 @@ def test_every_variant_has_palette_override(variant_id: str) -> None:
     assert base is not None and meta is not None
     assert meta.bg_color != base.bg_color
     assert meta.theme_file == base.theme_file
+
+
+def test_template_tag_counts_include_variants() -> None:
+    from app.templates_catalog import grouped_templates, template_tag_counts
+
+    groups = grouped_templates()
+    counts = template_tag_counts(groups)
+    expected = sum(
+        1
+        for metas in groups.values()
+        for meta in metas
+        if "dark" in meta.tags
+    )
+
+    assert counts.get("dark", 0) == expected
+    assert counts
+
+
+def test_variant_tags_override_base() -> None:
+    meta = get_template("neo_tech_minimal__gruvbox")
+    base = get_template("neo_tech_minimal")
+
+    assert meta is not None and base is not None
+    assert meta.tags
+    assert "gruvbox" in meta.tags
+    assert meta.tags != base.tags
+
+
+def test_filter_template_groups_empty_selection() -> None:
+    from app.templates_catalog import filter_template_groups, grouped_templates
+
+    groups = grouped_templates()
+
+    assert filter_template_groups(groups, []) == groups
+
+
+def test_filter_template_groups_or_semantics() -> None:
+    from app.templates_catalog import filter_template_groups, grouped_templates
+
+    groups = grouped_templates()
+    filtered = filter_template_groups(groups, ["dark", "light"])
+
+    kept = [meta for metas in filtered.values() for meta in metas]
+    assert kept
+    for meta in kept:
+        assert {"dark", "light"} & set(meta.tags)
+
+
+def test_filter_template_groups_unknown_tag_is_empty() -> None:
+    from app.templates_catalog import filter_template_groups, grouped_templates
+
+    assert filter_template_groups(grouped_templates(), ["khong-ton-tai"]) == {}
+
+
+def test_filter_template_groups_keeps_selected_template() -> None:
+    from app.templates_catalog import filter_template_groups, grouped_templates
+
+    filtered = filter_template_groups(
+        grouped_templates(), ["dark"], "flat"
+    )
+
+    kept = [meta.id for metas in filtered.values() for meta in metas]
+    assert "flat" in kept

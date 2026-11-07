@@ -1609,3 +1609,111 @@ def test_tag_row_truncates_label() -> None:
     assert "text-overflow: ellipsis" in css
     assert "max-height: calc(7 * var(--gap-lg) + 6 * 4px)" in css
     assert ".input-details[hidden]" in css
+
+
+def test_theme_tags_layout_present(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/").text
+
+    assert 'data-tags-layout="tags"' in html
+    assert 'data-tags-layout="theme-tags"' in html
+    assert html.index('data-tags-layout="tags"') < html.index(
+        'data-tags-layout="theme-tags"'
+    )
+
+
+def test_theme_tags_have_no_delete(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/").text
+    block = html.split('data-tags-layout="theme-tags"', 1)[1]
+    block = block.split("</section>", 1)[0]
+
+    assert "/delete" not in block
+
+
+def test_theme_tag_filter_hides_options(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/", params={"ttags": "dark"}).text
+    select = html.split('<select name="template">', 1)[1].split("</select>", 1)[0]
+
+    assert 'value="neo_tech_minimal"' in select
+    assert 'value="flat"' not in select
+
+
+def test_theme_tag_filter_keeps_selected_template(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input(
+        "A", "Mô tả", "Chi tiết", template="flat", root=tmp_path
+    )
+    html = client.get(
+        "/", params={"ttags": "dark", "use": record.id}
+    ).text
+    select = html.split('<select name="template">', 1)[1].split("</select>", 1)[0]
+
+    assert re.search(r'value="flat"\s+selected', select)
+
+
+def test_theme_tag_filter_empty_state(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/", params={"ttags": "khong-ton-tai"}).text
+
+    assert "Không có theme khớp tag" in html
+
+
+def test_theme_tag_search_keeps_selection(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/", params={"ttq": "da", "ttags": "dark"}).text
+    block = html.split('data-tags-layout="theme-tags"', 1)[1]
+    block = block.split("</section>", 1)[0]
+
+    assert 'name="ttags" value="dark"' in block
+    assert 'name="ttags" value="light"' not in block
+
+
+def test_theme_tag_select_all_flags(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    plain = client.get("/").text.split('data-tags-layout="theme-tags"', 1)[1]
+    plain = plain.split("</section>", 1)[0]
+    assert "data-select-all" not in plain
+
+    searched = client.get("/", params={"ttq": "da"}).text
+    searched = searched.split('data-tags-layout="theme-tags"', 1)[1]
+    searched = searched.split("</section>", 1)[0]
+    assert "data-select-all" in searched
+
+    selected = client.get("/", params={"ttags": "dark"}).text
+    selected = selected.split('data-tags-layout="theme-tags"', 1)[1]
+    selected = selected.split("</section>", 1)[0]
+    assert "data-deselect-all" in selected
+
+
+def test_search_keeps_theme_tags(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/", params={"ttags": "dark"}).text
+    search = html.split('<form class="search-bar"', 1)[1].split("</form>", 1)[0]
+
+    assert 'name="ttags" value="dark"' in search
+
+
+def test_input_tag_links_keep_theme_tags(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input("A", "Mô tả", "Chi tiết", tags=["alpha"], root=tmp_path)
+    html = client.get("/", params={"ttags": "dark"}).text
+
+    assert 'href="/?tags=alpha&amp;ttags=dark"' in html
+
+
+def test_generate_still_works_with_filtered_themes(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    response = client.post(
+        "/generate",
+        data={
+            "title": "Deck A",
+            "description": "Mô tả",
+            "details": "Chi tiết",
+            "template": "flat",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303

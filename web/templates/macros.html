@@ -24,6 +24,9 @@
     {% endfor %}
   </optgroup>
   {% endif %}
+  {% if not groups.pptx and not groups.themes %}
+  <option value="" selected disabled>Không có theme khớp tag</option>
+  {% endif %}
 </select>
 {%- endmacro %}
 

@@ -22,10 +22,12 @@ from .render import render_deck
 from .template_render import render_deck_with_template
 from .templates_catalog import (
     apply_template_palette,
+    filter_template_groups,
     get_template,
     grouped_templates,
     refresh_templates,
     template_file,
+    template_tag_counts,
 )
 from .theme_render import render_deck_theme
 
@@ -117,11 +119,17 @@ def create_app(
         form: dict | None = None,
         tags_filter: list[str] | None = None,
         tag_query: str | None = None,
+        theme_tags: list[str] | None = None,
+        theme_tag_query: str | None = None,
         query: str | None = None,
         reuse: dict | None = None,
         message: str | None = None,
     ):
         selected_tags = list(tags_filter or [])
+        selected_theme_tags = list(theme_tags or [])
+        keep_template = (form or {}).get("template") or (reuse or {}).get(
+            "template"
+        )
         records = storage.list_inputs(
             tags=selected_tags, search=query, root=base
         )
@@ -167,17 +175,48 @@ def create_app(
                 if query_norm in storage.normalize_search(output.slug)
             ]
 
+        all_groups = grouped_templates()
+        visible_groups = filter_template_groups(
+            all_groups, selected_theme_tags, keep_template
+        )
+
         preserve: dict[str, str] = {}
         if query:
             preserve["q"] = query
         if tag_query:
             preserve["tq"] = tag_query
+        if selected_theme_tags:
+            preserve["ttags"] = ",".join(selected_theme_tags)
+        if theme_tag_query:
+            preserve["ttq"] = theme_tag_query
+
         search_hidden: dict[str, str] = {}
         if selected_tags:
             search_hidden["tags"] = ",".join(selected_tags)
         if tag_query:
             search_hidden["tq"] = tag_query
+        if selected_theme_tags:
+            search_hidden["ttags"] = ",".join(selected_theme_tags)
+        if theme_tag_query:
+            search_hidden["ttq"] = theme_tag_query
         search_clear_url = _url_without("/", search_hidden)
+
+        tag_hidden: dict[str, str] = {}
+        if query:
+            tag_hidden["q"] = query
+        if selected_theme_tags:
+            tag_hidden["ttags"] = ",".join(selected_theme_tags)
+        if theme_tag_query:
+            tag_hidden["ttq"] = theme_tag_query
+
+        theme_tag_hidden: dict[str, str] = {}
+        if query:
+            theme_tag_hidden["q"] = query
+        if tag_query:
+            theme_tag_hidden["tq"] = tag_query
+        if selected_tags:
+            theme_tag_hidden["tags"] = ",".join(selected_tags)
+
         tag_links = {
             name: _url_without("/", {"tags": name, **preserve})
             for name in storage.list_tags(root=base)
@@ -190,9 +229,20 @@ def create_app(
             query=tag_query or "",
             search_param="tq",
             filter_param="tags",
-            hidden_fields={"q": query} if query else {},
+            hidden_fields=tag_hidden,
             delete_base="/tags",
             clear_url=_url_without("/", preserve),
+        )
+        theme_tags_layout = tag_utils.build_tag_layout(
+            dom_id="theme-tags",
+            title="Theme Tags",
+            counts=template_tag_counts(all_groups),
+            selected=selected_theme_tags,
+            query=theme_tag_query or "",
+            search_param="ttq",
+            filter_param="ttags",
+            hidden_fields=theme_tag_hidden,
+            clear_url=_url_without("/", theme_tag_hidden),
         )
         return templates.TemplateResponse(
             request=request,
@@ -201,12 +251,13 @@ def create_app(
                 "inputs": inputs,
                 "orphans": orphans,
                 "input_tags_layout": tags_layout,
+                "theme_tags_layout": theme_tags_layout,
                 "search_hidden": search_hidden,
                 "search_clear_url": search_clear_url,
                 "query": query or "",
                 "tag_links": tag_links,
                 "tags": storage.list_tags(root=base),
-                "template_groups": template_groups,
+                "template_groups": visible_groups,
                 "server_url": server_url,
                 "error": error,
                 "form": form or {},
@@ -267,11 +318,14 @@ def create_app(
         tag: str | None = Query(None),
         tags: list[str] | None = Query(None),
         tq: str | None = Query(None),
+        ttags: list[str] | None = Query(None),
+        ttq: str | None = Query(None),
         q: str | None = Query(None),
         use: str | None = Query(None),
         msg: str | None = Query(None),
     ):
         selected_tags = _split_tags(tags, tag)
+        selected_theme_tags = _split_tags(ttags)
         reuse = None
         if use:
             try:
@@ -283,6 +337,8 @@ def create_app(
                     404,
                     tags_filter=selected_tags,
                     tag_query=tq,
+                    theme_tags=selected_theme_tags,
+                    theme_tag_query=ttq,
                     query=q,
                     message=msg,
                 )
@@ -301,6 +357,8 @@ def create_app(
             request,
             tags_filter=selected_tags,
             tag_query=tq,
+            theme_tags=selected_theme_tags,
+            theme_tag_query=ttq,
             query=q,
             reuse=reuse,
             message=msg,
