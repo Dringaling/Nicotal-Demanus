@@ -7,8 +7,11 @@
   - `header.html` — brand + nút Tạo/Review, dùng ở `base.html`.
   - `delete_overlay.html` — modal xoá input, dùng ở `index.html`.
   - `help_overlay.html` — overlay trợ giúp, dùng ở `base.html`.
-  - `changelog_overlay.html` — nút floating + overlay cập nhật, dùng ở
+  - `changelog_overlay.html` — overlay cập nhật, dùng ở `base.html`.
+  - `ai_config_overlay.html` — overlay cấu hình provider/model, dùng ở
     `base.html`.
+  - `fab_stack.html` — cột nút floating góc dưới trái (CẤU HÌNH AI trên,
+    CHI TIẾT CẬP NHẬT dưới), dùng ở `base.html`.
 - **Macro** (`{% from "macros.html" import ... %}`): khối lặp lại hoặc có
   dữ liệu động. Luôn truyền tham số rõ ràng, không dựa vào context ngầm.
 
@@ -20,6 +23,8 @@
 | `delete_overlay.html` | `index.html` | không |
 | `help_overlay.html` | `base.html` | không (JS tự fetch `/api/help`) |
 | `changelog_overlay.html` | `base.html` | không (JS tự fetch `/api/changelog`) |
+| `ai_config_overlay.html` | `base.html` | không (JS tự fetch `/api/ai-config`) |
+| `fab_stack.html` | `base.html` | không |
 
 ## Macro trong `macros.html`
 
@@ -96,6 +101,17 @@ nhau (`dom_id`, `filter_param`, `delete_base`).
 - Nút floating "CHI TIẾT CẬP NHẬT" (góc dưới trái) mở overlay rộng 80%; dùng
   chung factory `initFetchedOverlay` với help, chỉ khác `render` và
   `bodyClass`.
+
+## Cấu hình AI
+
+- Nút `CẤU HÌNH AI` (icon bánh răng) nằm trong `.fab-stack`, **trên** nút
+  `CHI TIẾT CẬP NHẬT`; không thêm nút floating thứ ba ngoài cột này.
+- Overlay rộng 80%, ba nhóm `<details>`: Mặc định / Provider / Model; dữ liệu
+  do `/api/ai-config` trả về, JS render bằng DOM (không `innerHTML` cho dữ liệu
+  người dùng).
+- Ghi cấu hình chỉ từ loopback; mọi thay đổi lưu vào
+  `config/providers.local.toml`, key vào `secret/`.
+- Không dùng `window.confirm`: nút xoá dùng xác nhận hai bước ngay trên nút.
 
 ## Icon
 

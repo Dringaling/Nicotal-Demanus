@@ -40,8 +40,8 @@ def test_version_for_module() -> None:
 def test_loads_all_entries() -> None:
     entries = load_changelog()
 
-    assert len(entries) >= 24
-    assert entries[0].version == "3.3"
+    assert len(entries) >= 25
+    assert entries[0].version == "3.4"
     assert entries[-1].version == "1.0"
 
 

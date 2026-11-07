@@ -110,6 +110,19 @@ uv run demanus.py serve --provider lmstudio-openai \
 - `update.bat` cập nhật shallow `main` bằng `fetch --depth=1` + `reset --hard`
   (xoá thay đổi cục bộ).
 
+## Cấu hình AI trong app
+
+- Nút **CẤU HÌNH AI** ở góc dưới trái mở overlay sửa provider, model, API key
+  và lựa chọn mặc định ngay trong app.
+- Thay đổi ghi vào `config/providers.local.toml` (gitignored, đè lên
+  `config/providers.toml`); key ghi vào `secret/<name>.env` với quyền `0600`.
+- Không cần khởi động lại: cấu hình được nạp lại sau mỗi lần lưu.
+- Chỉ máy đang chạy app (loopback) mới sửa được; máy khác trong LAN chỉ xem.
+- `type` chọn một lần khi tạo provider (body request phụ thuộc type); muốn đổi
+  thì tạo provider mới.
+- Xoá được provider/model do app tạo; entry phát hành sẵn chỉ bị ghi đè. Không
+  xoá được provider/model đang là mặc định.
+
 ## Trợ giúp trong ứng dụng
 
 - Mỗi layout lớn có nút `?` riêng (Tags, Theme Tags, Input, Tạo, Review, Deck,

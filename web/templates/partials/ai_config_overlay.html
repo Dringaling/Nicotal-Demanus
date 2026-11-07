@@ -1,0 +1,19 @@
+<div class="ai-config-overlay" data-ai-config-overlay hidden>
+  <div class="ai-config-dialog" role="dialog" aria-modal="true"
+       aria-labelledby="ai-config-title" data-ai-config-dialog>
+    <div class="ai-config-head">
+      <h2 id="ai-config-title">Cấu hình AI</h2>
+      <button class="icon" type="button" data-ai-config-close
+              aria-label="Đóng cấu hình AI">×</button>
+    </div>
+    <p class="ai-config-note">
+      Thay đổi được ghi vào <code>config/providers.local.toml</code> (không
+      commit). API key chỉ nằm trong <code>secret/</code> trên máy này và không
+      bao giờ hiện lại. Chỉ máy đang chạy app mới sửa được.
+    </p>
+    <p class="error" data-ai-config-error hidden role="alert"></p>
+    <div class="ai-config-body" data-ai-config-body>
+      <p class="muted">Đang tải...</p>
+    </div>
+  </div>
+</div>

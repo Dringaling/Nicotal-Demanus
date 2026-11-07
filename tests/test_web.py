@@ -1840,5 +1840,152 @@ def test_changelog_backfill_covers_all_modules() -> None:
 
     assert "1.0" in versions
     assert "2.9" in versions
-    assert "3.3" in versions
-    assert len(versions) == 24
+    assert "3.4" in versions
+    assert len(versions) == 25
+
+
+def make_config_client(tmp_path: Path):
+    import shutil
+
+    base = tmp_path / "config" / "providers.toml"
+    base.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(CONFIG, base)
+    local = base.parent / "providers.local.toml"
+    settings = load_settings(base)
+    app = create_app(
+        settings,
+        llm_factory=lambda current: FakeClient(current),
+        root=tmp_path,
+        config_path=base,
+        local_config_path=local,
+    )
+    return TestClient(app), base, local
+
+
+def test_ai_config_api(tmp_path: Path) -> None:
+    client, _, _ = make_config_client(tmp_path)
+    data = client.get("/api/ai-config").json()
+
+    assert data["default_provider"] == "deepinfra"
+    assert data["providers"]
+    assert "api_key" not in repr(data).lower() or "api_key_env" in repr(data)
+
+
+def test_ai_config_button_and_overlay(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/").text
+
+    assert "data-ai-config" in html
+    assert "CẤU HÌNH AI" in html
+    assert "data-ai-config-overlay" in html
+    assert html.index("CẤU HÌNH AI") < html.index("CHI TIẾT CẬP NHẬT")
+    block = html.split("data-ai-config-overlay", 1)[1][:80]
+    assert "hidden" in block
+
+
+def test_ai_config_icon_served(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+
+    assert client.get("/icons/settings.svg").status_code == 200
+    assert "/icons/settings.svg" in client.get("/").text
+
+
+def test_ai_config_save_provider(tmp_path: Path) -> None:
+    client, base, local = make_config_client(tmp_path)
+    response = client.post(
+        "/api/ai-config/provider",
+        json={
+            "name": "local-test",
+            "type": "openai",
+            "base_url": "http://127.0.0.1:1234/v1",
+            "create": True,
+        },
+    )
+
+    assert response.status_code == 201
+    names = [item["name"] for item in response.json()["config"]["providers"]]
+    assert "local-test" in names
+    assert local.is_file()
+
+
+def test_ai_config_reloads_settings(tmp_path: Path) -> None:
+    client, _, _ = make_config_client(tmp_path)
+    client.post(
+        "/api/ai-config/provider",
+        json={
+            "name": "local-test",
+            "type": "openai",
+            "base_url": "http://127.0.0.1:1234/v1",
+            "create": True,
+        },
+    )
+    client.post(
+        "/api/ai-config/model",
+        json={
+            "provider": "local-test",
+            "id": "demo",
+            "model": "demo-model",
+            "api_key": "sk-secret",
+            "create": True,
+        },
+    )
+    response = client.post(
+        "/api/ai-config/default",
+        json={"provider": "local-test", "model": "demo"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["config"]["default_key"] == "local-test/demo"
+    assert "sk-secret" not in response.text
+
+
+def test_ai_config_requires_loopback(tmp_path: Path) -> None:
+    import shutil
+
+    base = tmp_path / "config" / "providers.toml"
+    base.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(CONFIG, base)
+    settings = load_settings(base)
+    app = create_app(
+        settings,
+        llm_factory=lambda current: FakeClient(current),
+        root=tmp_path,
+        config_path=base,
+        local_config_path=base.parent / "providers.local.toml",
+    )
+    remote = TestClient(app, client=("192.168.1.50", 50000))
+
+    response = remote.post(
+        "/api/ai-config/provider",
+        json={
+            "name": "remote",
+            "type": "openai",
+            "base_url": "https://example.com/v1",
+            "create": True,
+        },
+    )
+
+    assert response.status_code == 403
+    assert remote.get("/api/ai-config").status_code == 200
+
+
+def test_ai_config_validation_error(tmp_path: Path) -> None:
+    client, _, _ = make_config_client(tmp_path)
+    response = client.post(
+        "/api/ai-config/provider",
+        json={"name": "Bad Name", "type": "openai", "base_url": "http://x", "create": True},
+    )
+
+    assert response.status_code == 400
+    assert "không hợp lệ" in response.json()["detail"]
+
+
+def test_ai_config_overlays_coexist(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/").text
+
+    assert "data-overlay" in html
+    assert "data-help-overlay" in html
+    assert "data-changelog-overlay" in html
+    assert "data-ai-config-overlay" in html
+    assert html.count('<select name="template">') == 1

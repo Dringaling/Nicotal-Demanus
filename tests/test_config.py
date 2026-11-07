@@ -189,3 +189,67 @@ def test_duplicate_api_key_env_is_rejected(tmp_path: Path) -> None:
     )
     with pytest.raises(ConfigError, match="bị trùng"):
         load_settings(config)
+
+
+def test_deep_merge_merges_tables() -> None:
+    from app.config import deep_merge
+
+    merged = deep_merge(
+        {"a": {"b": 1, "c": 2}, "d": [1]},
+        {"a": {"b": 9}, "d": [2]},
+    )
+
+    assert merged == {"a": {"b": 9, "c": 2}, "d": [2]}
+
+
+def test_load_settings_uses_local_override(tmp_path: Path) -> None:
+    import shutil
+
+    base = tmp_path / "providers.toml"
+    shutil.copy(CONFIG, base)
+    local = tmp_path / "providers.local.toml"
+    local.write_text(
+        '[providers.deepinfra]\nbase_url = "https://example.test/v1"\n',
+        encoding="utf-8",
+    )
+
+    settings = load_settings(base, local)
+
+    assert settings.provider.base_url == "https://example.test/v1"
+
+
+def test_load_settings_without_local_file(tmp_path: Path) -> None:
+    import shutil
+
+    base = tmp_path / "providers.toml"
+    shutil.copy(CONFIG, base)
+
+    settings = load_settings(base, tmp_path / "missing.toml")
+
+    assert settings.provider_name == "deepinfra"
+
+
+def test_local_config_syntax_error(tmp_path: Path) -> None:
+    import shutil
+
+    base = tmp_path / "providers.toml"
+    shutil.copy(CONFIG, base)
+    local = tmp_path / "providers.local.toml"
+    local.write_text("[providers\n", encoding="utf-8")
+
+    with pytest.raises(ConfigError) as exc:
+        load_settings(base, local)
+    assert "providers.local.toml" in str(exc.value)
+
+
+def test_write_secret_file_is_private(tmp_path: Path) -> None:
+    from app.config import write_secret_file
+
+    path = write_secret_file(
+        "secret/demo.env", "DEMO_KEY", "sk-test", root=tmp_path
+    )
+
+    assert path == tmp_path / "secret" / "demo.env"
+    assert path.read_text(encoding="utf-8") == 'DEMO_KEY="sk-test"\n'
+    assert path.stat().st_mode & 0o777 == 0o600
+    assert not (path.parent / "demo.env.tmp").exists()

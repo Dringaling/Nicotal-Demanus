@@ -6,16 +6,29 @@ from pathlib import Path
 from typing import Callable
 from urllib.parse import quote, urlencode
 
-from fastapi import FastAPI, Form, HTTPException, Query, Request
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi import Body, FastAPI, Form, HTTPException, Query, Request
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    RedirectResponse,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import storage, theme_store
+from . import ai_config, storage, theme_store
 from . import tags as tag_utils
 from .boho_render import render_deck_boho
 from .changelog import current_version, load_changelog
-from .config import ConfigError, REPO_ROOT, Settings, lan_url, load_settings
+from .config import (
+    CONFIG_PATH,
+    LOCAL_CONFIG_PATH,
+    ConfigError,
+    REPO_ROOT,
+    Settings,
+    lan_url,
+    load_settings,
+)
 from .help_docs import HelpError, render_help
 from .copy_slide_render import render_deck_copy_slides
 from .llm import LLMClient, LLMError
@@ -82,10 +95,39 @@ def create_app(
     settings: Settings | None = None,
     llm_factory: Callable[[Settings], LLMClient] | None = None,
     root: Path | None = None,
+    config_path: Path | None = None,
+    local_config_path: Path | None = None,
 ) -> FastAPI:
-    settings = settings or load_settings()
+    cfg_path = Path(config_path) if config_path is not None else CONFIG_PATH
+    local_cfg_path = (
+        Path(local_config_path)
+        if local_config_path is not None
+        else LOCAL_CONFIG_PATH
+    )
+    holder = {
+        "settings": settings or load_settings(cfg_path, local_cfg_path)
+    }
+    settings = holder["settings"]
     factory = llm_factory or (lambda current: LLMClient(current))
     base = Path(root) if root is not None else REPO_ROOT
+
+    def current_settings() -> Settings:
+        return holder["settings"]
+
+    def reload_settings() -> Settings:
+        holder["settings"] = load_settings(cfg_path, local_cfg_path)
+        return holder["settings"]
+
+    def ai_payload() -> dict:
+        return ai_config.payload(cfg_path, local_cfg_path, root=base)
+
+    def require_local(request: Request) -> None:
+        host = request.client.host if request.client else ""
+        if not ai_config.is_local_host(host):
+            raise HTTPException(
+                status_code=403,
+                detail="Chỉ máy đang chạy app mới sửa được cấu hình",
+            )
     output_dir = base / "output"
     server_url = lan_url(settings)
 
@@ -287,7 +329,7 @@ def create_app(
 
         storage.update_status(record.id, "generating", root=base)
         try:
-            client = factory(settings)
+            client = factory(current_settings())
             prompt_template = "flat" if meta.renderer == "copy" else template
             spec, _usage = await client.generate_spec(
                 record.title,
@@ -506,6 +548,116 @@ def create_app(
             )
         refresh_templates()
         return RedirectResponse("/themes", status_code=303)
+
+    @app.get("/api/ai-config")
+    async def api_ai_config():
+        return ai_payload()
+
+    @app.post("/api/ai-config/provider")
+    async def api_ai_save_provider(
+        request: Request, payload: dict = Body(...)
+    ):
+        require_local(request)
+        try:
+            status = ai_config.save_provider(
+                name=payload.get("name"),
+                type=payload.get("type"),
+                base_url=payload.get("base_url"),
+                timeout_seconds=payload.get("timeout_seconds", 180),
+                max_retries=payload.get("max_retries", 3),
+                create=bool(payload.get("create")),
+                base_path=cfg_path,
+                local_path=local_cfg_path,
+            )
+        except ai_config.AiConfigError as exc:
+            raise HTTPException(
+                status_code=exc.status, detail=str(exc)
+            ) from exc
+        reload_settings()
+        return JSONResponse(
+            {"status": status, "config": ai_payload()},
+            status_code=201 if status == "created" else 200,
+        )
+
+    @app.delete("/api/ai-config/provider")
+    async def api_ai_delete_provider(request: Request, name: str = Query("")):
+        require_local(request)
+        try:
+            ai_config.delete_provider(
+                name=name,
+                base_path=cfg_path,
+                local_path=local_cfg_path,
+                root=base,
+            )
+        except ai_config.AiConfigError as exc:
+            raise HTTPException(
+                status_code=exc.status, detail=str(exc)
+            ) from exc
+        reload_settings()
+        return {"status": "deleted", "config": ai_payload()}
+
+    @app.post("/api/ai-config/model")
+    async def api_ai_save_model(request: Request, payload: dict = Body(...)):
+        require_local(request)
+        try:
+            status = ai_config.save_model(
+                provider=payload.get("provider"),
+                model_id=payload.get("id"),
+                model=payload.get("model"),
+                params=payload.get("params") or {},
+                generation=payload.get("generation") or {},
+                api_key=payload.get("api_key") or None,
+                create=bool(payload.get("create")),
+                base_path=cfg_path,
+                local_path=local_cfg_path,
+                root=base,
+            )
+        except ai_config.AiConfigError as exc:
+            raise HTTPException(
+                status_code=exc.status, detail=str(exc)
+            ) from exc
+        reload_settings()
+        return JSONResponse(
+            {"status": status, "config": ai_payload()},
+            status_code=201 if status == "created" else 200,
+        )
+
+    @app.delete("/api/ai-config/model")
+    async def api_ai_delete_model(
+        request: Request, provider: str = Query(""), id: str = Query("")
+    ):
+        require_local(request)
+        try:
+            ai_config.delete_model(
+                provider=provider,
+                model_id=id,
+                base_path=cfg_path,
+                local_path=local_cfg_path,
+                root=base,
+            )
+        except ai_config.AiConfigError as exc:
+            raise HTTPException(
+                status_code=exc.status, detail=str(exc)
+            ) from exc
+        reload_settings()
+        return {"status": "deleted", "config": ai_payload()}
+
+    @app.post("/api/ai-config/default")
+    async def api_ai_set_default(request: Request, payload: dict = Body(...)):
+        require_local(request)
+        try:
+            ai_config.set_default(
+                provider=payload.get("provider"),
+                model=payload.get("model"),
+                base_path=cfg_path,
+                local_path=local_cfg_path,
+            )
+        except ai_config.AiConfigError as exc:
+            raise HTTPException(
+                status_code=exc.status, detail=str(exc)
+            ) from exc
+        reload_settings()
+        return {"status": "ok", "config": ai_payload()}
 
     @app.get("/api/help")
     async def api_help(layout: str = Query("")):

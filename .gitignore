@@ -1,6 +1,8 @@
 venv/
 .venv
 .DS_Store
+config/providers.local.toml
+
 secret/
 *.env
 **/.env

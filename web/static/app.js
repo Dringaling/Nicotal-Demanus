@@ -327,19 +327,24 @@
 })();
 
 (function () {
-  const OVERLAYS = "[data-overlay], [data-help-overlay], [data-changelog-overlay]";
-  const BODY_CLASSES = ["overlay-open", "help-open", "changelog-open"];
+  const OVERLAYS =
+    "[data-overlay], [data-help-overlay], [data-changelog-overlay], [data-ai-config-overlay]";
+  const BODY_CLASSES = [
+    "overlay-open",
+    "help-open",
+    "changelog-open",
+    "ai-config-open",
+  ];
 
-  function initFetchedOverlay(options) {
+  function initOverlay(options) {
     const overlay = document.querySelector(options.overlay);
     if (!overlay) {
       return null;
     }
-    const dialog = overlay.querySelector(options.dialog);
-    const body = overlay.querySelector(options.body);
-    const title = options.title ? overlay.querySelector(options.title) : null;
-    const closeButton = overlay.querySelector(options.close);
-    const cache = new Map();
+    const dialog = options.dialog ? overlay.querySelector(options.dialog) : null;
+    const closeButton = options.close
+      ? overlay.querySelector(options.close)
+      : null;
     const bodyClass = options.bodyClass || "overlay-open";
     let lastFocus = null;
 
@@ -414,6 +419,27 @@
     }
     document.addEventListener("keydown", onKeydown);
 
+    document.querySelectorAll(options.trigger).forEach((trigger) => {
+      trigger.addEventListener("click", () => {
+        open(trigger);
+        if (options.onOpen) {
+          options.onOpen(trigger);
+        }
+      });
+    });
+
+    return { open, close, overlay };
+  }
+
+  function initFetchedOverlay(options) {
+    const overlay = document.querySelector(options.overlay);
+    if (!overlay) {
+      return null;
+    }
+    const body = overlay.querySelector(options.body);
+    const title = options.title ? overlay.querySelector(options.title) : null;
+    const cache = new Map();
+
     async function load(key) {
       if (cache.has(key)) {
         return cache.get(key);
@@ -430,42 +456,40 @@
       return data;
     }
 
-    async function show(trigger) {
-      const key =
-        options.param && options.datasetKey
-          ? trigger.dataset[options.datasetKey] || ""
-          : "";
-      if (title) {
-        title.textContent = options.fallbackTitle || "";
-      }
-      if (body) {
-        body.innerHTML = '<p class="muted">Đang tải...</p>';
-      }
-      open(trigger);
-      try {
-        const data = await load(key);
+    return initOverlay({
+      ...options,
+      onOpen: async (trigger) => {
+        const key =
+          options.param && options.datasetKey
+            ? trigger.dataset[options.datasetKey] || ""
+            : "";
         if (title) {
-          title.textContent = data.title || options.fallbackTitle || "";
+          title.textContent = options.fallbackTitle || "";
         }
         if (body) {
-          body.innerHTML = options.render
-            ? options.render(data)
-            : data.html || '<p class="muted">Chưa có nội dung.</p>';
+          body.innerHTML = '<p class="muted">Đang tải...</p>';
         }
-      } catch (exc) {
-        if (body) {
-          body.innerHTML = '<p class="error">Không tải được nội dung.</p>';
+        try {
+          const data = await load(key);
+          if (title) {
+            title.textContent = data.title || options.fallbackTitle || "";
+          }
+          if (body) {
+            body.innerHTML = options.render
+              ? options.render(data)
+              : data.html || '<p class="muted">Chưa có nội dung.</p>';
+          }
+        } catch (exc) {
+          if (body) {
+            body.innerHTML = '<p class="error">Không tải được nội dung.</p>';
+          }
         }
-      }
-    }
-
-    document.querySelectorAll(options.trigger).forEach((trigger) => {
-      trigger.addEventListener("click", () => show(trigger));
+      },
     });
-    return { open, close, show };
   }
 
   window.Demanus = Object.assign(window.Demanus || {}, {
+    initOverlay,
     initFetchedOverlay,
   });
 
@@ -606,5 +630,666 @@
       event.preventDefault();
       first.focus();
     }
+  });
+})();
+
+(function () {
+  const init = window.Demanus && window.Demanus.initOverlay;
+  const root = document.querySelector("[data-ai-config-overlay]");
+  if (!init || !root) {
+    return;
+  }
+
+  const body = root.querySelector("[data-ai-config-body]");
+  const errorBox = root.querySelector("[data-ai-config-error]");
+  const state = {
+    payload: null,
+    provider: "",
+    model: "",
+    defaultProvider: "",
+    defaultModel: "",
+    creatingProvider: false,
+    creatingModel: false,
+  };
+
+  const KEY_LABELS = {
+    set: "đã có key",
+    missing: "chưa có key",
+    "not-required": "không cần key",
+  };
+
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) {
+      node.className = className;
+    }
+    if (text !== undefined && text !== null) {
+      node.textContent = text;
+    }
+    return node;
+  }
+
+  function showError(message) {
+    if (!errorBox) {
+      return;
+    }
+    errorBox.textContent = message || "";
+    errorBox.hidden = !message;
+  }
+
+  async function request(url, options) {
+    const response = await fetch(url, options);
+    let data = null;
+    try {
+      data = await response.json();
+    } catch (exc) {
+      data = null;
+    }
+    if (!response.ok) {
+      const detail = data && data.detail;
+      throw new Error(detail || "Không lưu được cấu hình");
+    }
+    return data;
+  }
+
+  function providers() {
+    return (state.payload && state.payload.providers) || [];
+  }
+
+  function findProvider(name) {
+    return providers().find((item) => item.name === name) || null;
+  }
+
+  function currentProvider() {
+    return findProvider(state.provider) || providers()[0] || null;
+  }
+
+  function currentModel() {
+    const provider = currentProvider();
+    if (!provider) {
+      return null;
+    }
+    return provider.models.find((item) => item.id === state.model) || null;
+  }
+
+  function section(title, key) {
+    const node = el("details", "ai-config-section");
+    node.open = true;
+    const summary = el("summary");
+    summary.appendChild(el("span", "ai-config-title", title));
+    node.appendChild(summary);
+    const content = el("div", "ai-config-section-body");
+    node.appendChild(content);
+    return { node, content };
+  }
+
+  function selectField(label, options, value, onChange) {
+    const wrap = el("label", "ai-config-field");
+    wrap.appendChild(el("span", null, label));
+    const select = el("select");
+    options.forEach((option) => {
+      const node = el("option", null, option.label);
+      node.value = option.value;
+      if (option.value === value) {
+        node.selected = true;
+      }
+      select.appendChild(node);
+    });
+    select.addEventListener("change", () => onChange(select.value));
+    wrap.appendChild(select);
+    return { wrap, input: select };
+  }
+
+  function inputField(label, value, options) {
+    const config = options || {};
+    const wrap = el("label", "ai-config-field");
+    wrap.appendChild(el("span", null, label));
+    const input = el("input");
+    input.value = value === undefined || value === null ? "" : value;
+    if (config.type) {
+      input.type = config.type;
+    }
+    if (config.step) {
+      input.step = config.step;
+    }
+    if (config.placeholder) {
+      input.placeholder = config.placeholder;
+    }
+    if (config.readOnly) {
+      input.readOnly = true;
+    }
+    wrap.appendChild(input);
+    return { wrap, input };
+  }
+
+  function checkField(label, value) {
+    const wrap = el("label", "ai-config-check");
+    const input = el("input");
+    input.type = "checkbox";
+    input.checked = Boolean(value);
+    wrap.appendChild(input);
+    wrap.appendChild(el("span", null, label));
+    return { wrap, input };
+  }
+
+  function actions(nodes) {
+    const row = el("div", "ai-config-actions");
+    nodes.filter(Boolean).forEach((node) => row.appendChild(node));
+    return row;
+  }
+
+  function button(label, className, onClick) {
+    const node = el("button", className || "button", label);
+    node.type = "button";
+    node.addEventListener("click", onClick);
+    return node;
+  }
+
+  function confirmButton(label, onConfirm) {
+    let armed = false;
+    let timer = null;
+    const node = el("button", "button danger", label);
+    node.type = "button";
+    node.addEventListener("click", async () => {
+      if (!armed) {
+        armed = true;
+        node.textContent = "Bấm lần nữa để xoá";
+        timer = setTimeout(() => {
+          armed = false;
+          node.textContent = label;
+        }, 4000);
+        return;
+      }
+      clearTimeout(timer);
+      armed = false;
+      node.textContent = label;
+      await onConfirm();
+    });
+    return node;
+  }
+
+  function applyConfig(data, provider, model) {
+    state.payload = data;
+    state.creatingProvider = false;
+    state.creatingModel = false;
+    if (provider) {
+      state.provider = provider;
+    }
+    if (model) {
+      state.model = model;
+    }
+    state.defaultProvider = data.default_provider;
+    state.defaultModel = data.default_model;
+    render();
+  }
+
+  function renderDefaults() {
+    const { node, content } = section("Mặc định");
+    const provider = findProvider(state.defaultProvider) || providers()[0];
+    const providerOptions = providers().map((item) => ({
+      value: item.name,
+      label: item.name + " · " + item.type,
+    }));
+    const modelOptions = ((provider && provider.models) || []).map((item) => ({
+      value: item.id,
+      label: item.id + (item.key === "missing" ? " (chưa có key)" : ""),
+    }));
+
+    content.appendChild(
+      selectField("Nhà cung cấp", providerOptions, provider && provider.name, (value) => {
+        state.defaultProvider = value;
+        const next = findProvider(value);
+        state.defaultModel = next && next.models[0] ? next.models[0].id : "";
+        render();
+      }).wrap
+    );
+    content.appendChild(
+      selectField("Model", modelOptions, state.defaultModel, (value) => {
+        state.defaultModel = value;
+        render();
+      }).wrap
+    );
+
+    const status = state.payload.default_key_status;
+    if (status === "missing") {
+      content.appendChild(
+        el(
+          "p",
+          "ai-config-warn",
+          "Model mặc định chưa có API key; sinh deck sẽ báo thiếu key."
+        )
+      );
+    }
+
+    content.appendChild(
+      actions([
+        button(
+          "Dùng làm mặc định",
+          "button",
+          async () => {
+            if (!state.defaultProvider || !state.defaultModel) {
+              return;
+            }
+            try {
+              const data = await request("/api/ai-config/default", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  provider: state.defaultProvider,
+                  model: state.defaultModel,
+                }),
+              });
+              showError("");
+              applyConfig(data.config, state.defaultProvider, state.defaultModel);
+            } catch (exc) {
+              showError(exc.message);
+            }
+          }
+        ),
+      ])
+    );
+    return node;
+  }
+
+  function renderProvider() {
+    const { node, content } = section("Provider");
+    const provider = state.creatingProvider ? null : currentProvider();
+
+    const head = el("div", "ai-config-row");
+    head.appendChild(
+      selectField(
+        "Chọn provider",
+        providers().map((item) => ({
+          value: item.name,
+          label:
+            item.name +
+            " · " +
+            item.type +
+            (item.source === "local" ? " · tự tạo" : ""),
+        })),
+        state.provider,
+        (value) => {
+          state.provider = value;
+          const next = findProvider(value);
+          state.model = next && next.models[0] ? next.models[0].id : "";
+          state.creatingModel = false;
+          render();
+        }
+      ).wrap
+    );
+    head.appendChild(
+      button("Thêm provider", "button secondary", () => {
+        state.creatingProvider = true;
+        render();
+      })
+    );
+    content.appendChild(head);
+
+    const fields = el("div", "ai-config-grid");
+    const name = inputField(
+      "Tên provider",
+      provider ? provider.name : "",
+      {
+        readOnly: Boolean(provider),
+        placeholder: "vi-du: local-openai",
+      }
+    );
+    fields.appendChild(name.wrap);
+
+    const type = selectField(
+      "Kiểu kết nối",
+      (state.payload.types || []).map((value) => ({ value, label: value })),
+      provider ? provider.type : "openai",
+      () => {}
+    );
+    if (provider) {
+      type.input.disabled = true;
+      type.wrap.title = "Không đổi được type sau khi tạo";
+    }
+    fields.appendChild(type.wrap);
+
+    const baseUrl = inputField(
+      "Base URL",
+      provider ? provider.base_url : "",
+      { placeholder: "https://api.example.com/v1" }
+    );
+    fields.appendChild(baseUrl.wrap);
+
+    const timeout = inputField(
+      "Timeout (giây)",
+      provider ? provider.timeout_seconds : 180,
+      { type: "number", step: "1" }
+    );
+    fields.appendChild(timeout.wrap);
+
+    const retries = inputField(
+      "Số lần thử",
+      provider ? provider.max_retries : 3,
+      { type: "number", step: "1" }
+    );
+    fields.appendChild(retries.wrap);
+    content.appendChild(fields);
+
+    if (provider) {
+      content.appendChild(
+        el(
+          "p",
+          "muted",
+          provider.source === "local"
+            ? "Provider tự tạo: lưu trong config/providers.local.toml."
+            : "Provider phát hành sẵn: lưu sẽ ghi bản đè vào config/providers.local.toml."
+        )
+      );
+    }
+
+    const isDefaultProvider =
+      provider && provider.name === state.payload.default_provider;
+    content.appendChild(
+      actions([
+        button(
+          "Lưu provider",
+          "button",
+          async () => {
+            try {
+              const data = await request("/api/ai-config/provider", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  name: name.input.value.trim(),
+                  type: type.input.value,
+                  base_url: baseUrl.input.value.trim(),
+                  timeout_seconds: Number(timeout.input.value || 180),
+                  max_retries: Number(retries.input.value || 0),
+                  create: state.creatingProvider,
+                }),
+              });
+              showError("");
+              applyConfig(
+                data.config,
+                name.input.value.trim(),
+                provider ? state.model : ""
+              );
+            } catch (exc) {
+              showError(exc.message);
+            }
+          }
+        ),
+        provider && provider.source === "local" && !isDefaultProvider
+          ? confirmButton(
+              "Xoá provider",
+              async () => {
+                try {
+                  const data = await request(
+                    "/api/ai-config/provider?name=" +
+                      encodeURIComponent(provider.name),
+                    { method: "DELETE" }
+                  );
+                  showError("");
+                  applyConfig(data.config, "", "");
+                } catch (exc) {
+                  showError(exc.message);
+                }
+              }
+            )
+          : null,
+        state.creatingProvider
+          ? button("Huỷ", "button secondary", () => {
+              state.creatingProvider = false;
+              render();
+            })
+          : null,
+      ])
+    );
+    return node;
+  }
+
+  function renderModel() {
+    const { node, content } = section("Model");
+    const provider = currentProvider();
+    if (!provider) {
+      content.appendChild(el("p", "muted", "Tạo provider trước."));
+      return node;
+    }
+    const model = state.creatingModel ? null : currentModel();
+
+    const head = el("div", "ai-config-row");
+    head.appendChild(
+      selectField(
+        "Chọn model",
+        provider.models.map((item) => ({
+          value: item.id,
+          label: item.id + (item.is_default ? " · mặc định" : ""),
+        })),
+        state.model,
+        (value) => {
+          state.model = value;
+          render();
+        }
+      ).wrap
+    );
+    head.appendChild(
+      button("Thêm model", "button secondary", () => {
+        state.creatingModel = true;
+        render();
+      })
+    );
+    content.appendChild(head);
+
+    const grid = el("div", "ai-config-grid");
+    const id = inputField("ID model", model ? model.id : "", {
+      readOnly: Boolean(model),
+      placeholder: "vi-du: deepseek-flash-flex",
+    });
+    grid.appendChild(id.wrap);
+    const modelName = inputField(
+      "Tên model trên server",
+      model ? model.model : "",
+      { placeholder: "deepseek-ai/DeepSeek-V4.1-Flash-1017" }
+    );
+    grid.appendChild(modelName.wrap);
+    const key = inputField(
+      "API key",
+      "",
+      {
+        type: "password",
+        placeholder: model
+          ? KEY_LABELS[model.key] || model.key
+          : "để trống nếu server không cần key",
+      }
+    );
+    grid.appendChild(key.wrap);
+    content.appendChild(grid);
+
+    const params = el("div", "ai-config-grid");
+    const allowed = (state.payload.param_fields || {})[provider.type] || [];
+    const paramsValues = {};
+    allowed.forEach((field) => {
+      const value = (model && model.params && model.params[field]) || "";
+      if (field === "service_tier") {
+        const field1 = selectField(
+          "service_tier",
+          [
+            { value: "flex", label: "flex" },
+            { value: "standard", label: "standard" },
+          ],
+          value || "flex",
+          () => {}
+        );
+        paramsValues[field] = () => field1.input.value;
+        params.appendChild(field1.wrap);
+      } else if (field === "fail_fast" || field === "store") {
+        const field1 = checkField(field, value);
+        paramsValues[field] = () => field1.input.checked;
+        params.appendChild(field1.wrap);
+      } else {
+        const field1 = inputField(
+          field,
+          Array.isArray(value) ? value.join(", ") : value,
+          { placeholder: "danh sách cách nhau bởi dấu phẩy" }
+        );
+        paramsValues[field] = () => field1.input.value;
+        params.appendChild(field1.wrap);
+      }
+    });
+    content.appendChild(params);
+
+    const generation = el("div", "ai-config-grid");
+    const generationValues = {};
+    const gen = (model && model.generation) || {};
+    [
+      ["temperature", "number", "0.1"],
+      ["top_p", "number", "0.05"],
+      ["max_tokens", "number", "100"],
+      ["chunk_chars", "number", "100"],
+    ].forEach(([field, type, step]) => {
+      const field1 = inputField(field, gen[field] === undefined ? "" : gen[field], {
+        type,
+        step,
+      });
+      generationValues[field] = () => field1.input.value;
+      generation.appendChild(field1.wrap);
+    });
+    const format = selectField(
+      "response_format",
+      (state.payload.response_formats || []).map((value) => ({
+        value,
+        label: value,
+      })),
+      gen.response_format || "json_schema",
+      () => {}
+    );
+    generationValues.response_format = () => format.input.value;
+    generation.appendChild(format.wrap);
+    content.appendChild(generation);
+
+    if (model) {
+      content.appendChild(
+        el("p", "muted", "Trạng thái key: " + (KEY_LABELS[model.key] || model.key))
+      );
+    }
+
+    content.appendChild(
+      actions([
+        button(
+          "Lưu model",
+          "button",
+          async () => {
+            const paramPayload = {};
+            Object.keys(paramsValues).forEach((field) => {
+              const value = paramsValues[field]();
+              if (value === "" || value === false) {
+                return;
+              }
+              paramPayload[field] =
+                field === "fallback_models"
+                  ? String(value)
+                      .split(",")
+                      .map((item) => item.trim())
+                      .filter(Boolean)
+                  : value;
+            });
+            const generationPayload = {};
+            Object.keys(generationValues).forEach((field) => {
+              const value = generationValues[field]();
+              if (value === "") {
+                return;
+              }
+              generationPayload[field] = value;
+            });
+            try {
+              const data = await request("/api/ai-config/model", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  provider: provider.name,
+                  id: id.input.value.trim(),
+                  model: modelName.input.value.trim(),
+                  params: paramPayload,
+                  generation: generationPayload,
+                  api_key: key.input.value.trim() || null,
+                  create: state.creatingModel,
+                }),
+              });
+              showError("");
+              applyConfig(
+                data.config,
+                provider.name,
+                id.input.value.trim()
+              );
+            } catch (exc) {
+              showError(exc.message);
+            }
+          }
+        ),
+        model && model.source === "local" && !model.is_default
+          ? confirmButton(
+              "Xoá model",
+              async () => {
+                try {
+                  const data = await request(
+                    "/api/ai-config/model?provider=" +
+                      encodeURIComponent(provider.name) +
+                      "&id=" +
+                      encodeURIComponent(model.id),
+                    { method: "DELETE" }
+                  );
+                  showError("");
+                  applyConfig(data.config, provider.name, "");
+                } catch (exc) {
+                  showError(exc.message);
+                }
+              }
+            )
+          : null,
+        state.creatingModel
+          ? button("Huỷ", "button secondary", () => {
+              state.creatingModel = false;
+              render();
+            })
+          : null,
+      ])
+    );
+    return node;
+  }
+
+  function render() {
+    if (!body || !state.payload) {
+      return;
+    }
+    body.replaceChildren(renderDefaults(), renderProvider(), renderModel());
+  }
+
+  async function loadConfig() {
+    showError("");
+    if (body) {
+      body.innerHTML = '<p class="muted">Đang tải...</p>';
+    }
+    try {
+      const data = await request("/api/ai-config");
+      state.payload = data;
+      state.defaultProvider = data.default_provider;
+      state.defaultModel = data.default_model;
+      const provider = data.providers[0] || null;
+      state.provider = provider ? provider.name : "";
+      state.model =
+        provider && provider.models[0] ? provider.models[0].id : "";
+      state.creatingProvider = false;
+      state.creatingModel = false;
+      render();
+    } catch (exc) {
+      if (body) {
+        body.innerHTML = "";
+      }
+      showError(exc.message);
+    }
+  }
+
+  init({
+    trigger: "[data-ai-config]",
+    overlay: "[data-ai-config-overlay]",
+    dialog: "[data-ai-config-dialog]",
+    close: "[data-ai-config-close]",
+    bodyClass: "ai-config-open",
+    onOpen: loadConfig,
   });
 })();

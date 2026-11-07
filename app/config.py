@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from __future__ import annotations
 
+import copy
 import os
 import socket
 import tomllib
@@ -8,8 +9,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlparse
 
+import tomli_w
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = REPO_ROOT / "config" / "providers.toml"
+LOCAL_CONFIG_PATH = REPO_ROOT / "config" / "providers.local.toml"
 PROVIDER_TYPES = {"deepinfra", "openai", "lmstudio"}
 
 
@@ -99,6 +103,77 @@ def paths(root: Path | None = None) -> Paths:
     )
 
 
+def deep_merge(base: dict, override: dict) -> dict:
+    """Merge hai bảng TOML: bảng lồng nhau merge theo khoá, còn lại override thắng."""
+    result = copy.deepcopy(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(result.get(key), dict):
+            result[key] = deep_merge(result[key], value)
+        else:
+            result[key] = copy.deepcopy(value)
+    return result
+
+
+def read_local_config(path: Path | None = None) -> dict:
+    """Đọc config/providers.local.toml (do UI ghi); trả {} nếu chưa có."""
+    local_path = Path(path) if path is not None else LOCAL_CONFIG_PATH
+    if not local_path.is_file():
+        return {}
+    try:
+        with local_path.open("rb") as handle:
+            data = tomllib.load(handle)
+    except tomllib.TOMLDecodeError as exc:
+        raise ConfigError(f"{local_path} sai cú pháp TOML: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ConfigError(f"{local_path} phải là bảng TOML")
+    return data
+
+
+def _write_private(path: Path, text: str) -> None:
+    """Ghi atomic, quyền 0600 vì file nằm cạnh credential."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, path)
+
+
+def write_local_config(data: dict, path: Path | None = None) -> Path:
+    local_path = Path(path) if path is not None else LOCAL_CONFIG_PATH
+    _write_private(local_path, tomli_w.dumps(data))
+    return local_path
+
+
+def write_secret_file(
+    secret_file: str,
+    env_name: str,
+    key: str,
+    root: Path | None = None,
+) -> Path:
+    """Ghi key vào secret/<file>.env; không bao giờ ghi vào TOML."""
+    base = Path(root) if root is not None else REPO_ROOT
+    path = Path(secret_file)
+    if not path.is_absolute():
+        path = base / path
+    name = env_name.strip() or "API_KEY"
+    value = str(key).strip().replace("\n", "").replace('"', "")
+    _write_private(path, f'{name}="{value}"\n')
+    return path
+
+
+def merged_raw(
+    path: Path | None = None, local_path: Path | None = None
+) -> dict:
+    """Cấu hình phát hành + phần đè của người dùng."""
+    cfg_path = Path(path) if path is not None else CONFIG_PATH
+    if not cfg_path.is_file():
+        raise ConfigError(f"Không tìm thấy file cấu hình: {cfg_path}")
+    with cfg_path.open("rb") as handle:
+        base = tomllib.load(handle)
+    local = read_local_config(local_path)
+    return deep_merge(base, local) if local else base
+
+
 def _require(mapping: dict, key: str, where: str) -> object:
     if key not in mapping:
         raise ConfigError(f"Thiếu khoá '{key}' trong {where}")
@@ -109,6 +184,11 @@ def _as_str(value: object, key: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ConfigError(f"Giá trị '{key}' phải là chuỗi không rỗng")
     return value.strip()
+
+
+def infer_provider_type(base_url: str) -> str:
+    """Suy type từ base_url để UI gợi ý khi tạo provider mới."""
+    return _infer_type(base_url)
 
 
 def _infer_type(base_url: str) -> str:
@@ -298,6 +378,10 @@ def _load_models(
             if key not in PROVIDER_RESERVED and isinstance(value, dict)
         }
         if not model_tables:
+            if "model" not in pdata:
+                # Provider chưa có model nào: bỏ qua, để UI tạo provider
+                # trước rồi thêm model ở bước sau.
+                continue
             model_tables = {str(provider_name): pdata}
 
         for model_id, mdata in model_tables.items():
@@ -356,13 +440,11 @@ def _load_models(
     return models, default_provider, default_model, models[key]
 
 
-def load_settings(path: Path | None = None) -> Settings:
+def load_settings(
+    path: Path | None = None, local_path: Path | None = None
+) -> Settings:
     cfg_path = Path(path) if path is not None else CONFIG_PATH
-    if not cfg_path.is_file():
-        raise ConfigError(f"Không tìm thấy file cấu hình: {cfg_path}")
-
-    with cfg_path.open("rb") as fh:
-        raw = tomllib.load(fh)
+    raw = merged_raw(cfg_path, local_path)
 
     models, provider_name, model_name, provider = _load_models(raw, cfg_path)
 

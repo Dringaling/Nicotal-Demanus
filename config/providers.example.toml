@@ -1,6 +1,11 @@
 # Ví dụ cấu hình provider cho Demanus.
 # Sao chép thành config/providers.toml rồi sửa.
 #
+# Người dùng cuối không cần sửa file này: mở app, bấm "CẤU HÌNH AI" để thêm
+# provider/model. Phần chỉnh trong app được ghi vào config/providers.local.toml
+# (đã gitignore) và đè lên file này theo từng khoá. API key luôn nằm trong
+# secret/, không bao giờ trong TOML.
+#
 # Quy tắc:
 # - default_provider + default_model chọn model đang dùng.
 # - [providers.<type>] chứa type, base_url, timeout... dùng chung cho provider.
