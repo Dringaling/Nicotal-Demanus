@@ -28,11 +28,11 @@
 | `readonly_textarea` | `label, value, rows` | `reuse_form` |
 | `tag_editor` | `record` | `input_card` |
 | `reuse_tag_editor` | `input_id, tags` | `reuse_form` |
-| `output_item` | `record, output` | `input_card` |
-| `input_card` | `item` | `input_list` |
-| `input_list` | `inputs` | `index.html` |
-| `tags_sidebar` | `tags, counts, active_tag, query` | `index.html` |
-| `search_bar` | `active_tag, query` | `index.html` |
+| `output_item` | `record, output, highlight` | `input_card` |
+| `input_card` | `item, tag_links` | `input_list` |
+| `input_list` | `inputs, tag_links` | `index.html` |
+| `tags_layout` | `layout` | `index.html` (sidebar Tags) |
+| `search_bar` | `search_hidden, query, clear_url` | `index.html` |
 | `create_form` | `form, error, groups` | `index.html` |
 | `reuse_form` | `reuse, error, groups` | `index.html` |
 
@@ -42,6 +42,32 @@ Khi thêm khối mới:
    tham số tường minh.
 2. Nếu khối tĩnh dùng một lần → thêm file vào `partials/` và `include`.
 3. Cập nhật bảng trên.
+
+## Tags Layout (dùng lại)
+
+`tags_layout(layout)` là module UI duy nhất cho danh sách tag; dữ liệu do
+`app/tags.py::build_tag_layout` dựng (lọc search, sắp xếp, truncate label, cờ
+select/deselect). Không viết lại HTML cho từng loại tag — truyền `layout` khác
+nhau (`dom_id`, `filter_param`, `delete_base`).
+
+- Danh sách tag nằm **ngoài** `<form class="tags-filter">`; checkbox liên kết
+  form bằng thuộc tính `form="tags-filter-<dom_id>"`, nên không có form lồng
+  nhau (mỗi dòng có form xoá riêng).
+- Search tag: tham số `tq` (server-side, không dấu, không hoa thường).
+- Chọn nhiều tag: `?tags=a,b` = OR. `?tag=x` vẫn được chấp nhận.
+- `data-*` hooks: `data-tags-layout`, `data-select-all`, `data-deselect-all`.
+- Tag dài: `.tag-row .tag-label` dùng ellipsis + `title` đầy đủ; nút xoá
+  `flex: 0 0 auto` nên luôn cùng hàng.
+- Cao 7 dòng: `max-height: calc(7 * var(--gap-lg) + 6 * 4px)` (không thêm
+  token).
+
+## Icon
+
+- Icon là **file SVG** trong `demanus/src/icons/`, phục vụ qua mount `/icons`.
+- Không vẽ SVG inline trong template/JS.
+- Màu icon đặt trong file (`stroke="#fffff2"` = cream-100) vì icon render qua
+  `<img>`; nền nút lấy từ palette (`--color-teal-500` cho select all,
+  `--color-red-600` cho deselect all).
 
 ## Bảng màu (đóng băng 16 màu)
 
@@ -124,7 +150,8 @@ icon/badge).
 
 - Giữ nguyên class/`data-*` mà `web/static/app.js` đang bắt
   (`data-expand`, `data-delete-trigger`, `data-tag-editor`, `data-reuse-tags`,
-  `data-check-url`, `data-overlay`...).
+  `data-check-url`, `data-overlay`, `data-tags-layout`, `data-select-all`,
+  `data-deselect-all`...).
 - Không đổi cấu trúc `<select name="template">` hoặc số nút submit; test và
   luồng tạo deck phụ thuộc vào đó.
 - Thêm màu mới hoặc token mới phải cập nhật bảng trong file này và

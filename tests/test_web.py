@@ -606,8 +606,8 @@ def test_clear_search_keeps_tag(tmp_path: Path) -> None:
     storage.create_input(
         "Báo cáo nha khoa", "Mô tả", "Chi tiết", tags=["dental"], root=tmp_path
     )
-    html = client.get("/", params={"tag": "dental", "q": "bao"}).text
-    assert 'href="/?tag=dental"' in html
+    html = client.get("/", params={"tags": "dental", "q": "bao"}).text
+    assert 'href="/?tags=dental"' in html
 
 
 def test_api_inputs_include_outputs(tmp_path: Path) -> None:
@@ -1209,9 +1209,9 @@ def test_index_uses_macros() -> None:
     )
 
     assert '{% from "macros.html" import' in text
-    assert "tags_sidebar(tags, counts, active_tag, query)" in text
-    assert "search_bar(active_tag, query)" in text
-    assert "input_list(inputs)" in text
+    assert "tags_layout(input_tags_layout)" in text
+    assert "search_bar(search_hidden, query, search_clear_url)" in text
+    assert "input_list(inputs, tag_links)" in text
     assert "create_form(form, error, template_groups)" in text
     assert "reuse_form(reuse, error, template_groups)" in text
     assert '{% include "partials/delete_overlay.html" %}' in text
@@ -1249,10 +1249,10 @@ def test_macros_have_explicit_parameters() -> None:
         "{% macro tag_editor(record)",
         "{% macro reuse_tag_editor(input_id, tags)",
         "{% macro output_item(record, output, highlight=false)",
-        "{% macro input_card(item)",
-        "{% macro input_list(inputs)",
-        "{% macro tags_sidebar(tags, counts, active_tag, query)",
-        "{% macro search_bar(active_tag, query)",
+        "{% macro input_card(item, tag_links)",
+        "{% macro input_list(inputs, tag_links)",
+        "{% macro tags_layout(layout)",
+        "{% macro search_bar(search_hidden, query, clear_url)",
         "{% macro create_form(form, error, groups)",
         "{% macro reuse_form(reuse, error, groups)",
     ):
@@ -1479,3 +1479,133 @@ def test_search_no_match_hides_inputs(tmp_path: Path) -> None:
     html = client.get("/", params={"q": "khong-ton-tai"}).text
 
     assert "Báo cáo" not in html
+
+
+def test_tags_layout_is_reusable_block(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input("A", "Mô tả", "Chi tiết", tags=["alpha"], root=tmp_path)
+    html = client.get("/").text
+
+    assert 'data-tags-layout="tags"' in html
+    assert '<div class="tag-scroll">' in html
+    assert 'form="tags-filter-tags"' in html
+
+
+def test_tags_layout_search_filters_rows(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input(
+        "A", "Mô tả", "Chi tiết", tags=["alpha", "beta"], root=tmp_path
+    )
+
+    html = client.get("/", params={"tq": "alp"}).text
+    assert 'name="tags" value="alpha"' in html
+    assert 'name="tags" value="beta"' not in html
+
+
+def test_select_all_hidden_without_query(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input("A", "Mô tả", "Chi tiết", tags=["alpha"], root=tmp_path)
+    html = client.get("/").text
+
+    assert "data-select-all" not in html
+    assert "data-deselect-all" not in html
+
+
+def test_select_all_visible_when_searching(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input(
+        "A", "Mô tả", "Chi tiết", tags=["alpha", "beta"], root=tmp_path
+    )
+    html = client.get("/", params={"tq": "a"}).text
+
+    assert "data-select-all" in html
+    assert "/icons/select-multiple.svg" in html
+
+
+def test_deselect_all_visible_when_selected(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input("A", "Mô tả", "Chi tiết", tags=["alpha"], root=tmp_path)
+    html = client.get("/", params={"tags": "alpha"}).text
+
+    assert "data-deselect-all" in html
+    assert "/icons/deselect.svg" in html
+
+
+def test_icons_are_served(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+
+    assert client.get("/icons/deselect.svg").status_code == 200
+    assert client.get("/icons/select-multiple.svg").status_code == 200
+
+
+def test_filter_by_multiple_tags(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input("Deck A", "Mô tả", "Chi tiết", tags=["alpha"], root=tmp_path)
+    storage.create_input("Deck B", "Mô tả", "Chi tiết", tags=["beta"], root=tmp_path)
+    storage.create_input("Deck C", "Mô tả", "Chi tiết", tags=["gamma"], root=tmp_path)
+
+    html = client.get("/", params={"tags": "alpha,beta"}).text
+    assert "Deck A" in html
+    assert "Deck B" in html
+    assert "Deck C" not in html
+
+
+def test_tag_link_keeps_search(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input("A", "Mô tả", "Chi tiết", tags=["alpha"], root=tmp_path)
+    html = client.get("/", params={"q": "a"}).text
+
+    assert 'href="/?tags=alpha&amp;q=a"' in html
+
+
+def test_invalid_tag_rejected(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+
+    response = client.post(f"/inputs/{record.id}/tags", data={"tags": "!!!"})
+
+    assert response.status_code == 400
+    assert storage.get_input(record.id, root=tmp_path).tags == []
+
+
+def test_tag_post_normalizes(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    record = storage.create_input("A", "Mô tả", "Chi tiết", root=tmp_path)
+
+    client.post(
+        f"/inputs/{record.id}/tags",
+        data={"tags": "Medical Blue, Nhiễm Khuẩn"},
+        follow_redirects=False,
+    )
+
+    assert storage.get_input(record.id, root=tmp_path).tags == [
+        "medical-blue",
+        "nhiem-khuan",
+    ]
+
+
+def test_index_forms_are_not_nested(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    storage.create_input("A", "Mô tả", "Chi tiết", tags=["alpha"], root=tmp_path)
+    html = client.get("/").text
+
+    assert html.count("<form") == html.count("</form>")
+    start = html.index('<form class="tags-filter"')
+    assert html.index("</form>", start) < html.index('<div class="tag-scroll">', start)
+
+
+def test_index_has_single_template_select(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    html = client.get("/").text
+
+    assert html.count('<select name="template">') == 1
+
+
+def test_tag_row_truncates_label() -> None:
+    root = Path(__file__).resolve().parents[1]
+    css = (root / "web" / "static" / "style.css").read_text(encoding="utf-8")
+
+    assert ".tag-row .tag-label" in css
+    assert "text-overflow: ellipsis" in css
+    assert "max-height: calc(7 * var(--gap-lg) + 6 * 4px)" in css
+    assert ".input-details[hidden]" in css

@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Callable
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from fastapi import FastAPI, Form, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from . import storage, theme_store
+from . import tags as tag_utils
 from .boho_render import render_deck_boho
 from .config import ConfigError, REPO_ROOT, Settings, lan_url, load_settings
 from .copy_slide_render import render_deck_copy_slides
@@ -35,6 +36,25 @@ MAX_TITLE = 200
 PPTX_MEDIA_TYPE = (
     "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 )
+
+
+def _url_without(path: str, params: dict[str, str]) -> str:
+    """Ghép URL, giữ lại các tham số được truyền vào."""
+    if not params:
+        return path
+    return f"{path}?{urlencode(params)}"
+
+
+def _split_tags(
+    values: list[str] | None, single: str | None = None
+) -> list[str]:
+    """Gom tag từ query string: hỗ trợ `?tags=a&tags=b` và `?tags=a,b`."""
+    raw: list[str] = []
+    if single:
+        raw.append(single)
+    for value in values or []:
+        raw.extend(str(value).split(","))
+    return tag_utils.limit_filter_tags(raw)
 
 
 def write_deck(spec, meta, out_path: Path) -> None:
@@ -82,19 +102,28 @@ def create_app(
             StaticFiles(directory=str(fonts_dir)),
             name="fonts",
         )
+    icons_dir = REPO_ROOT / "src" / "icons"
+    if icons_dir.is_dir():
+        app.mount(
+            "/icons",
+            StaticFiles(directory=str(icons_dir)),
+            name="icons",
+        )
 
     def render_index(
         request: Request,
         error: str | None = None,
         status_code: int = 200,
         form: dict | None = None,
-        active_tag: str | None = None,
+        tags_filter: list[str] | None = None,
+        tag_query: str | None = None,
         query: str | None = None,
         reuse: dict | None = None,
         message: str | None = None,
     ):
+        selected_tags = list(tags_filter or [])
         records = storage.list_inputs(
-            tag=active_tag, search=query, root=base
+            tags=selected_tags, search=query, root=base
         )
         query_norm = storage.normalize_search(query or "")
         inputs = []
@@ -137,16 +166,46 @@ def create_app(
                 for output in orphans
                 if query_norm in storage.normalize_search(output.slug)
             ]
+
+        preserve: dict[str, str] = {}
+        if query:
+            preserve["q"] = query
+        if tag_query:
+            preserve["tq"] = tag_query
+        search_hidden: dict[str, str] = {}
+        if selected_tags:
+            search_hidden["tags"] = ",".join(selected_tags)
+        if tag_query:
+            search_hidden["tq"] = tag_query
+        search_clear_url = _url_without("/", search_hidden)
+        tag_links = {
+            name: _url_without("/", {"tags": name, **preserve})
+            for name in storage.list_tags(root=base)
+        }
+        tags_layout = tag_utils.build_tag_layout(
+            dom_id="tags",
+            title="Tags",
+            counts=storage.tag_counts(root=base),
+            selected=selected_tags,
+            query=tag_query or "",
+            search_param="tq",
+            filter_param="tags",
+            hidden_fields={"q": query} if query else {},
+            delete_base="/tags",
+            clear_url=_url_without("/", preserve),
+        )
         return templates.TemplateResponse(
             request=request,
             name="index.html",
             context={
                 "inputs": inputs,
                 "orphans": orphans,
-                "tags": storage.list_tags(root=base),
-                "counts": storage.tag_counts(root=base),
-                "active_tag": active_tag,
+                "input_tags_layout": tags_layout,
+                "search_hidden": search_hidden,
+                "search_clear_url": search_clear_url,
                 "query": query or "",
+                "tag_links": tag_links,
+                "tags": storage.list_tags(root=base),
                 "template_groups": template_groups,
                 "server_url": server_url,
                 "error": error,
@@ -206,10 +265,13 @@ def create_app(
     async def index(
         request: Request,
         tag: str | None = Query(None),
+        tags: list[str] | None = Query(None),
+        tq: str | None = Query(None),
         q: str | None = Query(None),
         use: str | None = Query(None),
         msg: str | None = Query(None),
     ):
+        selected_tags = _split_tags(tags, tag)
         reuse = None
         if use:
             try:
@@ -219,7 +281,8 @@ def create_app(
                     request,
                     "Không tìm thấy input.",
                     404,
-                    active_tag=tag,
+                    tags_filter=selected_tags,
+                    tag_query=tq,
                     query=q,
                     message=msg,
                 )
@@ -236,7 +299,8 @@ def create_app(
             }
         return render_index(
             request,
-            active_tag=tag,
+            tags_filter=selected_tags,
+            tag_query=tq,
             query=q,
             reuse=reuse,
             message=msg,

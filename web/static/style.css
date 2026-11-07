@@ -806,36 +806,6 @@ body.overlay-open {
   padding: 4px;
 }
 
-.tag-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap-sm);
-}
-
-.tag-list li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--gap-sm);
-}
-
-.tag-link {
-  color: var(--text);
-  text-decoration: none;
-  flex: 1;
-  padding: 4px var(--gap-sm);
-  border-radius: 6px;
-}
-
-.tag-link.active {
-  background: var(--color-cream-200);
-  color: var(--navy);
-  font-weight: 600;
-}
-
 .count {
   color: var(--muted);
   font-size: 12px;
@@ -844,6 +814,96 @@ body.overlay-open {
 .icon {
   padding: 2px var(--gap-sm);
   font-size: 14px;
+}
+
+.tags-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-sm);
+}
+
+.tags-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.tags-toolbar input[type="search"] {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+.tags-apply {
+  padding: 4px var(--gap-sm);
+  font-size: 13px;
+}
+
+.tag-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: calc(7 * var(--gap-lg) + 6 * 4px);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.tag-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  min-height: var(--gap-lg);
+}
+
+.tag-row.selected {
+  font-weight: 600;
+}
+
+.tag-row .tag-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag-row .count {
+  flex: 0 0 auto;
+}
+
+.tag-row form {
+  flex: 0 0 auto;
+  display: flex;
+}
+
+.icon-button {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.icon-button img {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.icon-button:hover {
+  opacity: 0.85;
+}
+
+.icon-teal {
+  background: var(--color-teal-500);
+}
+
+.icon-red {
+  background: var(--color-red-600);
 }
 
 .tag-input {

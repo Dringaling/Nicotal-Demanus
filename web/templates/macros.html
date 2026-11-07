@@ -60,6 +60,7 @@
     <div class="tag-chips" id="tag-chips"></div>
     <input id="tag-entry" list="tag-suggestions"
            placeholder="Nhập tag rồi Enter">
+    <p class="field-error" data-tags-error hidden role="alert"></p>
   </div>
   <input type="hidden" name="tags" id="tags-hidden"
          value="{{ value }}">
@@ -91,6 +92,7 @@
   <div class="tag-chips" data-tag-chips></div>
   <input class="tag-entry" list="tag-suggestions"
          placeholder="Thêm tag rồi Enter">
+  <p class="field-error" data-tags-error hidden role="alert"></p>
   <button class="button secondary" type="submit">Lưu tag</button>
 </form>
 {% endmacro %}
@@ -103,10 +105,10 @@
     <div class="tag-chips" data-tag-chips></div>
     <input class="tag-entry" list="tag-suggestions"
            placeholder="Nhập tag rồi Enter">
+    <p class="field-error" data-tags-error hidden role="alert"></p>
   </div>
   <input type="hidden" name="tags" data-tags-hidden
          value="{{ tags | join(',') }}">
-  <p class="field-error" data-tags-error hidden role="alert"></p>
 </label>
 {% endmacro %}
 
@@ -135,7 +137,7 @@
 {% endmacro %}
 
 
-{% macro input_card(item) %}
+{% macro input_card(item, tag_links) %}
 {% set record = item.record %}
 {% set expanded = item.expanded %}
 <li class="input-card{% if expanded %} expanded{% endif %}">
@@ -162,7 +164,7 @@
   <div class="input-details"{% if not expanded %} hidden{% endif %}>
     <div class="chips">
       {% for tag in record.tags %}
-      <a class="tag-chip" href="/?tag={{ tag | urlencode }}">{{ tag }}</a>
+      <a class="tag-chip" href="{{ tag_links.get(tag, '/?tags=' ~ (tag | urlencode)) }}">{{ tag }}</a>
       {% endfor %}
     </div>
     {% if item.outputs %}
@@ -197,11 +199,11 @@
 {% endmacro %}
 
 
-{% macro input_list(inputs) %}
+{% macro input_list(inputs, tag_links) %}
 {% if inputs %}
 <ul class="input-list">
   {% for item in inputs %}
-  {{ input_card(item) }}
+  {{ input_card(item, tag_links) }}
   {% endfor %}
 </ul>
 {% else %}
@@ -210,43 +212,72 @@
 {% endmacro %}
 
 
-{% macro tags_sidebar(tags, counts, active_tag, query) %}
-<aside class="card sidebar">
+{% macro tags_layout(layout) %}
+<section class="card tags-layout" data-tags-layout="{{ layout.dom_id }}">
   <div class="deck-head">
-    <h2>Tags</h2>
-    {% if active_tag %}<a class="meta" href="/{% if query %}?q={{ query | urlencode }}{% endif %}">Bỏ lọc</a>{% endif %}
+    <h2>{{ layout.title }}</h2>
+    {% if layout.clear_url and layout.selected %}
+    <a class="meta" href="{{ layout.clear_url }}">Bỏ lọc</a>
+    {% endif %}
   </div>
-  {% if tags %}
-  <ul class="tag-list">
-    {% for tag in tags %}
-    <li>
-      <a class="tag-link {% if active_tag == tag %}active{% endif %}"
-         href="/?tag={{ tag | urlencode }}{% if query %}&q={{ query | urlencode }}{% endif %}">
-        {{ tag }} <span class="count">{{ counts.get(tag, 0) }}</span>
-      </a>
-      <form method="post" action="/tags/{{ tag | urlencode }}/delete"
+  <form class="tags-filter" id="tags-filter-{{ layout.dom_id }}"
+        method="get" action="/">
+    {% for key, value in layout.hidden_fields.items() %}
+    <input type="hidden" name="{{ key }}" value="{{ value }}">
+    {% endfor %}
+    <div class="tags-toolbar">
+      <input type="search" name="{{ layout.search_param }}"
+             value="{{ layout.query }}" placeholder="Tìm tag..."
+             aria-label="Tìm {{ layout.title | lower }}">
+      {% if layout.show_deselect_all %}
+      <button class="icon-button icon-red" type="button" data-deselect-all
+              title="Bỏ chọn tất cả" aria-label="Bỏ chọn tất cả">
+        <img src="/icons/deselect.svg" alt="">
+      </button>
+      {% endif %}
+      {% if layout.show_select_all %}
+      <button class="icon-button icon-teal" type="button" data-select-all
+              title="Chọn tất cả" aria-label="Chọn tất cả">
+        <img src="/icons/select-multiple.svg" alt="">
+      </button>
+      {% endif %}
+      <button class="button secondary tags-apply" type="submit">Lọc</button>
+    </div>
+  </form>
+  <div class="tag-scroll">
+    {% for item in layout.items %}
+    <div class="tag-row{% if item.selected %} selected{% endif %}">
+      <input type="checkbox" form="tags-filter-{{ layout.dom_id }}"
+             name="{{ layout.filter_param }}" value="{{ item.name }}"
+             {% if item.selected %}checked{% endif %}>
+      <span class="tag-label" title="{{ item.name }}">{{ item.label }}</span>
+      <span class="count">{{ item.count }}</span>
+      {% if item.delete_action %}
+      <form method="post" action="{{ item.delete_action }}"
             onsubmit="return confirm('Xoá tag này?')">
         <button class="icon danger" type="submit" title="Xoá tag">×</button>
       </form>
-    </li>
+      {% endif %}
+    </div>
+    {% else %}
+    <p class="muted">Không có tag khớp.</p>
     {% endfor %}
-  </ul>
-  {% else %}
-  <p class="muted">Chưa có tag.</p>
-  {% endif %}
-</aside>
+  </div>
+  <p class="meta">{{ layout.matched }}/{{ layout.total }} tag</p>
+</section>
 {% endmacro %}
 
 
-{% macro search_bar(active_tag, query) %}
+{% macro search_bar(search_hidden, query, clear_url) %}
 <form class="search-bar" method="get" action="/">
-  {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
+  {% for key, value in (search_hidden or {}).items() %}
+  <input type="hidden" name="{{ key }}" value="{{ value }}">
+  {% endfor %}
   <input type="search" name="q" value="{{ query }}"
          placeholder="Tìm theo tên input hoặc file PPTX..." aria-label="Tìm input theo tên hoặc file PPTX">
   <button type="submit">Tìm</button>
   {% if query %}
-  <a class="button secondary" title="Xoá tìm kiếm"
-     href="/{% if active_tag %}?tag={{ active_tag | urlencode }}{% endif %}">x</a>
+  <a class="button secondary" title="Xoá tìm kiếm" href="{{ clear_url }}">x</a>
   {% endif %}
 </form>
 {% endmacro %}

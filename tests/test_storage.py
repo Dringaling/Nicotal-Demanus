@@ -109,8 +109,32 @@ def test_title_validation(tmp_path: Path) -> None:
 def test_tag_validation(tmp_path: Path) -> None:
     with pytest.raises(StorageError):
         storage.create_input(
-            "A", "Mô tả", "Chi tiết", tags=["bad/tag"], root=tmp_path
+            "A", "Mô tả", "Chi tiết", tags=["   "], root=tmp_path
         )
+    with pytest.raises(StorageError):
+        storage.create_input(
+            "B", "Mô tả", "Chi tiết", tags=["a" * 33], root=tmp_path
+        )
+
+
+def test_tag_normalization(tmp_path: Path) -> None:
+    record = storage.create_input(
+        "C",
+        "Mô tả",
+        "Chi tiết",
+        tags=["Medical Blue", "Nhiễm Khuẩn", "bad/tag"],
+        root=tmp_path,
+    )
+
+    assert record.tags == ["medical-blue", "nhiem-khuan", "bad-tag"]
+
+
+def test_list_tags_keeps_legacy_values(tmp_path: Path) -> None:
+    path = tmp_path / "input" / "tags.toml"
+    path.parent.mkdir(parents=True)
+    path.write_text('tags = ["Legacy Tag"]\n', encoding="utf-8")
+
+    assert storage.list_tags(root=tmp_path) == ["Legacy Tag"]
 
 
 def test_migrate_legacy_input(tmp_path: Path) -> None:

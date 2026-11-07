@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import re
 import shutil
-import unicodedata
 import zlib
 from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime, timezone
@@ -12,14 +11,15 @@ from pathlib import Path
 import tomllib
 import tomli_w
 
+from . import tags as tag_utils
 from .config import REPO_ROOT
+from .text_norm import normalize_search, slugify_tag
 
 STATUSES = {"pending", "generating", "done", "failed"}
 _ID_PATTERN = re.compile(r"^[0-9a-f]{8}(-\d+)?$")
 _SAFE_PART = re.compile(r"^[A-Za-z0-9._-]+$")
 _TITLE_FORBIDDEN = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 _TITLE_ALLOWED = re.compile(r"^[\w\s\-!.,()\[\]&+%#@;]+$")
-_TAG_FORBIDDEN = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 
 
 class StorageError(RuntimeError):
@@ -110,15 +110,6 @@ def _title_key(title: str) -> str:
     return normalize_title(title).casefold()
 
 
-def normalize_search(text: str) -> str:
-    value = str(text).replace("đ", "d").replace("Đ", "D")
-    value = unicodedata.normalize("NFKD", value)
-    value = "".join(ch for ch in value if not unicodedata.combining(ch))
-    value = value.casefold()
-    value = re.sub(r"[^a-z0-9\s]", " ", value)
-    return re.sub(r"\s+", " ", value).strip()
-
-
 def validate_title(title: str) -> str:
     cleaned = normalize_title(title)
     if not 1 <= len(cleaned) <= 200:
@@ -160,31 +151,14 @@ def title_status(title: str, root: Path | None = None) -> TitleStatus:
 
 
 def normalize_tags(tags: list[str] | None) -> list[str]:
-    result: list[str] = []
-    seen: set[str] = set()
-    for raw in tags or []:
-        tag = re.sub(r"\s+", " ", str(raw).strip())
-        if not tag:
-            continue
-        if len(tag) > 40:
-            raise StorageError("Tag tối đa 40 ký tự")
-        if _TAG_FORBIDDEN.search(tag):
-            raise StorageError("Tag chứa ký tự không hợp lệ")
-        key = tag.casefold()
-        if key in seen:
-            continue
-        seen.add(key)
-        result.append(tag)
-    return result
+    try:
+        return tag_utils.normalize_tag_list(tags)
+    except tag_utils.TagError as exc:
+        raise StorageError(str(exc)) from exc
 
 
 def slugify(name: str) -> str:
-    value = name.replace("đ", "d").replace("Đ", "D")
-    value = unicodedata.normalize("NFKD", value)
-    value = "".join(ch for ch in value if not unicodedata.combining(ch))
-    value = value.lower()
-    value = re.sub(r"[^a-z0-9]+", "-", value).strip("-")
-    return value[:80].strip("-")
+    return slugify_tag(name)[:80].strip("-")
 
 
 def safe_path(base: Path, user_part: str) -> Path:
@@ -253,7 +227,12 @@ def list_tags(root: Path | None = None) -> list[str]:
     raw = data.get("tags", [])
     if not isinstance(raw, list):
         return []
-    return normalize_tags([str(tag) for tag in raw])
+    result: list[str] = []
+    for item in raw:
+        name = str(item).strip()
+        if name and name not in result:
+            result.append(name)
+    return result
 
 
 def _write_tags(tags: list[str], root: Path) -> None:
@@ -273,6 +252,7 @@ def _merge_tags(tags: list[str], root: Path) -> None:
 def list_inputs(
     tag: str | None = None,
     search: str | None = None,
+    tags: list[str] | None = None,
     root: Path | None = None,
 ) -> list[InputRecord]:
     base = Path(root) if root is not None else REPO_ROOT
@@ -283,12 +263,14 @@ def list_inputs(
         if "title" not in data or "details_hash" not in data:
             continue
         records.append(InputRecord.from_dict(data))
+    wanted = {tag_utils.tag_key(item) for item in tags or [] if str(item).strip()}
     if tag:
-        key = tag.casefold()
+        wanted.add(tag_utils.tag_key(tag))
+    if wanted:
         records = [
             record
             for record in records
-            if any(item.casefold() == key for item in record.tags)
+            if any(tag_utils.tag_key(item) in wanted for item in record.tags)
         ]
     query = normalize_search(search or "")
     if query:

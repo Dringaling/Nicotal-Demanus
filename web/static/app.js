@@ -100,62 +100,42 @@
 })();
 
 (function () {
-  const root = document.getElementById("tag-input");
-  if (!root) {
-    return;
-  }
-
-  const entry = document.getElementById("tag-entry");
-  const chips = document.getElementById("tag-chips");
-  const hidden = document.getElementById("tags-hidden");
-  let values = (hidden.value || "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
-
-  function render() {
-    chips.innerHTML = "";
-    values.forEach((tag, index) => {
-      const chip = document.createElement("span");
-      chip.className = "tag-chip";
-      chip.textContent = tag;
-      const remove = document.createElement("button");
-      remove.type = "button";
-      remove.textContent = "×";
-      remove.addEventListener("click", () => {
-        values.splice(index, 1);
-        render();
-      });
-      chip.appendChild(remove);
-      chips.appendChild(chip);
-    });
-    hidden.value = values.join(",");
-  }
-
-  function add(value) {
-    const tag = value.trim().replace(/\s+/g, " ");
-    if (!tag) {
+  document.querySelectorAll("[data-tags-layout]").forEach((root) => {
+    const form = root.querySelector(".tags-filter");
+    if (!form) {
       return;
     }
-    if (!values.some((item) => item.toLowerCase() === tag.toLowerCase())) {
-      values.push(tag);
-    }
-    entry.value = "";
-    render();
-  }
+    let timer = null;
 
-  entry.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === ",") {
-      event.preventDefault();
-      add(entry.value);
+    function submit() {
+      clearTimeout(timer);
+      timer = setTimeout(() => form.submit(), 150);
+    }
+
+    root.querySelectorAll('input[type="checkbox"]').forEach((box) => {
+      box.addEventListener("change", submit);
+    });
+
+    const selectAll = root.querySelector("[data-select-all]");
+    if (selectAll) {
+      selectAll.addEventListener("click", () => {
+        root.querySelectorAll('input[type="checkbox"]').forEach((box) => {
+          box.checked = true;
+        });
+        submit();
+      });
+    }
+
+    const deselectAll = root.querySelector("[data-deselect-all]");
+    if (deselectAll) {
+      deselectAll.addEventListener("click", () => {
+        root.querySelectorAll('input[type="checkbox"]').forEach((box) => {
+          box.checked = false;
+        });
+        submit();
+      });
     }
   });
-  entry.addEventListener("blur", () => {
-    if (entry.value.trim()) {
-      add(entry.value);
-    }
-  });
-  render();
 })();
 
 (function () {
@@ -179,93 +159,37 @@
 })();
 
 (function () {
-  document.querySelectorAll("[data-tag-editor]").forEach((form) => {
-    const hidden = form.querySelector('input[name="tags"]');
-    const chips = form.querySelector("[data-tag-chips]");
-    const entry = form.querySelector(".tag-entry");
+  const MAX_TAG_LEN = 32;
+
+  function normalizeTag(value) {
+    const withoutAccent = String(value)
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+    return withoutAccent
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function tagError(tag) {
+    if (!tag) {
+      return "Tag không hợp lệ: chỉ chữ không dấu, số và dấu gạch ngang.";
+    }
+    if (tag.length > MAX_TAG_LEN) {
+      return `Tag tối đa ${MAX_TAG_LEN} ký tự`;
+    }
+    return "";
+  }
+
+  function initTagEditor(config) {
+    const { root, hidden, chips, entry } = config;
     if (!hidden || !chips || !entry) {
       return;
     }
-
-    let values = (hidden.value || "")
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean);
-    let submitted = false;
-
-    function render() {
-      chips.innerHTML = "";
-      values.forEach((tag, index) => {
-        const chip = document.createElement("span");
-        chip.className = "tag-chip";
-        chip.textContent = tag;
-        const remove = document.createElement("button");
-        remove.type = "button";
-        remove.textContent = "×";
-        remove.addEventListener("click", () => {
-          values.splice(index, 1);
-          render();
-          save();
-        });
-        chip.appendChild(remove);
-        chips.appendChild(chip);
-      });
-      hidden.value = values.join(",");
-    }
-
-    function save() {
-      if (submitted) {
-        return;
-      }
-      submitted = true;
-      form.submit();
-    }
-
-    function add(value) {
-      const tag = value.trim().replace(/\s+/g, " ");
-      if (!tag) {
-        return false;
-      }
-      if (!values.some((item) => item.toLowerCase() === tag.toLowerCase())) {
-        values.push(tag);
-      }
-      entry.value = "";
-      render();
-      return true;
-    }
-
-    entry.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === ",") {
-        event.preventDefault();
-        if (add(entry.value)) {
-          save();
-        }
-      }
-    });
-    entry.addEventListener("blur", () => {
-      if (entry.value.trim() && add(entry.value)) {
-        save();
-      }
-    });
-    form.addEventListener("submit", () => {
-      submitted = true;
-    });
-    render();
-  });
-})();
-
-(function () {
-  document.querySelectorAll("[data-reuse-tags]").forEach((root) => {
-    const inputId = root.dataset.inputId;
-    const chips = root.querySelector("[data-tag-chips]");
-    const entry = root.querySelector(".tag-entry");
-    const form = root.closest("form");
-    const hidden = form ? form.querySelector("[data-tags-hidden]") : null;
-    const error = form ? form.querySelector("[data-tags-error]") : null;
-    if (!inputId || !chips || !entry || !hidden) {
-      return;
-    }
-
+    const error = root.querySelector("[data-tags-error]");
+    const onChange = config.onChange || function () {};
     let values = (hidden.value || "")
       .split(",")
       .map((value) => value.trim())
@@ -279,27 +203,6 @@
       error.hidden = !message;
     }
 
-    async function save() {
-      try {
-        const body = new URLSearchParams();
-        body.set("tags", values.join(","));
-        const response = await fetch(`/inputs/${inputId}/tags`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body,
-        });
-        if (!response.ok) {
-          throw new Error("save failed");
-        }
-        hidden.value = values.join(",");
-        showError("");
-      } catch (exc) {
-        showError("Không lưu được tag. Thử lại.");
-      }
-    }
-
     function render() {
       chips.innerHTML = "";
       values.forEach((tag, index) => {
@@ -312,7 +215,7 @@
         remove.addEventListener("click", () => {
           values.splice(index, 1);
           render();
-          save();
+          onChange();
         });
         chip.appendChild(remove);
         chips.appendChild(chip);
@@ -320,12 +223,15 @@
       hidden.value = values.join(",");
     }
 
-    function add(value) {
-      const tag = value.trim().replace(/\s+/g, " ");
-      if (!tag) {
+    function add(raw) {
+      const tag = normalizeTag(raw);
+      const message = tagError(tag);
+      if (message) {
+        showError(message);
         return false;
       }
-      if (!values.some((item) => item.toLowerCase() === tag.toLowerCase())) {
+      showError("");
+      if (!values.includes(tag)) {
         values.push(tag);
       }
       entry.value = "";
@@ -337,16 +243,86 @@
       if (event.key === "Enter" || event.key === ",") {
         event.preventDefault();
         if (add(entry.value)) {
-          save();
+          onChange();
         }
       }
     });
     entry.addEventListener("blur", () => {
       if (entry.value.trim() && add(entry.value)) {
-        save();
+        onChange();
       }
     });
     render();
+  }
+
+  const createRoot = document.getElementById("tag-input");
+  if (createRoot) {
+    initTagEditor({
+      root: createRoot,
+      hidden: document.getElementById("tags-hidden"),
+      chips: document.getElementById("tag-chips"),
+      entry: document.getElementById("tag-entry"),
+    });
+  }
+
+  document.querySelectorAll("[data-tag-editor]").forEach((form) => {
+    let submitted = false;
+    initTagEditor({
+      root: form,
+      hidden: form.querySelector('input[name="tags"]'),
+      chips: form.querySelector("[data-tag-chips]"),
+      entry: form.querySelector(".tag-entry"),
+      onChange: () => {
+        if (submitted) {
+          return;
+        }
+        submitted = true;
+        form.submit();
+      },
+    });
+    form.addEventListener("submit", () => {
+      submitted = true;
+    });
+  });
+
+  document.querySelectorAll("[data-reuse-tags]").forEach((root) => {
+    const form = root.closest("form");
+    const inputId = root.dataset.inputId;
+    const hidden = form ? form.querySelector("[data-tags-hidden]") : null;
+    if (!form || !inputId || !hidden) {
+      return;
+    }
+
+    async function save() {
+      try {
+        const body = new URLSearchParams();
+        body.set("tags", hidden.value);
+        const response = await fetch(`/inputs/${inputId}/tags`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body,
+        });
+        if (!response.ok) {
+          throw new Error("save failed");
+        }
+      } catch (exc) {
+        const error = root.querySelector("[data-tags-error]");
+        if (error) {
+          error.textContent = "Không lưu được tag. Thử lại.";
+          error.hidden = false;
+        }
+      }
+    }
+
+    initTagEditor({
+      root,
+      hidden,
+      chips: root.querySelector("[data-tag-chips]"),
+      entry: root.querySelector(".tag-entry"),
+      onChange: save,
+    });
   });
 })();
 

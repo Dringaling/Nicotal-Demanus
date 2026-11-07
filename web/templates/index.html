@@ -1,21 +1,23 @@
 {% extends "base.html" %}
-{% from "macros.html" import tags_sidebar, search_bar, input_list, create_form, reuse_form, orphan_decks %}
+{% from "macros.html" import tags_layout, search_bar, input_list, create_form, reuse_form, orphan_decks %}
 {% block content %}
 {% if message %}<p class="flash">{{ message }}</p>{% endif %}
 <datalist id="tag-suggestions">
   {% for tag in tags %}<option value="{{ tag }}"></option>{% endfor %}
 </datalist>
 <div class="layout">
-  {{ tags_sidebar(tags, counts, active_tag, query) }}
+  <aside class="sidebar">
+    {{ tags_layout(input_tags_layout) }}
+  </aside>
 
   <section class="card input-column">
     <div class="deck-head">
-      <h2>Input{% if active_tag %} · {{ active_tag }}{% endif %}</h2>
+      <h2>Input{% if input_tags_layout.selected %} · {{ input_tags_layout.selected | join(', ') }}{% endif %}</h2>
       <a class="button secondary" href="/review">Review deck</a>
     </div>
-    {{ search_bar(active_tag, query) }}
+    {{ search_bar(search_hidden, query, search_clear_url) }}
     <div class="input-scroll">
-      {{ input_list(inputs) }}
+      {{ input_list(inputs, tag_links) }}
       {{ orphan_decks(orphans) }}
     </div>
   </section>
